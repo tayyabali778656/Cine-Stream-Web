@@ -1621,3 +1621,5 @@ process.on('unhandledRejection', (reason) => logger.error('unhandled_rejection',
     });
   });
 })();
+
+module.exports = server;
