@@ -778,7 +778,9 @@ function handleStatic(req, res, filePath, ext) {
 }
 
 // ── Main request handler ──────────────────────────────────────────────────────
-const server = http.createServer(async (req, res) => {
+// Extracted to a named function so Vercel's @vercel/node can import it as a
+// serverless handler. Local dev still uses http.createServer + .listen().
+const requestHandler = async (req, res) => {
   const startMs = Date.now();
 
   // Apply security headers to every response
@@ -1576,7 +1578,9 @@ const server = http.createServer(async (req, res) => {
     }
     logger.request(req, statusCode, Date.now() - startMs);
   }
-});
+};
+
+const server = http.createServer(requestHandler);
 
 // ── Server timeouts (prevent slow-client DoS) ─────────────────────────────────
 server.requestTimeout = 30_000;   // 30s: max time to receive full request
@@ -1622,4 +1626,5 @@ process.on('unhandledRejection', (reason) => logger.error('unhandled_rejection',
   });
 })();
 
-module.exports = server;
+// Export the handler function (not the server) for Vercel's @vercel/node runtime
+module.exports = requestHandler;

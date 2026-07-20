@@ -76,7 +76,7 @@ const config = {
   streamPlayerUrl: optional('STREAM_PLAYER_URL', 'https://gemma416okl.com/play/'),
 
   // CORS — comma-separated list of trusted origins
-  allowedOrigins: optional('ALLOWED_ORIGINS', 'http://localhost:3000')
+  allowedOrigins: optional('ALLOWED_ORIGINS', 'http://localhost:3000,https://cinestream-ten-nu.vercel.app,https://cinestream.watch')
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean),
