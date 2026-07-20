@@ -795,14 +795,23 @@ const requestHandler = async (req, res) => {
     return;
   }
 
-  // Apply CORS
-  if (!applyCors(req, res)) {
-    logger.request(req, 403, Date.now() - startMs);
-    return;
+  // Extract pathname early so we can use it in CORS logic
+  const pathname = (req.url || '').split('?')[0];
+
+  // Apply CORS — only BLOCK for API/proxy routes (origin enforcement).
+  // Static files (HTML, CSS, JS, manifest.json, images…) are public assets;
+  // we just set permissive headers so PWA manifests, fonts etc. all load fine.
+  if (pathname.startsWith('/api/') || pathname.startsWith('/proxy') || pathname.startsWith('/iframe-proxy')) {
+    if (!applyCors(req, res)) {
+      logger.request(req, 403, Date.now() - startMs);
+      return;
+    }
+  } else {
+    // Open CORS for all static/public assets
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
   // Apply rate limiting (skip for static assets)
-  const pathname = (req.url || '').split('?')[0];
   if (pathname.startsWith('/api/') || pathname.startsWith('/proxy')) {
     if (!applyRateLimit(req, res, pathname)) {
       logger.request(req, 429, Date.now() - startMs);
