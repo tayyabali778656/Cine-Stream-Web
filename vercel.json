@@ -7,7 +7,29 @@
   "builds": [
     {
       "src": "serve.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "*.html",
+          "*.css",
+          "*.js",
+          "*.json",
+          "*.xml",
+          "*.txt",
+          "images/**",
+          "public/**",
+          "middleware/**",
+          "services/**",
+          "utils/**",
+          "scripts/**",
+          "tayyab/**",
+          "db.js",
+          "config.js",
+          "api.js",
+          "admin.js",
+          "app.js"
+        ]
+      }
     }
   ],
 
