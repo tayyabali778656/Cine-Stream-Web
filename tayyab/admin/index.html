@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login – MovieBox</title>
+  <title>Admin Login – CineStream</title>
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3163/3163478.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -197,7 +197,7 @@
 <body>
   <div class="login-card">
     <i class="fas fa-user-shield shield-icon"></i>
-    <div class="logo"><span class="logo-text">MOVIE<span>BOX</span></span></div>
+    <div class="logo"><span class="logo-text">CINE<span>STREAM</span></span></div>
     <p class="subtitle">Admin Access Only</p>
 
     <div class="error-msg" id="error-msg">
@@ -231,22 +231,62 @@
   </div>
 
   <script>
-    // Check if already logged in
-    if (sessionStorage.getItem('mb_admin') === 'true') {
-      window.location.href = '/tayyab/admin/dashboard.html';
-    }
+    // ── Check if already authenticated via server ────────────────────────────
+    (async () => {
+      try {
+        const res = await fetch('/api/v1/auth/verify', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            window.location.href = '/tayyab/admin/dashboard.html';
+          }
+        }
+      } catch { /* Not logged in, stay on login page */ }
+    })();
 
-    function doLogin() {
-      const email = document.getElementById('admin-email').value.trim();
-      const pass  = document.getElementById('admin-pass').value;
-      const err   = document.getElementById('error-msg');
+    let isLoggingIn = false;
 
-      if (email === 'tayyabdev@make.com' && pass === 'Tayyabali77865') {
-        sessionStorage.setItem('mb_admin', 'true');
-        window.location.href = '/tayyab/admin/dashboard.html';
-      } else {
-        err.classList.add('show');
-        document.getElementById('admin-pass').value = '';
+    async function doLogin() {
+      if (isLoggingIn) return;
+      const email  = document.getElementById('admin-email').value.trim();
+      const pass   = document.getElementById('admin-pass').value;
+      const errDiv = document.getElementById('error-msg');
+      const btn    = document.querySelector('.login-btn');
+
+      if (!email || !pass) {
+        errDiv.textContent = 'Please enter email and password.';
+        errDiv.classList.add('show');
+        return;
+      }
+
+      isLoggingIn = true;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+      errDiv.classList.remove('show');
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password: pass }),
+        });
+
+        if (res.ok) {
+          window.location.href = '/tayyab/admin/dashboard.html';
+        } else {
+          const data = await res.json().catch(() => ({}));
+          errDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Incorrect email or password.');
+          errDiv.classList.add('show');
+          document.getElementById('admin-pass').value = '';
+        }
+      } catch {
+        errDiv.innerHTML = '<i class="fas fa-wifi"></i> Network error. Is the server running?';
+        errDiv.classList.add('show');
+      } finally {
+        isLoggingIn = false;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login to Admin Panel';
       }
     }
 
@@ -262,7 +302,6 @@
       }
     }
 
-    // Allow Enter key
     document.addEventListener('keydown', e => {
       if (e.key === 'Enter') doLogin();
     });

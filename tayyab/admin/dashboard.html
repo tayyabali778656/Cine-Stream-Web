@@ -2,383 +2,1958 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard – MovieBox</title>
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3163/3163478.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – CineStream</title>
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3163/3163478.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        :root {
-            --primary: #e50914;
-            --bg-dark: #0f0f0f;
-            --glass: rgba(255, 255, 255, 0.07);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --text-muted: #b3b3b3;
-        }
+    :root {
+      --primary: #e50914;
+      --primary-glow: rgba(229, 9, 20, 0.35);
+      --bg-dark: #0f0f0f;
+      --bg-card: rgba(255, 255, 255, 0.04);
+      --glass: rgba(255, 255, 255, 0.07);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --text-muted: #b3b3b3;
+      --success: #2ecc71;
+      --warning: #f39c12;
+      --info: #3498db;
+    }
 
-        body {
-            background: var(--bg-dark);
-            color: #fff;
-            font-family: 'Outfit', sans-serif;
-            min-height: 100vh;
-        }
+    body {
+      background: var(--bg-dark);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+    }
 
-        /* Topbar */
-        header {
-            background: rgba(15, 15, 15, 0.95);
-            border-bottom: 1px solid var(--glass-border);
-            padding: 16px 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            backdrop-filter: blur(12px);
-        }
+    /* â”€â”€ Header â”€â”€ */
+    header {
+      background: rgba(15, 15, 15, 0.97);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 14px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+    }
 
-        .logo {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--primary);
-        }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
 
-        .logo span {
-            color: #fff;
-        }
+    .logo span {
+      color: #fff;
+    }
 
-        .logout-btn {
-            background: rgba(229, 9, 20, 0.1);
-            border: 1px solid rgba(229, 9, 20, 0.3);
-            color: #ff6b6b;
-            padding: 8px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-        }
+    .logo small {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-left: 6px;
+    }
 
-        .logout-btn:hover {
-            background: rgba(229, 9, 20, 0.2);
-        }
+    .logout-btn {
+      background: rgba(229, 9, 20, 0.1);
+      border: 1px solid rgba(229, 9, 20, 0.3);
+      color: #ff6b6b;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
 
-        /* Main */
-        main {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 0 24px;
-        }
+    .logout-btn:hover {
+      background: rgba(229, 9, 20, 0.25);
+    }
 
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 6px;
-        }
+    /* â”€â”€ Nav Tabs â”€â”€ */
+    .tab-nav {
+      display: flex;
+      gap: 0;
+      padding: 0 32px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--glass-border);
+      overflow-x: auto;
+    }
 
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            margin-bottom: 32px;
-        }
+    .tab-btn {
+      padding: 14px 22px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+    }
 
-        /* Card */
-        .card {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 28px;
-            margin-bottom: 24px;
-        }
+    .tab-btn:hover {
+      color: #fff;
+    }
 
-        .card h2 {
-            font-size: 1.1rem;
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    .tab-btn.active {
+      color: #fff;
+      border-bottom-color: var(--primary);
+    }
 
-        .card h2 i {
-            color: var(--primary);
-        }
+    .tab-btn .badge-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.7rem;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      margin-left: 6px;
+    }
 
-        .form-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
+    /* â”€â”€ Main â”€â”€ */
+    main {
+      max-width: 960px;
+      margin: 32px auto;
+      padding: 0 24px;
+    }
 
-        input[type=text],
-        input[type=url] {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            color: #fff;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            outline: none;
-            flex: 1;
-            min-width: 140px;
-            transition: border-color 0.2s;
-        }
+    .tab-panel {
+      display: none;
+    }
 
-        input[type=text]:focus,
-        input[type=url]:focus {
-            border-color: var(--primary);
-        }
+    .tab-panel.active {
+      display: block;
+    }
 
-        label.checkbox {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
+    /* â”€â”€ Section Heading â”€â”€ */
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
 
-        .btn-save {
-            background: linear-gradient(135deg, var(--primary), #ff3d47);
-            border: none;
-            color: #fff;
-            padding: 11px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: inherit;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+    .section-heading h1 {
+      font-size: 1.6rem;
+    }
 
-        .btn-save:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.35);
-        }
+    .section-heading i {
+      color: var(--primary);
+    }
 
-        .status-msg {
-            margin-top: 10px;
-            color: #4caf50;
-            font-size: 0.9rem;
-            min-height: 20px;
-        }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 28px;
+    }
 
-        /* List */
-        #admin-list {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    /* â”€â”€ Card â”€â”€ */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
 
-        .admin-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        .admin-item-info {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
+    .card-title i {
+      color: var(--primary);
+    }
 
-        .admin-item-info strong {
-            color: #fff;
-        }
+    /* â”€â”€ Form Row â”€â”€ */
+    .form-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
 
-        .btn-delete {
-            background: rgba(229, 9, 20, 0.1);
-            border: 1px solid rgba(229, 9, 20, 0.3);
-            color: #ff6b6b;
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-family: inherit;
-        }
+    input[type=text],
+    input[type=url],
+    select,
+    textarea {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      flex: 1;
+      min-width: 140px;
+      transition: border-color 0.2s;
+    }
 
-        .btn-delete:hover {
-            background: rgba(229, 9, 20, 0.2);
-        }
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--primary);
+    }
 
-        .empty-msg {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            text-align: center;
-            padding: 20px 0;
-        }
-    </style>
+    textarea {
+      resize: none;
+      height: 78px;
+    }
+
+    select option {
+      background: #1a1a1a;
+    }
+
+    label.checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    /* â”€â”€ Buttons â”€â”€ */
+    .btn-save {
+      background: linear-gradient(135deg, var(--primary), #ff3d47);
+      border: none;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-save:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px var(--primary-glow);
+    }
+
+    .btn-publish {
+      background: linear-gradient(135deg, #1abc9c, #16a085);
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 0.82rem;
+      white-space: nowrap;
+      transition: transform 0.15s;
+    }
+
+    .btn-publish:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-delete {
+      background: rgba(229, 9, 20, 0.1);
+      border: 1px solid rgba(229, 9, 20, 0.3);
+      color: #ff6b6b;
+      padding: 7px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-family: inherit;
+    }
+
+    .btn-delete:hover {
+      background: rgba(229, 9, 20, 0.2);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      color: #fff;
+    }
+
+    /* â”€â”€ Status Message â”€â”€ */
+    .status-msg {
+      margin-top: 10px;
+      font-size: 0.88rem;
+      min-height: 20px;
+      color: var(--success);
+    }
+
+    /* â”€â”€ List Items â”€â”€ */
+    .item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .admin-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .admin-item.broken-item {
+      border-left: 3px solid var(--warning);
+    }
+
+    .admin-item.hindi-item {
+      border-left: 3px solid var(--success);
+    }
+
+    .admin-item.no-hindi-item {
+      border-left: 3px solid var(--info);
+    }
+
+    .admin-item-poster {
+      width: 44px;
+      height: 64px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #222;
+    }
+
+    .admin-item-info {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .admin-item-info strong {
+      font-size: 0.95rem;
+      color: #fff;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .admin-item-info .meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .admin-item-info .meta span {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-right: 5px;
+    }
+
+    .admin-item-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .url-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .url-input-row input {
+      flex: 1;
+      min-width: 220px;
+      padding: 7px 12px;
+      font-size: 0.82rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state i {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      display: block;
+      opacity: 0.4;
+    }
+
+    .empty-state p {
+      font-size: 0.9rem;
+    }
+
+    /* â”€â”€ Search Box â”€â”€ */
+    .search-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .search-row input {
+      flex: 1;
+    }
+
+    /* â”€â”€ Subsection Divider â”€â”€ */
+    .subsection {
+      margin-bottom: 30px;
+    }
+
+    .subsection-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subsection-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--glass-border);
+    }
+
+    /* â”€â”€ Pill Badge â”€â”€ */
+    .pill {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 30px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .pill-warning {
+      background: rgba(243, 156, 18, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(243, 156, 18, 0.3);
+    }
+
+    .pill-success {
+      background: rgba(46, 204, 113, 0.12);
+      color: var(--success);
+      border: 1px solid rgba(46, 204, 113, 0.25);
+    }
+
+    .pill-info {
+      background: rgba(52, 152, 219, 0.12);
+      color: var(--info);
+      border: 1px solid rgba(52, 152, 219, 0.25);
+    }
+
+    .pill-type {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ccc;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    /* â”€â”€ Toast â”€â”€ */
+    #admin-toast {
+      position: fixed;
+      bottom: 30px;
+      right: 28px;
+      background: #1e1e1e;
+      border: 1px solid var(--glass-border);
+      color: var(--success);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      z-index: 9999;
+      display: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    #remove-search-results,
+    #broken-search-results,
+    #hidden-items-list {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    @media (min-width: 1024px) {
+
+      #remove-search-results,
+      #broken-search-results,
+      #hidden-items-list {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    #hidden-items-list .list-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+      justify-content: space-between;
+      transition: all 0.3s ease;
+    }
+
+    #hidden-items-list .list-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    #hidden-items-list .item-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #hidden-items-list .item-poster {
+      width: 80px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 6px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    #hidden-items-list .item-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      margin: 5px 0 2px 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      height: 36px;
+    }
+
+    #hidden-items-list .item-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    #hidden-items-list .item-actions {
+      width: 100%;
+    }
+
+    #hidden-items-list .item-actions button {
+      width: 100%;
+      padding: 8px;
+      font-size: 0.8rem;
+    }
+  </style>
 </head>
 
 <body>
-    <header>
-        <div class="logo">MOVIE<span>BOX</span> <span
-                style="font-size:0.8rem; color:var(--text-muted); font-weight:400;">Admin</span></div>
-        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-    </header>
+  <header>
+    <div class="logo">CINE<span>STREAM</span><small>Admin</small></div>
+    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </header>
 
-    <main>
-        <h1><i class="fas fa-user-shield" style="color:var(--primary)"></i> Admin Dashboard</h1>
-        <p class="subtitle">Manage custom movie links and Hindi dubbed overrides.</p>
+  <!-- Tab Nav -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('tab-manage', this)">
+      <i class="fas fa-list"></i> Manage Library
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab-toonstream', this)">
+      <i class="fas fa-search"></i> Search Anime
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab-broken', this)">
+      <i class="fas fa-exclamation-triangle"></i> Broken Reports
+      <span class="badge-count" id="broken-count" style="display: none;">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab-remove', this)">
+      <i class="fas fa-trash-alt"></i> Remove Content
+      <span class="badge-count" id="remove-badge" style="display: none;">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab-ads', this)">
+      <i class="fas fa-ad"></i> Server Ads
+    </button>
+  </div>
 
-        <div class="card">
-            <h2><i class="fas fa-plus-circle"></i> Upload / Override Content</h2>
-            <div class="form-row" style="margin-bottom: 20px;">
-                <input type="text" id="admin-movie-id" placeholder="ID (TMDB or Unique)" style="flex: 0.5;">
-                <select id="admin-type" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: #fff; padding: 10px; border-radius: 8px; font-family: inherit;">
-                    <option value="movie">Movie</option>
-                    <option value="tv">TV Series</option>
-                    <option value="anime">Anime</option>
-                </select>
-                <input type="text" id="admin-title" placeholder="Title" style="flex: 2;">
-            </div>
-            
-            <div class="form-row" style="margin-bottom: 20px;">
-                <textarea id="admin-desc" placeholder="Description / Overview" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: #fff; padding: 12px; border-radius: 8px; font-family: inherit; height: 80px; resize: none;"></textarea>
-            </div>
+  <main>
 
-            <div class="form-row" style="margin-bottom: 20px;">
-                <input type="text" id="admin-poster" placeholder="Poster URL (https://... or /path.jpg)">
-                <input type="text" id="admin-date" placeholder="Release Date (YYYY-MM-DD)">
-                <input type="text" id="admin-genres" placeholder="Genres (Action, Drama)">
-            </div>
+    <!-- ═════════════════════════════ TAB: MANAGE LIBRARY ═════════════════════════════ -->
+    <div class="tab-panel active" id="tab-manage">
+      <div class="section-heading">
+        <i class="fas fa-database"></i>
+        <h1>Manage Library</h1>
+      </div>
+      <p class="subtitle">All manually added entries. Delete or update existing content.</p>
 
-            <div class="form-row">
-                <input type="url" id="admin-custom-link" placeholder="Watch Link (https://...)">
-                <label class="checkbox">
-                    <input type="checkbox" id="admin-hindi-dubbed"> Hindi Dubbed
-                </label>
-            </div>
-            
-            <div style="margin-top: 20px;">
-                <button class="btn-save" onclick="saveData()"><i class="fas fa-cloud-upload-alt"></i> Save to Database</button>
-                <div class="status-msg" id="status-msg"></div>
-            </div>
+      <div class="card-grid">
+        <div class="card span-4">
+          <div class="card-title"><i class="fas fa-list"></i> Saved Entries</div>
+          <div class="item-list" id="admin-list"></div>
         </div>
+      </div>
+    </div>
 
-        <div class="card">
-            <h2><i class="fas fa-list"></i> Managed Movies</h2>
-            <div id="admin-list"></div>
+    <!-- ═════════════════════════════ TAB: SEARCH ANIME ═════════════════════════════ -->
+    <div class="tab-panel" id="tab-toonstream">
+      <div class="section-heading">
+        <i class="fas fa-search"></i>
+        <h1>Search Anime</h1>
+      </div>
+      <p class="subtitle">Search for any anime on ToonStream to add it to your library and configure custom episode links.</p>
+
+      <div class="card">
+        <div class="card-title"><i class="fas fa-search"></i> Search ToonStream</div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <input type="text" id="toonstream-search-input" placeholder="Type anime title..." class="filter-chip glass"
+            style="flex: 1; padding: 12px 20px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: #fff;">
+          <button onclick="searchToonstreamLive()" class="btn-primary" style="padding: 10px 20px; border-radius: 8px;"><i
+              class="fas fa-search"></i> Search</button>
         </div>
-    </main>
+        <div id="toonstream-search-results" style="margin-top: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;"></div>
+      </div>
+    </div>
 
-    <script>
-        // Auth guard
-        if (sessionStorage.getItem('mb_admin') !== 'true') {
-            window.location.href = './index.html';
-        }
+    <!-- ═════════════════════════════ TAB: BROKEN REPORTS ═════════════════════════════ -->
+    <div class="tab-panel" id="tab-broken">
+      <div class="section-heading">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h1>Broken Reports</h1>
+      </div>
+      <p class="subtitle">View user-reported playback failures and assign working custom links.</p>
 
-        function logout() {
-            sessionStorage.removeItem('mb_admin');
-            window.location.href = './index.html';
-        }
+      <div class="card">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <span><i class="fas fa-unlink"></i> Reported Broken Streams</span>
+          <button onclick="clearAllBroken()" class="btn-delete" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; cursor: pointer;">
+            <i class="fas fa-trash"></i> Clear All Reports
+          </button>
+        </div>
+        <div class="item-list" id="broken-list" style="margin-top: 15px;"></div>
+      </div>
+    </div>
 
-        function getStore() {
-            return JSON.parse(localStorage.getItem('moviebox_admin') || '{}');
-        }
+    <!-- ═════════════════════════════ TAB: REMOVE CONTENT ═════════════════════════════ -->
+    <div class="tab-panel" id="tab-remove">
+      <div class="section-heading">
+        <i class="fas fa-trash-alt"></i>
+        <h1>Remove Content</h1>
+      </div>
+      <p class="subtitle">Search and hide any movies, series, or anime from your website.</p>
 
-        function setStore(data) {
-            localStorage.setItem('moviebox_admin', JSON.stringify(data));
-        }
-
-        function saveData() {
-            const id = document.getElementById('admin-movie-id').value.trim();
-            const type = document.getElementById('admin-type').value;
-            const title = document.getElementById('admin-title').value.trim();
-            const desc = document.getElementById('admin-desc').value.trim();
-            const poster = document.getElementById('admin-poster').value.trim();
-            const date = document.getElementById('admin-date').value.trim();
-            const genres = document.getElementById('admin-genres').value.trim();
-            const link = document.getElementById('admin-custom-link').value.trim();
-            const hindi = document.getElementById('admin-hindi-dubbed').checked;
-            const msg = document.getElementById('status-msg');
-
-            if (!id || !title) { 
-                msg.style.color = '#ff6b6b'; 
-                msg.textContent = 'ID and Title are required.'; 
-                return; 
-            }
-
-            const store = getStore();
-            store[id] = { 
-                id, 
-                type, 
-                title: type === 'movie' ? title : null,
-                name: type !== 'movie' ? title : null,
-                overview: desc,
-                poster_path: poster,
-                release_date: type === 'movie' ? date : null,
-                first_air_date: type !== 'movie' ? date : null,
-                genres_str: genres,
-                original_language: hindi ? 'hi' : 'en',
-                customLink: link || null, 
-                manual: true 
-            };
-            setStore(store);
-
-            msg.style.color = '#4caf50';
-            msg.textContent = `✓ Successfully saved ${title} to database.`;
-
-            // Reset form
-            document.getElementById('admin-movie-id').value = '';
-            document.getElementById('admin-title').value = '';
-            document.getElementById('admin-desc').value = '';
-            document.getElementById('admin-poster').value = '';
-            document.getElementById('admin-date').value = '';
-            document.getElementById('admin-genres').value = '';
-            document.getElementById('admin-custom-link').value = '';
-            document.getElementById('admin-hindi-dubbed').checked = false;
-
-            renderList();
-        }
-
-        function deleteEntry(id) {
-            const store = getStore();
-            delete store[id];
-            setStore(store);
-            renderList();
-        }
-
-        function renderList() {
-            const list = document.getElementById('admin-list');
-            const store = getStore();
-            const entries = Object.entries(store);
-
-            if (entries.length === 0) {
-                list.innerHTML = '<p class="empty-msg">No entries yet.</p>';
-                return;
-            }
-
-            list.innerHTML = entries.map(([id, data]) => `
-        <div class="admin-item">
-          <div class="admin-item-info">
-            <strong style="color:var(--primary);">${data.title || data.name || 'Unknown'}</strong> <span style="font-size:0.7rem; opacity:0.6;">(${data.type})</span>
-            <div style="font-size:0.8rem; margin-top:4px;">ID: ${id} | ${data.original_language === 'hi' ? 'Hindi' : 'Original'}</div>
-            ${data.customLink ? `<a href="${data.customLink}" target="_blank" style="color:#2196f3; font-size:0.8rem;">Watch Link</a>` : ''}
+      <div class="card-grid">
+        <div class="card span-2">
+          <div class="card-title"><i class="fas fa-search"></i> Search Content to Hide</div>
+          <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <input type="text" id="remove-search-input" placeholder="Type title to search..." class="filter-chip glass"
+              style="flex: 1; padding: 12px 20px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: #fff;">
+            <button onclick="searchRemoveItems()" class="btn-primary" style="padding: 10px 20px; border-radius: 8px;"><i
+                class="fas fa-search"></i> Search</button>
           </div>
-          <button class="btn-delete" onclick="deleteEntry('${id}')"><i class="fas fa-trash"></i></button>
+          <div id="remove-search-results" style="margin-top: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;"></div>
         </div>
-      `).join('');
+
+        <div class="card span-2">
+          <div class="card-title"><i class="fas fa-eye-slash"></i> Currently Hidden Items</div>
+          <div class="item-list" id="hidden-items-list" style="margin-top: 15px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== TAB: SERVER ADS ============================== -->
+    <div class="tab-panel" id="tab-ads">
+      <div class="section-heading">
+        <i class="fas fa-ad"></i>
+        <h1>Server Ads & Player Settings</h1>
+      </div>
+      <p class="subtitle">Configure ad constraints and select the default playback server for all players.</p>
+
+      <div class="card-grid">
+        <!-- Server Ads Card -->
+        <div class="card span-2" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 20px;">
+          <div class="card-title" style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 15px;"><i class="fas fa-server"></i> Configure Active Servers (Ads)</div>
+          <p style="font-size:0.82rem; color: var(--text-muted); margin-bottom:14px;">These are all possible servers. Check the servers that show ads so they can be deprioritized or labelled.</p>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;" id="dashboard-server-ads-checkboxes">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Ruby"> Ruby</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="cloudy"> cloudy</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Moly"> Moly</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Short"> Short</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="MultiQ"> MultiQ</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Play"> Play</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Turbo"> Turbo</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="SD"> SD</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="HD"> HD</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="FHD"> FHD</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Watch/DL"> Watch/DL</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="short"> short</label>
+            
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 1"> Server 1</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 2"> Server 2</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 3"> Server 3</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 4"> Server 4</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 5"> Server 5</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 6"> Server 6</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 7"> Server 7</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 8"> Server 8</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 9"> Server 9</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 10"> Server 10</label>
+          </div>
+          <button onclick="saveDashboardServerAds()" class="btn-primary" style="padding: 10px 20px; border-radius: 8px; cursor: pointer;"><i class="fas fa-save"></i> Save Server Ads Settings</button>
+        </div>
+
+        <!-- Default Server Card -->
+        <div class="card span-2" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 20px;">
+          <div class="card-title" style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 15px;"><i class="fas fa-play-circle"></i> Default Play Server</div>
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; color: #fff;">Select Default Server:</label>
+            <select id="dashboard-default-server-select" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px;">
+              <option value="">None (Default Order)</option>
+              <optgroup label="Real Server Names" style="color: #fff; background: #1a1a1a;">
+                <option value="Ruby">Ruby</option>
+                <option value="cloudy">cloudy</option>
+                <option value="Moly">Moly</option>
+                <option value="Short">Short</option>
+                <option value="MultiQ">MultiQ</option>
+                <option value="Play">Play</option>
+                <option value="Turbo">Turbo</option>
+                <option value="SD">SD</option>
+                <option value="HD">HD</option>
+                <option value="FHD">FHD</option>
+                <option value="Watch/DL">Watch/DL</option>
+                <option value="short">short</option>
+              </optgroup>
+              <optgroup label="Fallback Server Labels" style="color: #777; background: #1a1a1a;">
+                <option value="Server 1">Server 1</option>
+                <option value="Server 2">Server 2</option>
+                <option value="Server 3">Server 3</option>
+                <option value="Server 4">Server 4</option>
+                <option value="Server 5">Server 5</option>
+                <option value="Server 6">Server 6</option>
+                <option value="Server 7">Server 7</option>
+                <option value="Server 8">Server 8</option>
+                <option value="Server 9">Server 9</option>
+                <option value="Server 10">Server 10</option>
+              </optgroup>
+            </select>
+          </div>
+          <button onclick="saveDashboardDefaultServer()" class="btn-primary" style="padding: 10px 20px; border-radius: 8px; cursor: pointer;"><i class="fas fa-save"></i> Save Default Server</button>
+        </div>
+
+        <!-- Reset Website Data Card -->
+        <div class="card span-4" style="background: rgba(229, 9, 20, 0.03); border: 1px solid rgba(229, 9, 20, 0.2); border-radius: 8px; padding: 20px; margin-top: 20px;">
+          <div class="card-title" style="font-size: 1.1rem; font-weight: 600; color: #ff6b6b; margin-bottom: 15px;"><i class="fas fa-trash-alt"></i> Reset Admin Panel Data</div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Warning: This will permanently delete all manual library entries, custom episode links, broken video reports, Hindi dubbed links, and hidden items. This action cannot be undone.</p>
+          <button onclick="resetAdminPanelData()" class="btn-delete" style="padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;"><i class="fas fa-exclamation-triangle"></i> Reset All Data</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast -->
+  <div id="admin-toast"></div>
+
+  <script>
+    // â”€â”€ Server-side Auth Guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    (async () => {
+      try {
+        const res = await fetch('/api/v1/auth/verify', { credentials: 'include' });
+        if (!res.ok || !(await res.json()).authenticated) {
+          window.location.href = './index.html';
+        }
+      } catch {
+        window.location.href = './index.html';
+      }
+    })();
+
+    async function logout() {
+      await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => { });
+      window.location.href = './index.html';
+    }
+
+    // Restore active tab instantly before fetching data to prevent flicker
+    (function () {
+      const savedTab = localStorage.getItem('activeAdminTab');
+      if (savedTab) {
+        document.addEventListener('DOMContentLoaded', () => {
+          const tabBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(savedTab));
+          if (tabBtn) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            const panel = document.getElementById(savedTab);
+            if (panel) panel.classList.add('active');
+            tabBtn.classList.add('active');
+          }
+        });
+      }
+    })();
+
+    // â”€â”€ Tab Switching â”€â”€
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+      localStorage.setItem('activeAdminTab', tabId);
+
+      if (tabId === 'tab-broken') renderBrokenList();
+      if (tabId === 'tab-hindi') renderHindiLists();
+      if (tabId === 'tab-manage') renderManageList();
+      if (tabId === 'tab-remove') renderHiddenList();
+      if (tabId === 'tab-ads') loadDashboardServerAds();
+    }
+
+    // â”€â”€ MongoDB State Manager â”€â”€
+    const DbState = {
+      adminStore: {},
+      brokenStore: {},
+      hindiStore: {},
+      missingStore: {},
+      hiddenStore: {},
+
+      async init() {
+        try {
+          const fetchJson = (url) => fetch(url, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []);
+          const [admin, broken, hindi, missing, hidden] = await Promise.all([
+            fetchJson('/api/admin-store'),
+            fetchJson('/api/broken-videos'),
+            fetchJson('/api/hindi-dubbed'),
+            fetchJson('/api/missing-catalog'),
+            fetchJson('/api/hidden-items')
+          ]);
+
+          this.adminStore = {};
+          if (Array.isArray(admin)) admin.forEach(item => this.adminStore[item.id] = item);
+          this.brokenStore = {};
+          if (Array.isArray(broken)) broken.forEach(item => this.brokenStore[item.id] = item);
+          this.hindiStore = {};
+          if (Array.isArray(hindi)) hindi.forEach(item => this.hindiStore[item.id] = item);
+          this.missingStore = {};
+          if (Array.isArray(missing)) missing.forEach(item => this.missingStore[item.id] = item);
+          this.hiddenStore = {};
+          if (Array.isArray(hidden)) hidden.forEach(item => this.hiddenStore[item.id] = item);
+
+          updateBrokenCount();
+          updateMissingCount();
+          updateRemoveBadge();
+          loadDashboardServerAds();
+        } catch (e) {
+          console.error("Failed to initialize database state:", e);
+        }
+      },
+
+      async saveItem(collection, item) {
+        return fetch(`/api/v1/${collection}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(item)
+        }).then(r => r.json());
+      },
+
+      async deleteItem(collection, id) {
+        return fetch(`/api/v1/${collection}?id=${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        }).then(r => r.json());
+      }
+    };
+
+    function getAdminStore() { return DbState.adminStore; }
+    function getBrokenStore() { return DbState.brokenStore; }
+    function getHindiStore() { return DbState.hindiStore; }
+    function getMissingStore() { return DbState.missingStore; }
+
+    // â”€â”€ Toast â”€â”€
+    function showToast(msg, color) {
+      const t = document.getElementById('admin-toast');
+      t.textContent = msg;
+      t.style.color = color || '#2ecc71';
+      t.style.display = 'block';
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { t.style.display = 'none'; }, 3500);
+    }
+
+    // â”€â”€ TMDB API Helper â”€â”€
+    const TMDB_BASE = 'https://api.themoviedb.org/3';
+    const TMDB_IMG = 'https://image.tmdb.org/t/p/w200';
+    const TMDB_KEY = '3370c7875d057cde17b3d68c22cba6e8';
+
+    async function tmdbFetch(path) {
+      const sep = path.includes('?') ? '&' : '?';
+      const r = await fetch(`${TMDB_BASE}${path}${sep}api_key=${TMDB_KEY}`);
+      return r.ok ? r.json() : null;
+    }
+
+    // â”€â”€ Helper: Type label â”€â”€
+    function typeLabel(t) {
+      const map = { movie: 'Movie', tv: 'Series', anime: 'Anime', drama: 'Drama', cartoon: 'Cartoon' };
+      return map[t] || (t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Unknown');
+    }
+
+    // â”€â”€ Broken Video Helpers â”€â”€
+    function updateBrokenCount() {
+      const count = Object.keys(getBrokenStore()).length;
+      const el = document.getElementById('broken-count');
+      if (el) { el.textContent = count; el.style.display = count > 0 ? 'inline-flex' : 'none'; }
+    }
+
+    function updateMissingCount() {
+      const count = Object.keys(getMissingStore()).length;
+      const el = document.getElementById('missing-count');
+      if (el) { el.textContent = count; el.style.display = count > 0 ? 'inline-flex' : 'none'; }
+    }
+
+    function loadSavedLinkForMissing(id) {
+      const s = document.getElementById(`missing-season-${id}`).value;
+      const e = document.getElementById(`missing-episode-${id}`).value;
+      const adminStore = getAdminStore();
+      const customLinks = (adminStore[id] && adminStore[id].customLinks) || {};
+      const urlInput = document.getElementById(`missing-url-${id}`);
+      if (urlInput) urlInput.value = customLinks[`S${s}E${e}`] || '';
+    }
+
+    function renderMissingList(query = '') {
+      const store = getMissingStore();
+      const list = document.getElementById('missing-list');
+      let entries = Object.values(store);
+      updateMissingCount();
+
+      if (query) {
+        const q = query.toLowerCase();
+        entries = entries.filter(item =>
+          (item.title && item.title.toLowerCase().includes(q)) ||
+          (item.id && String(item.id).includes(q))
+        );
+      }
+
+      if (entries.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle"></i><p>${query ? 'No matching missing entries found.' : 'No missing catalog items detected. All checked items match 9x or AllMoviesLand!'}</p></div>`;
+        return;
+      }
+
+      list.innerHTML = entries.map(item => {
+        const poster = item.posterPath ? TMDB_IMG + item.posterPath : '';
+        const year = item.date ? item.date.split('-')[0] : 'â€”';
+        const isMovie = item.type === 'movie';
+        return `
+          <div class="admin-item" style="border-left: 3px solid var(--warning);" id="missing-item-${item.id}">
+            ${poster ? `<img class="admin-item-poster" src="${poster}" alt="${item.title}" onerror="this.style.display='none'">` : ''}
+            <div class="admin-item-info">
+              <strong>${item.title || 'Unknown'}</strong>
+              <div class="meta">
+                <span class="pill pill-warning">Missing Source</span>
+                <span class="pill pill-type">${typeLabel(item.type)}</span>
+                <span>${year}</span>
+              </div>
+              
+              ${!isMovie ? `
+              <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
+                <label style="font-size:0.8rem; color:var(--text-muted);">Season:</label>
+                <input type="number" id="missing-season-${item.id}" value="1" min="1" style="max-width: 60px; padding: 4px 8px; font-size: 0.8rem;" onchange="loadSavedLinkForMissing('${item.id}')">
+                <label style="font-size:0.8rem; color:var(--text-muted);">Episode:</label>
+                <input type="number" id="missing-episode-${item.id}" value="1" min="1" style="max-width: 60px; padding: 4px 8px; font-size: 0.8rem;" onchange="loadSavedLinkForMissing('${item.id}')">
+              </div>
+              ` : ''}
+
+              <div class="url-input-row">
+                <input type="url" id="missing-url-${item.id}" placeholder="Paste working stream URL...">
+                <button class="btn-publish" onclick="publishMissingFix('${item.id}')">
+                  <i class="fas fa-check"></i> Publish
+                </button>
+                <button class="btn-delete" onclick="deleteMissing('${item.id}')"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      entries.forEach(item => {
+        if (item.type !== 'movie') {
+          loadSavedLinkForMissing(item.id);
+        } else {
+          const adminStore = getAdminStore();
+          const entry = adminStore[item.id] || {};
+          const urlInput = document.getElementById(`missing-url-${item.id}`);
+          if (urlInput) urlInput.value = entry.customLink || '';
+        }
+      });
+    }
+
+    async function publishMissingFix(id) {
+      const url = document.getElementById(`missing-url-${id}`).value.trim();
+      if (!url || !/^https?:\/\//i.test(url)) { showToast('Please enter a valid URL starting with http:// or https://', '#ff6b6b'); return; }
+
+      const store = getMissingStore();
+      const item = store[id];
+      if (!item) return;
+
+      const adminStore = getAdminStore();
+      const entry = adminStore[id] || {
+        id: item.id,
+        type: item.type || 'movie',
+        title: item.title,
+        name: item.title,
+        poster_path: item.posterPath,
+        release_date: item.type === 'movie' ? item.date : null,
+        first_air_date: item.type !== 'movie' ? item.date : null,
+        manual: true
+      };
+
+      if (item.type === 'movie') {
+        entry.customLink = url;
+      } else {
+        const s = document.getElementById(`missing-season-${id}`).value;
+        const e = document.getElementById(`missing-episode-${id}`).value;
+        entry.customLinks = entry.customLinks || {};
+        entry.customLinks[`S${s}E${e}`] = url;
+      }
+
+      await DbState.saveItem('admin-store', entry);
+      DbState.adminStore[id] = entry;
+
+      await DbState.deleteItem('missing-catalog', id);
+      delete DbState.missingStore[id];
+
+      showToast(`âœ… "${item.title}" fixed and published!`);
+      renderMissingList();
+    }
+
+    async function deleteMissing(id) {
+      await DbState.deleteItem('missing-catalog', id);
+      delete DbState.missingStore[id];
+      renderMissingList();
+    }
+
+    function loadSavedLinkForBroken(id) {
+      const store = getBrokenStore();
+      const item = store[id];
+      const entryId = item ? (item.mediaId || item.id) : id;
+      const s = document.getElementById(`broken-season-${id}`).value;
+      const e = document.getElementById(`broken-episode-${id}`).value;
+      const adminStore = getAdminStore();
+      const customLinks = (adminStore[entryId] && adminStore[entryId].customLinks) || {};
+      const urlInput = document.getElementById(`broken-url-${id}`);
+      if (urlInput) urlInput.value = customLinks[`S${s}E${e}`] || '';
+    }
+
+    function renderBrokenList(query = '') {
+      const store = getBrokenStore();
+      const list = document.getElementById('broken-list');
+      let entries = Object.values(store);
+      updateBrokenCount();
+
+      if (query) {
+        const q = query.toLowerCase();
+        entries = entries.filter(item =>
+          (item.title && item.title.toLowerCase().includes(q)) ||
+          (item.id && String(item.id).includes(q))
+        );
+      }
+
+      if (entries.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle"></i><p>${query ? 'No matching broken entries found.' : 'No broken videos reported. Great job!'}</p></div>`;
+        return;
+      }
+
+      list.innerHTML = entries.map(item => {
+        const poster = item.posterPath ? TMDB_IMG + item.posterPath : '';
+        const year = item.date ? item.date.split('-')[0] : '—';
+        const isMovie = item.type === 'movie';
+        return `
+          <div class="admin-item broken-item" id="broken-item-${item.id}">
+            ${poster ? `<img class="admin-item-poster" src="${poster}" alt="${item.title}" onerror="this.style.display='none'">` : ''}
+            <div class="admin-item-info">
+              <strong>${item.title || 'Unknown'}</strong>
+              <div class="meta">
+                <span class="pill pill-warning">Broken</span>
+                <span class="pill pill-type">${typeLabel(item.type)}</span>
+                <span>${year}</span>
+              </div>
+              
+              ${!isMovie ? `
+              <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
+                <label style="font-size:0.8rem; color:var(--text-muted);">Season:</label>
+                <input type="number" id="broken-season-${item.id}" value="${item.season || 1}" min="1" style="max-width: 60px; padding: 4px 8px; font-size: 0.8rem;" onchange="loadSavedLinkForBroken('${item.id}')">
+                <label style="font-size:0.8rem; color:var(--text-muted);">Episode:</label>
+                <input type="number" id="broken-episode-${item.id}" value="${item.episode || 1}" min="1" style="max-width: 60px; padding: 4px 8px; font-size: 0.8rem;" onchange="loadSavedLinkForBroken('${item.id}')">
+              </div>
+              ` : ''}
+
+              <div class="url-input-row">
+                <input type="url" id="broken-url-${item.id}" placeholder="Paste working stream URL...">
+                <button class="btn-publish" onclick="publishBrokenFix('${item.id}')">
+                  <i class="fas fa-check"></i> Publish
+                </button>
+                <button class="btn-delete" onclick="deleteBroken('${item.id}')"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      entries.forEach(item => {
+        if (item.type !== 'movie') {
+          loadSavedLinkForBroken(item.id);
+        } else {
+          const adminStore = getAdminStore();
+          const entryId = item.mediaId || item.id;
+          const entry = adminStore[entryId] || {};
+          const urlInput = document.getElementById(`broken-url-${item.id}`);
+          if (urlInput) urlInput.value = entry.customLink || '';
+        }
+      });
+    }
+
+    async function publishBrokenFix(id) {
+      const url = document.getElementById(`broken-url-${id}`).value.trim();
+      if (!url || !/^https?:\/\//i.test(url)) { showToast('Please enter a valid URL starting with http:// or https://', '#ff6b6b'); return; }
+
+      const store = getBrokenStore();
+      const item = store[id];
+      if (!item) return;
+
+      const adminStore = getAdminStore();
+      const entryId = item.mediaId || item.id;
+      const entry = adminStore[entryId] || {
+        id: entryId,
+        type: item.type || 'tv',
+        title: item.title,
+        name: item.title,
+        poster_path: item.posterPath,
+        release_date: item.type === 'movie' ? item.date : null,
+        first_air_date: item.type !== 'movie' ? item.date : null,
+        manual: true
+      };
+
+      if (item.type === 'movie') {
+        entry.customLink = url;
+      } else {
+        const s = document.getElementById(`broken-season-${id}`).value;
+        const e = document.getElementById(`broken-episode-${id}`).value;
+        entry.customLinks = entry.customLinks || {};
+        entry.customLinks[`S${s}E${e}`] = url;
+      }
+
+      await DbState.saveItem('admin-store', entry);
+      DbState.adminStore[entryId] = entry;
+
+      await DbState.deleteItem('broken-videos', id);
+      delete DbState.brokenStore[id];
+
+      showToast(`✅ "${item.title}" fixed and published!`);
+      renderBrokenList();
+    }
+
+    async function deleteBroken(id) {
+      await DbState.deleteItem('broken-videos', id);
+      delete DbState.brokenStore[id];
+      renderBrokenList();
+    }
+
+    // â”€â”€ Hindi Dubbed Helpers â”€â”€
+    function renderHindiLists() {
+      const hindiStore = getHindiStore();
+      const adminStore = getAdminStore();
+
+      const availList = document.getElementById('hindi-available-list');
+      const missList = document.getElementById('hindi-missing-list');
+      const availCount = document.getElementById('hindi-avail-count');
+      const missCount = document.getElementById('hindi-missing-count');
+
+      // Collect all known items from admin store to show in "Not Available"
+      const allItems = Object.values(adminStore);
+
+      const available = [];
+      const missing = [];
+
+      // Items with Hindi link in hindiStore
+      Object.entries(hindiStore).forEach(([id, data]) => {
+        available.push({ id, ...data });
+      });
+
+      // Items in adminStore that are tagged Hindi
+      allItems.forEach(item => {
+        const isHindi = item.original_language === 'hi' || item.hindi === true;
+        const inHindiStore = !!hindiStore[item.id];
+        if (isHindi && !inHindiStore) {
+          available.push({ id: item.id, title: item.title || item.name, type: item.type, posterPath: item.poster_path, link: item.customLink || '' });
+        } else if (!isHindi && !inHindiStore) {
+          missing.push(item);
+        }
+      });
+
+      // Render Available
+      availCount.textContent = `(${available.length})`;
+      if (available.length === 0) {
+        availList.innerHTML = `<div class="empty-state"><i class="fas fa-language"></i><p>No Hindi dubbed links added yet.</p></div>`;
+      } else {
+        availList.innerHTML = available.map(item => {
+          const poster = item.posterPath ? TMDB_IMG + item.posterPath : '';
+          return `
+            <div class="admin-item hindi-item" id="hindi-avail-${item.id}">
+              ${poster ? `<img class="admin-item-poster" src="${poster}" alt="${item.title || 'Poster'}" onerror="this.style.display='none'">` : ''}
+              <div class="admin-item-info">
+                <strong>${item.title || 'Unknown'}</strong>
+                <div class="meta">
+                  <span class="pill pill-success">Hindi Dubbed</span>
+                  <span class="pill pill-type">${typeLabel(item.type)}</span>
+                </div>
+                <div class="url-input-row">
+                  <input type="url" id="hindi-url-${item.id}" placeholder="Update Hindi stream URL..." value="${item.link || ''}">
+                  <button class="btn-publish" onclick="publishHindiLink('${item.id}', '${(item.title || '').replace(/'/g, "\\'")}', '${item.type || 'movie'}', '${item.posterPath || ''}')">
+                    <i class="fas fa-sync-alt"></i> Update
+                  </button>
+                  <button class="btn-delete" onclick="removeHindiLink('${item.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Missing
+      missCount.textContent = `(${missing.length})`;
+      if (missing.length === 0) {
+        missList.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle"></i><p>All library items have Hindi dubbed links!</p></div>`;
+      } else {
+        missList.innerHTML = missing.map(item => {
+          const poster = item.poster_path ? TMDB_IMG + item.poster_path : '';
+          const year = (item.release_date || item.first_air_date || '').split('-')[0];
+          return `
+            <div class="admin-item no-hindi-item" id="hindi-miss-${item.id}">
+              ${poster ? `<img class="admin-item-poster" src="${poster}" alt="${item.title || item.name || 'Poster'}" onerror="this.style.display='none'">` : ''}
+              <div class="admin-item-info">
+                <strong>${item.title || item.name || 'Unknown'}</strong>
+                <div class="meta">
+                  <span class="pill pill-info">Not Available</span>
+                  <span class="pill pill-type">${typeLabel(item.type)}</span>
+                  ${year ? `<span>${year}</span>` : ''}
+                </div>
+                <div class="url-input-row">
+                  <input type="url" id="hindi-miss-url-${item.id}" placeholder="Paste Hindi stream URL...">
+                  <button class="btn-publish" onclick="publishHindiLink('${item.id}', '${(item.title || item.name || '').replace(/'/g, "\\'")}', '${item.type || 'movie'}', '${item.poster_path || ''}')">
+                    <i class="fas fa-check"></i> Publish
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    async function publishHindiLink(id, title, type, posterPath) {
+      // Look for the URL input (could be in available or missing section)
+      const urlInput = document.getElementById(`hindi-url-${id}`) || document.getElementById(`hindi-miss-url-${id}`) || document.getElementById(`hindi-search-url-${id}`);
+      if (!urlInput) { showToast('Input field not found.', '#f39c12'); return; }
+      const url = urlInput.value.trim();
+      if (!url || !/^https?:\/\//i.test(url)) { showToast('Please enter a valid URL starting with http:// or https://', '#ff6b6b'); return; }
+
+      const hindiEntry = { id, title, type, posterPath, link: url, addedAt: new Date().toISOString() };
+      await DbState.saveItem('hindi-dubbed', hindiEntry);
+      DbState.hindiStore[id] = hindiEntry;
+
+      // Also mark admin store entry as Hindi
+      const adminStore = getAdminStore();
+      if (adminStore[id]) {
+        adminStore[id].hindi = true;
+        adminStore[id].original_language = 'hi';
+        adminStore[id].customLink = adminStore[id].customLink || url;
+        await DbState.saveItem('admin-store', adminStore[id]);
+      }
+
+      showToast(`âœ… Hindi dubbed link published for "${title}"!`);
+      renderHindiLists();
+    }
+
+    async function removeHindiLink(id) {
+      await DbState.deleteItem('hindi-dubbed', id);
+      delete DbState.hindiStore[id];
+
+      // Revert admin store
+      const adminStore = getAdminStore();
+      if (adminStore[id]) {
+        adminStore[id].hindi = false;
+        adminStore[id].original_language = 'en';
+        await DbState.saveItem('admin-store', adminStore[id]);
+      }
+
+      showToast('Hindi dubbed link removed.', '#f39c12');
+      renderHindiLists();
+    }
+
+    // â”€â”€ Hindi Search â”€â”€
+    async function searchHindiItem() {
+      const query = document.getElementById('hindi-search-input').value.trim();
+      const resultsEl = document.getElementById('hindi-search-results');
+      if (!query) return;
+
+      resultsEl.innerHTML = '<p style="color:var(--text-muted);font-size:0.88rem;padding:8px 0;"><i class="fas fa-spinner fa-spin"></i> Searchingâ€¦</p>';
+
+      let results = [];
+      // If it's a number, treat as TMDB ID
+      if (/^\d+$/.test(query)) {
+        const movie = await tmdbFetch(`/movie/${query}`);
+        const tv = await tmdbFetch(`/tv/${query}`);
+        if (movie && movie.title) results.push({ ...movie, media_type: 'movie' });
+        if (tv && tv.name) results.push({ ...tv, media_type: 'tv' });
+      } else {
+        const [movRes, tvRes] = await Promise.all([
+          tmdbFetch(`/search/movie?query=${encodeURIComponent(query)}&page=1`),
+          tmdbFetch(`/search/tv?query=${encodeURIComponent(query)}&page=1`)
+        ]);
+        if (movRes && movRes.results) results.push(...movRes.results.slice(0, 3).map(r => ({ ...r, media_type: 'movie' })));
+        if (tvRes && tvRes.results) results.push(...tvRes.results.slice(0, 3).map(r => ({ ...r, media_type: 'tv' })));
+      }
+
+      if (results.length === 0) {
+        resultsEl.innerHTML = '<p style="color:var(--text-muted);font-size:0.88rem;padding:8px 0;">No results found.</p>';
+        return;
+      }
+
+      resultsEl.innerHTML = results.map(m => {
+        const title = m.title || m.name || 'Unknown';
+        const year = (m.release_date || m.first_air_date || '').split('-')[0];
+        const poster = m.poster_path ? TMDB_IMG + m.poster_path : '';
+        const hindiStore = getHindiStore();
+        const alreadyHindi = !!hindiStore[m.id];
+
+        return `
+          <div class="admin-item" style="margin-bottom:8px;" id="search-result-${m.id}">
+            ${poster ? `<img class="admin-item-poster" src="${poster}" alt="${title}" onerror="this.style.display='none'">` : ''}
+            <div class="admin-item-info">
+              <strong>${title}</strong>
+              <div class="meta">
+                ${alreadyHindi ? `<span class="pill pill-success">Hindi Available</span>` : `<span class="pill pill-info">No Hindi</span>`}
+                <span class="pill pill-type">${typeLabel(m.media_type)}</span>
+                ${year ? `<span>${year}</span>` : ''}
+              </div>
+              <div class="url-input-row">
+                <input type="url" id="hindi-search-url-${m.id}" placeholder="Paste Hindi stream URL..." value="${alreadyHindi ? (hindiStore[m.id].link || '') : ''}">
+                <button class="btn-publish" onclick="publishHindiLink('${m.id}', '${title.replace(/'/g, "\\'")}', '${m.media_type}', '${m.poster_path || ''}')">
+                  <i class="fas fa-check"></i> ${alreadyHindi ? 'Update' : 'Publish'}
+                </button>
+                ${alreadyHindi ? `<button class="btn-delete" onclick="removeHindiLink('${m.id}');document.getElementById('search-result-${m.id}').querySelector('.pill-success').className='pill pill-info';document.getElementById('search-result-${m.id}').querySelector('.pill-info').textContent='No Hindi';"><i class="fas fa-times"></i></button>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // â”€â”€ Upload / Save â”€â”€
+    function saveData() {
+      const id = document.getElementById('admin-movie-id').value.trim();
+      const type = document.getElementById('admin-type').value;
+      const title = document.getElementById('admin-title').value.trim();
+      const desc = document.getElementById('admin-desc').value.trim();
+      const poster = document.getElementById('admin-poster').value.trim();
+      const date = document.getElementById('admin-date').value.trim();
+      const genres = document.getElementById('admin-genres').value.trim();
+      const link = document.getElementById('admin-custom-link').value.trim();
+      const msg = document.getElementById('status-msg');
+
+      if (!id || !/^\d+$/.test(id)) {
+        msg.style.color = '#ff6b6b';
+        msg.textContent = 'A valid numeric TMDB ID is required.';
+        return;
+      }
+      if (!title) {
+        msg.style.color = '#ff6b6b';
+        msg.textContent = 'Title is required.';
+        return;
+      }
+      if (poster && !/^(https?:\/\/|\/)/i.test(poster)) {
+        msg.style.color = '#ff6b6b';
+        msg.textContent = 'Poster URL must be valid (start with http/https).';
+        return;
+      }
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        msg.style.color = '#ff6b6b';
+        msg.textContent = 'Release date must be YYYY-MM-DD.';
+        return;
+      }
+      if (link && !/^https?:\/\//i.test(link)) {
+        msg.style.color = '#ff6b6b';
+        msg.textContent = 'Watch/Stream Link must be a valid http/https URL.';
+        return;
+      }
+
+      const entry = {
+        id,
+        type,
+        title: type === 'movie' || type === 'cartoon' ? title : null,
+        name: type !== 'movie' && type !== 'cartoon' ? title : null,
+        overview: desc,
+        poster_path: poster,
+        release_date: type === 'movie' || type === 'cartoon' ? date : null,
+        first_air_date: type !== 'movie' && type !== 'cartoon' ? date : null,
+        genres_str: genres,
+        original_language: 'en',
+        hindi: false,
+        customLink: link || null,
+        manual: true
+      };
+
+      DbState.saveItem('admin-store', entry).then(() => {
+        DbState.adminStore[id] = entry;
+        msg.style.color = '#2ecc71';
+        msg.textContent = `✓ "${title}" saved to library.`;
+        showToast(`✅ "${title}" saved successfully!`);
+      }).catch(err => {
+        msg.style.color = '#ff6b6b';
+        msg.textContent = 'Error saving item: ' + err.message;
+      });
+
+      // Reset form
+      ['admin-movie-id', 'admin-title', 'admin-desc', 'admin-poster', 'admin-date', 'admin-genres', 'admin-custom-link'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+    }
+
+    function renderEpisodeLinksList(customLinks, entryId) {
+      const keys = Object.keys(customLinks || {});
+      if (keys.length === 0) return '<span style="color: grey; font-style: italic;">No custom episode links added yet.</span>';
+      return keys.map(key => {
+        const url = customLinks[key];
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 6px 10px; border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; margin-top: 6px; gap: 10px;">
+            <span style="font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;"><strong>${key}</strong>: <a href="${url}" target="_blank" style="color: #3498db; text-decoration: none;">${url}</a></span>
+            <button onclick="deleteCustomEpisodeLink('${entryId}', '${key}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.85rem;" title="Delete Link">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.renderEpisodeLinksList = renderEpisodeLinksList;
+
+    async function saveCustomEpisodeLink(id) {
+      const s = document.getElementById(`custom-s-${id}`).value;
+      const e = document.getElementById(`custom-e-${id}`).value;
+      const urlInput = document.getElementById(`custom-url-${id}`);
+      const url = urlInput.value.trim();
+
+      if (!url || !/^https?:\/\//i.test(url)) {
+        showToast('Please enter a valid URL starting with http:// or https://', '#ff6b6b');
+        return;
+      }
+
+      const store = getAdminStore();
+      const entry = store[id];
+      if (!entry) return;
+
+      entry.customLinks = entry.customLinks || {};
+      entry.customLinks[`S${s}E${e}`] = url;
+
+      try {
+        await DbState.saveItem('admin-store', entry);
+        DbState.adminStore[id] = entry;
+        showToast(`✅ Saved S${s}E${e} link!`);
+        urlInput.value = '';
+        renderManageList();
+      } catch (err) {
+        showToast('❌ Failed to save: ' + err.message, '#ff6b6b');
+      }
+    }
+
+    window.saveCustomEpisodeLink = saveCustomEpisodeLink;
+
+    async function deleteCustomEpisodeLink(id, key) {
+      if (!confirm(`Are you sure you want to delete custom link for ${key}?`)) return;
+      const store = getAdminStore();
+      const entry = store[id];
+      if (!entry || !entry.customLinks) return;
+
+      delete entry.customLinks[key];
+
+      try {
+        await DbState.saveItem('admin-store', entry);
+        DbState.adminStore[id] = entry;
+        showToast(`Removed custom link for ${key}`);
+        renderManageList();
+      } catch (err) {
+        showToast('❌ Failed to delete: ' + err.message, '#ff6b6b');
+      }
+    }
+
+    window.deleteCustomEpisodeLink = deleteCustomEpisodeLink;
+
+    // ── Manage Library ──
+    function renderManageList() {
+      const list = document.getElementById('admin-list');
+      const store = getAdminStore();
+      const entries = Object.entries(store);
+
+      if (entries.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-database"></i><p>No entries yet. Upload content first.</p></div>`;
+        return;
+      }
+
+      list.innerHTML = entries.map(([id, data]) => {
+        const title = data.title || data.name || 'Unknown';
+        const poster = data.poster_path ? TMDB_IMG + data.poster_path : '';
+        const year = (data.release_date || data.first_air_date || '').split('-')[0];
+        const isHindi = data.original_language === 'hi' || data.hindi;
+        return `
+          <div class="admin-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="display: flex; align-items: flex-start; gap: 14px; width: 100%;">
+              ${poster ? `<img class="admin-item-poster" src="${poster}" alt="${title}" onerror="this.style.display='none'">` : ''}
+              <div class="admin-item-info" style="flex:1;">
+                <strong>${title}</strong>
+                <div class="meta">
+                  <span class="pill pill-type">${typeLabel(data.type)}</span>
+                  ${isHindi ? `<span class="pill pill-success">Hindi</span>` : ''}
+                  ${year ? `<span>${year}</span>` : ''}
+                  ${data.customLink ? `<a href="${data.customLink}" target="_blank" style="color:#3498db;font-size:0.78rem;">Watch Link</a>` : ''}
+                </div>
+              </div>
+              <div class="admin-item-actions">
+                <button class="btn-delete" onclick="deleteEntry('${id}')"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+            ${data.type !== 'movie' ? `
+              <div style="margin-top: 8px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1); width: 100%;">
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #eee; display: flex; align-items: center; gap: 6px;">
+                  <i class="fas fa-film" style="color: var(--primary);"></i> Custom Episode Links
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">S:</span>
+                  <input type="number" id="custom-s-${id}" value="1" min="1" style="max-width: 55px; padding: 6px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #fff; border-radius: 4px;">
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">E:</span>
+                  <input type="number" id="custom-e-${id}" value="1" min="1" style="max-width: 55px; padding: 6px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #fff; border-radius: 4px;">
+                  <input type="url" id="custom-url-${id}" placeholder="Paste custom episode URL (iframe/stream)..." style="flex: 1; padding: 6px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #fff; border-radius: 4px; min-width: 180px;">
+                  <button onclick="saveCustomEpisodeLink('${id}')" class="btn-publish" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 4px;">
+                    <i class="fas fa-plus"></i> Add Link
+                  </button>
+                </div>
+                <div id="custom-links-list-${id}" style="margin-top: 6px;">
+                  ${renderEpisodeLinksList(data.customLinks, id)}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function deleteEntry(id) {
+      await DbState.deleteItem('admin-store', id);
+      delete DbState.adminStore[id];
+      renderManageList();
+      showToast('Entry deleted.', '#f39c12');
+    }
+
+    function searchBrokenItem() {
+      const query = document.getElementById('broken-search-input').value.trim();
+      renderBrokenList(query);
+    }
+
+    function searchMissingItem() {
+      const query = document.getElementById('missing-search-input').value.trim();
+      renderMissingList(query);
+    }
+
+    // ── Remove Content Logic ──
+    async function searchRemoveItems() {
+      const q = document.getElementById('remove-search-input').value.trim();
+      const resultsDiv = document.getElementById('remove-search-results');
+      if (!q) {
+        showToast('Please type a title to search.', 'var(--warning)');
+        return;
+      }
+      resultsDiv.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+
+      try {
+        // Fetch from local website search API
+        const localRes = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}`).then(r => r.ok ? r.json() : []).catch(() => []);
+        
+        // Fetch from TMDB
+        const tmdbData = await tmdbFetch(`/search/multi?query=${encodeURIComponent(q)}`).catch(() => null);
+        const tmdbResults = (tmdbData && tmdbData.results) ? tmdbData.results : [];
+
+        // Map local results to common structure
+        const mappedLocal = localRes.map(item => ({
+          id: item.id || `toon_${item.slug}`,
+          title: item.title || item.name || 'Unknown',
+          type: item.type || 'tv',
+          poster: item.poster || item.poster_path || 'https://via.placeholder.com/200x300?text=No+Poster',
+          source: 'Website'
+        }));
+
+        // Map TMDB results
+        const mappedTmdb = tmdbResults.filter(item => item.media_type === 'movie' || item.media_type === 'tv').map(item => ({
+          id: String(item.id),
+          title: item.title || item.name || 'Unknown',
+          type: item.media_type,
+          poster: item.poster_path ? (TMDB_IMG + item.poster_path) : 'https://via.placeholder.com/200x300?text=No+Poster',
+          source: 'TMDB'
+        }));
+
+        // Merge results, avoiding duplicate IDs
+        const merged = [];
+        const seenIds = new Set();
+
+        mappedLocal.forEach(item => {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            merged.push(item);
+          }
+        });
+
+        mappedTmdb.forEach(item => {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            merged.push(item);
+          }
+        });
+
+        if (merged.length === 0) {
+          resultsDiv.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No items found.</div>';
+          return;
         }
 
-        renderList();
-    </script>
+        let html = '';
+        const isHidden = (itemId) => !!DbState.hiddenStore[itemId];
+
+        merged.forEach(item => {
+          const alreadyHidden = isHidden(item.id);
+          html += `
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+              <img src="${item.poster}" style="width: 100%; border-radius: 6px; aspect-ratio: 2/3; object-fit: cover;" onerror="this.src='https://via.placeholder.com/200x300?text=No+Poster'">
+              <h4 style="margin: 10px 0 5px 0; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; height: 36px; color: #fff;">${item.title}</h4>
+              <span style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">${item.type === 'movie' ? 'Movie' : 'Series'} (${item.source})</span>
+              ${alreadyHidden
+              ? `<button class="btn-action edit" style="width: 100%; padding: 8px; font-size: 0.8rem; background: rgba(76, 175, 80, 0.1); color: #4caf50; border-color: rgba(76,175,80,0.3); cursor: not-allowed;" disabled><i class="fas fa-check"></i> Hidden</button>`
+              : `<button onclick="hideItem('${item.id}', '${item.title.replace(/'/g, "\\'")}', '${item.type}', '${item.poster.replace(/'/g, "\\'")}')" class="btn-save" style="width: 100%; padding: 8px; font-size: 0.8rem; background: #e50914; border: none; border-radius: 4px; color: white; cursor: pointer;"><i class="fas fa-eye-slash"></i> Hide Item</button>`
+            }
+            </div>
+          `;
+        });
+
+        resultsDiv.innerHTML = html;
+      } catch (err) {
+        console.error(err);
+        resultsDiv.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--danger);">Error searching.</div>';
+      }
+    }
+
+    window.searchRemoveItems = searchRemoveItems;
+
+    async function hideItem(id, title, type, poster) {
+      const hiddenEntry = { id, title, type, poster, time: Date.now() };
+      await DbState.saveItem('hidden-items', hiddenEntry);
+      DbState.hiddenStore[id] = hiddenEntry;
+      showToast(`"${title}" has been hidden from the website!`);
+
+      updateRemoveBadge();
+      renderHiddenList();
+      searchRemoveItems();
+    }
+
+    window.hideItem = hideItem;
+
+    async function unhideItem(id, title) {
+      await DbState.deleteItem('hidden-items', id);
+      delete DbState.hiddenStore[id];
+      showToast(`"${title}" restored successfully!`);
+
+      updateRemoveBadge();
+      renderHiddenList();
+
+      const searchInput = document.getElementById('remove-search-input').value.trim();
+      if (searchInput) searchRemoveItems();
+    }
+
+    window.unhideItem = unhideItem;
+
+    function updateRemoveBadge() {
+      const hiddenStore = DbState.hiddenStore || {};
+      const count = Object.keys(hiddenStore).length;
+      const badge = document.getElementById('remove-badge');
+      if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline-block' : 'none';
+      }
+    }
+
+    function renderHiddenList() {
+      const hiddenStore = DbState.hiddenStore || {};
+      const listDiv = document.getElementById('hidden-items-list');
+      const keys = Object.keys(hiddenStore);
+
+      if (keys.length === 0) {
+        listDiv.innerHTML = '<div class="empty-state"><i class="fas fa-eye"></i><p>No items are hidden. Use search to hide items.</p></div>';
+        return;
+      }
+
+      let html = '';
+      keys.forEach(id => {
+        const item = hiddenStore[id];
+        html += `
+          <div class="list-item">
+            <div class="item-info">
+              <img src="${item.poster}" class="item-poster">
+              <div class="item-title">${item.title}</div>
+              <div class="item-meta">ID: ${id} â€¢ ${item.type === 'movie' ? 'Movie' : 'Series'}</div>
+            </div>
+            <div class="item-actions">
+              <button onclick="unhideItem('${id}', '${item.title.replace(/'/g, "\\'")}')" class="btn-action edit"><i class="fas fa-eye"></i> Restore</button>
+            </div>
+          </div>
+        `;
+      });
+      listDiv.innerHTML = html;
+    }
+
+    window.renderHiddenList = renderHiddenList;
+
+    function loadDashboardServerAds() {
+      const settings = DbState.adminStore['global_settings'];
+      if (settings) {
+        if (settings.requires_ads_servers) {
+          const checkboxes = document.querySelectorAll('#dashboard-server-ads-checkboxes input[type="checkbox"]');
+          checkboxes.forEach(cb => {
+            const serverName = cb.getAttribute('data-server');
+            cb.checked = settings.requires_ads_servers.includes(serverName);
+          });
+        }
+        if (settings.default_play_server) {
+          const select = document.getElementById('dashboard-default-server-select');
+          if (select) {
+            select.value = settings.default_play_server;
+          }
+        }
+      }
+    }
+
+    async function saveDashboardServerAds() {
+      const checkboxes = document.querySelectorAll('#dashboard-server-ads-checkboxes input[type="checkbox"]');
+      const requires_ads_servers = [];
+      checkboxes.forEach(cb => {
+        if (cb.checked) {
+          requires_ads_servers.push(cb.getAttribute('data-server'));
+        }
+      });
+
+      const currentSettings = DbState.adminStore['global_settings'] || {};
+      const payload = {
+        ...currentSettings,
+        id: 'global_settings',
+        requires_ads_servers
+      };
+
+      try {
+        await DbState.saveItem('admin-store', payload);
+        DbState.adminStore['global_settings'] = payload;
+        showToast('✅ Server ads settings saved!');
+      } catch (err) {
+        showToast('❌ Failed to save settings: ' + err.message, '#e74c3c');
+      }
+    }
+
+    async function saveDashboardDefaultServer() {
+      const select = document.getElementById('dashboard-default-server-select');
+      const default_play_server = select ? select.value : '';
+
+      const currentSettings = DbState.adminStore['global_settings'] || {};
+      const payload = {
+        ...currentSettings,
+        id: 'global_settings',
+        default_play_server
+      };
+
+      try {
+        await DbState.saveItem('admin-store', payload);
+        DbState.adminStore['global_settings'] = payload;
+        showToast('✅ Default playback server saved!');
+      } catch (err) {
+        showToast('❌ Failed to save default server: ' + err.message, '#e74c3c');
+      }
+    }
+
+    async function resetAdminPanelData() {
+      if (!confirm('Are you sure you want to permanently delete ALL website data (library, custom links, broken reports, etc.)? This cannot be undone!')) return;
+      if (!confirm('PLEASE CONFIRM ONCE MORE: Do you really want to clear everything and make the admin panel brand new?')) return;
+      
+      try {
+        const res = await fetch('/api/v1/admin-reset', { method: 'POST' });
+        if (res.ok) {
+          showToast('✅ All data cleared successfully! Page reloading...', 'var(--success)');
+          setTimeout(() => { window.location.reload(); }, 2000);
+        } else {
+          showToast('❌ Failed to reset data.', '#ff6b6b');
+        }
+      } catch (err) {
+        showToast('❌ Error: ' + err.message, '#ff6b6b');
+      }
+    }
+
+    window.loadDashboardServerAds = loadDashboardServerAds;
+    window.saveDashboardServerAds = saveDashboardServerAds;
+    window.saveDashboardDefaultServer = saveDashboardDefaultServer;
+    window.resetAdminPanelData = resetAdminPanelData;
+
+    // ToonStream Live Search and Import logic
+    async function searchToonstreamLive() {
+      const q = document.getElementById('toonstream-search-input').value.trim();
+      const resultsDiv = document.getElementById('toonstream-search-results');
+      if (!q) {
+        showToast('Please type an anime title to search.', 'var(--warning)');
+        return;
+      }
+      resultsDiv.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Searching ToonStream Live...</div>';
+
+      try {
+        const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}`);
+        const results = await res.json();
+        if (!results || results.length === 0) {
+          resultsDiv.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">No anime found on ToonStream.</div>';
+          return;
+        }
+
+        let html = '';
+        results.forEach(item => {
+          const id = item.id;
+          const slug = item.slug;
+          const title = item.title;
+          const poster = item.poster;
+          const type = item.type;
+          
+          // Check if already in admin library
+          const alreadyInLib = !!DbState.adminStore[id];
+
+          html += `
+            <div class="card" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 15px; margin-bottom: 0;">
+              <img src="${poster}" style="width: 100%; border-radius: 8px; aspect-ratio: 2/3; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" onerror="this.src='https://via.placeholder.com/200x300?text=No+Poster'">
+              <h4 style="margin: 12px 0 6px 0; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; height: 36px; color: #fff;">${title}</h4>
+              <div class="meta" style="margin-bottom: 12px;">
+                <span class="pill pill-type" style="background: rgba(229, 9, 20, 0.15); color: #ff4757; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">${type === 'movie' ? 'Movie' : 'Series'}</span>
+              </div>
+              ${alreadyInLib 
+                ? `<button class="btn-action edit" style="width: 100%; padding: 8px; font-size: 0.8rem; background: rgba(76, 175, 80, 0.1); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; cursor: not-allowed;" disabled><i class="fas fa-check"></i> Added</button>`
+                : `<button onclick="importToonstreamItem('${id}', '${slug}', '${title.replace(/'/g, "\\'")}', '${poster.replace(/'/g, "\\'")}', '${type}')" class="btn-primary" style="width: 100%; padding: 8px; font-size: 0.8rem; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-plus-circle"></i> Add to Library</button>`
+              }
+            </div>
+          `;
+        });
+        resultsDiv.innerHTML = html;
+      } catch (err) {
+        resultsDiv.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--warning); padding: 20px;">Error searching ToonStream.</div>';
+      }
+    }
+
+    async function importToonstreamItem(id, slug, title, poster, type) {
+      const entry = {
+        id,
+        type: type === 'movie' ? 'movie' : 'anime',
+        title: type === 'movie' ? title : null,
+        name: type !== 'movie' ? title : null,
+        overview: `${title} - Imported from ToonStream.`,
+        poster_path: poster,
+        release_date: new Date().toISOString().split('T')[0],
+        first_air_date: new Date().toISOString().split('T')[0],
+        genres_str: type === 'movie' ? 'Anime, Movie' : 'Anime, Series',
+        original_language: 'en',
+        hindi: false,
+        customLink: null,
+        manual: true,
+        toonstreamId: id,
+        toonstreamSlug: slug
+      };
+
+      try {
+        await DbState.saveItem('admin-store', entry);
+        DbState.adminStore[id] = entry;
+        showToast(`✅ "${title}" imported to library successfully!`);
+        searchToonstreamLive(); // refresh search results
+      } catch (err) {
+        showToast(`❌ Failed to import item: ${err.message}`, '#ff6b6b');
+      }
+    }
+
+    // Clear broken video reports
+    async function clearAllBroken() {
+      if (!confirm('Are you sure you want to clear all broken video reports?')) return;
+      const store = getBrokenStore();
+      const ids = Object.keys(store);
+      if (ids.length === 0) {
+        showToast('No reports to clear.', 'var(--warning)');
+        return;
+      }
+      
+      try {
+        await Promise.all(ids.map(id => DbState.deleteItem('broken-videos', id)));
+        DbState.brokenStore = {};
+        showToast('✅ All broken video reports cleared successfully!');
+        renderBrokenList();
+      } catch (err) {
+        showToast('❌ Failed to clear reports: ' + err.message, '#ff6b6b');
+      }
+    }
+
+    window.searchToonstreamLive = searchToonstreamLive;
+    window.importToonstreamItem = importToonstreamItem;
+    window.clearAllBroken = clearAllBroken;
+
+    // ── Init ──
+    DbState.init().then(() => {
+      // Restore active tab
+      const savedTab = localStorage.getItem('activeAdminTab');
+      if (savedTab) {
+        const tabBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(savedTab));
+        if (tabBtn) {
+          switchTab(savedTab, tabBtn);
+          return;
+        }
+      }
+
+      // Trigger rendering after initial state loads if no saved tab exists
+      const activeTab = document.querySelector('.tab-btn.active');
+      if (activeTab && activeTab.getAttribute('onclick')) {
+        if (activeTab.getAttribute('onclick').includes('tab-broken')) renderBrokenList();
+        else if (activeTab.getAttribute('onclick').includes('tab-manage')) renderManageList();
+        else if (activeTab.getAttribute('onclick').includes('tab-remove')) renderHiddenList();
+        else if (activeTab.getAttribute('onclick').includes('tab-ads')) loadDashboardServerAds();
+      }
+    });
+  </script>
 </body>
 
 </html>

@@ -1,130 +1,497 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns# fb: https://ogp.me/ns/fb# article: https://ogp.me/ns/article#">
 
 <head>
+  <script>
+    // Global catch-all to prevent third-party scripts (like Google Ads/AdSense)
+    // from polluting the console with uncaught promise rejections.
+    window.addEventListener('unhandledrejection', function (event) {
+      const reason = event.reason;
+      if (!reason || (reason.stack && reason.stack.includes('show_ads')) || (reason.message && reason.message.includes('adsbygoogle'))) {
+        event.preventDefault(); // Suppress the exception
+      }
+    });
+  </script>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="theme-color" content="#e50914" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="format-detection" content="telephone=no">
 
-  <!-- Dynamic SEO Meta Tags -->
-  <title>MovieBox | Discover Movies & Anime</title>
-  <meta name="description"
-    content="Watch Movies, TV Series, and Anime online with Hindi Dubbed versions. Stay updated with Trending, Popular, Top Rated, and Upcoming releases.">
+  <!-- PWA Tags -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CineStream">
+  <meta name="application-name" content="CineStream">
+  <meta name="msapplication-TileColor" content="#ff4757">
+
+  <!-- ═══════════════ SEO — Dynamic (updated by app.js on modal open) ═══════════════ -->
+  <title id="seo-title">CineStream — Watch Anime in Hindi Dubbed Free Online</title>
+  <meta id="seo-desc" name="description"
+    content="Watch Hindi Dubbed Anime online free on CineStream. Stream trending anime in Hindi, English &amp; multi-audio HD. Naruto Hindi Dubbed, Demon Slayer Hindi Dubbed, One Piece in Hindi and more.">
   <meta name="keywords"
-    content="Movies online, Hindi Dubbed Movies, TV Series online, Anime online, Upcoming Movies, Trending TV Shows, Movie reviews">
-  <meta name="author" content="MovieBox">
+    content="anime in hindi, hindi dubbed anime, watch anime in hindi, anime hindi dubbed free, naruto in hindi, demon slayer hindi dubbed, one piece in hindi, jujutsu kaisen hindi dubbed, attack on titan in hindi, anime online free india, CineStream, watch anime online free">
+  <meta name="author" content="CineStream">
+  <meta name="language" content="en">
+  <link id="seo-canonical" rel="canonical" href="https://cinestream.watch/">
+  <link rel="alternate" hreflang="en" href="https://cinestream.watch/">
+  <link rel="alternate" hreflang="en-IN" href="https://cinestream.watch/">
+  <link rel="alternate" hreflang="hi" href="https://cinestream.watch/">
+  <link rel="alternate" hreflang="hi-IN" href="https://cinestream.watch/">
+  <link rel="alternate" hreflang="x-default" href="https://cinestream.watch/">
 
-  <!-- Open Graph / Social Sharing -->
-  <meta property="og:title" content="MovieBox - Watch Movies, TV Series, Anime Online">
-  <meta property="og:description"
-    content="Stream Trending, Popular, Top Rated, and Upcoming Movies, TV Series, and Anime with Hindi Dubbed versions.">
+  <!-- Open Graph / Social Sharing (dynamic) -->
+  <meta id="og-title" property="og:title" content="CineStream — Watch Anime Online Free">
+  <meta id="og-desc" property="og:description"
+    content="Stream Trending, Popular, Top Rated &amp; Upcoming Anime with Hindi Dubbed versions free on CineStream.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://movie-box-cyan.vercel.app/">
-  <meta property="og:image" content="https://cdn-www.bluestacks.com/bs-images/MBMTV_PC_EN.jpg">
+  <meta id="og-url" property="og:url" content="https://cinestream.watch/">
+  <meta id="og-image" property="og:image" content="https://cinestream.watch/images/og-banner.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="CineStream — Watch Anime in Hindi Online Free">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:site_name" content="CineStream">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="hi_IN">
 
-  <!-- Twitter Card -->
+  <!-- Twitter Card (dynamic) -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MovieBox - Watch Movies, TV Series, Anime Online">
-  <meta name="twitter:description"
-    content="Stream Trending, Popular, Top Rated, and Upcoming Movies, TV Series, and Anime with Hindi Dubbed versions.">
-  <meta name="twitter:image" content="https://cdn-www.bluestacks.com/bs-images/MBMTV_PC_EN.jpg">
-  <meta property="twitter:image"
-    content="https://raw.githubusercontent.com/kodeitkeem/movie-box-client/master/public/application-screenshots/thumbnail.jpg">
+  <meta name="twitter:site" content="@CineStream">
+  <meta id="tw-title" name="twitter:title" content="CineStream — Watch Anime Online Free">
+  <meta id="tw-desc" name="twitter:description"
+    content="Stream Trending, Popular &amp; Top Rated Anime with Hindi Dubbed. Free HD streaming on CineStream.">
+  <meta id="tw-image" name="twitter:image" content="https://cinestream.watch/images/og-banner.png">
+  <meta id="tw-image-alt" name="twitter:image:alt" content="CineStream — Watch Hindi Dubbed Anime Free">
+  <meta name="twitter:creator" content="@CineStream">
+
+  <!-- Favicons -->
   <link rel="icon" type="image/png" sizes="32x32" href="/images/fav-icon.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/fav-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/fav-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
+  <!-- ══════ Geo / Regional SEO (Optimized for India Market) ══════ -->
+  <meta name="geo.region" content="IN">
+  <meta name="geo.placename" content="India">
+  <meta name="geo.position" content="20.5937;78.9629">
+  <meta name="ICBM" content="20.5937, 78.9629">
+  <meta name="rating" content="general">
+  <meta name="revisit-after" content="3 days">
+  <meta name="distribution" content="global">
 
-  <!-- Google Fonts -->
+  <!-- ═══════════════ Performance — DNS &amp; Resource Hints ═══════════════ -->
+  <link rel="dns-prefetch" href="//api.themoviedb.org">
+  <link rel="dns-prefetch" href="//image.tmdb.org">
+  <link rel="dns-prefetch" href="//fonts.googleapis.com">
+  <link rel="dns-prefetch" href="//fonts.gstatic.com">
+  <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+
+  <!-- ══════ Preload Critical Resources ══════ -->
+  <link rel="preload" href="/style.css?v=2.1.1" as="style">
+  <!-- Note: JS is deferred, no preload needed -->
+
+  <!-- Google Fonts -->
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;600;700&display=swap"
     rel="stylesheet">
 
-  <!-- Font Awesome for Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/images/fav-icon.png">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print"
+    onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  </noscript>
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css?v=2.1.1">
+
+  <style>
+    /* Inline cache-busting loader styles to guarantee display on reload/cache updates */
+    .modal-loading-screen {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: rgba(15, 15, 15, 0.98) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      z-index: 10000 !important;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease !important;
+    }
+
+    .modal-loading-screen.active {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+
+    .modal-loading-screen .loading-spinner {
+      width: 50px !important;
+      height: 50px !important;
+      border: 4px solid rgba(255, 255, 255, 0.1) !important;
+      border-top-color: var(--primary) !important;
+      border-radius: 50% !important;
+      animation: modal-spin 0.8s infinite linear !important;
+    }
+
+    @keyframes modal-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+
+  <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2555027481119393"
     crossorigin="anonymous"></script>
-  <!-- YouTube IFrame API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <!-- ═══════════════ Structured Data — Base (updated dynamically on modal open) ═══════════════ -->
+  <script id="ld-website" type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "CineStream",
+    "alternateName": ["CineStream.watch", "CineStream Hindi Anime", "Anime in Hindi"],
+    "url": "https://cinestream.watch/",
+    "description": "Watch Hindi Dubbed Anime online free in HD on CineStream. Stream Naruto, Demon Slayer, One Piece, Jujutsu Kaisen and more anime in Hindi and English.",
+    "inLanguage": ["en", "hi"],
+    "audience": {
+      "@type": "Audience",
+      "geographicArea": {
+        "@type": "Country",
+        "name": "India"
+      }
+    },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://cinestream.watch/?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
+  <script id="ld-organization" type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "CineStream",
+    "url": "https://cinestream.watch/",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://cinestream.watch/images/fav-icon.png",
+      "width": 512,
+      "height": 512
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "email": "contact@cinestream.watch",
+      "areaServed": ["IN", "PK", "BD", "Worldwide"],
+      "availableLanguage": ["English", "Hindi"]
+    },
+    "sameAs": [
+      "https://cinestream.watch/"
+    ]
+  }
+  </script>
+
+  <!-- WebPage schema with India and Hindi targeting -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "CineStream — Watch Hindi Dubbed Anime Free Online",
+    "url": "https://cinestream.watch/",
+    "description": "Watch anime in Hindi Dubbed free on CineStream. Stream Naruto Hindi Dubbed, Demon Slayer Hindi Dubbed, One Piece in Hindi, Jujutsu Kaisen Hindi Dubbed and 1000+ more anime series online in HD.",
+    "inLanguage": ["en", "hi"],
+    "isAccessibleForFree": true,
+    "dateModified": "2026-07-21",
+    "primaryImageOfPage": {
+      "@type": "ImageObject",
+      "url": "https://cinestream.watch/images/og-banner.png",
+      "width": 1200,
+      "height": 630
+    },
+    "audience": {
+      "@type": "PeopleAudience",
+      "geographicArea": { "@type": "Country", "name": "India" },
+      "suggestedMinAge": 13,
+      "suggestedMaxAge": 35
+    },
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cinestream.watch/" }
+      ]
+    }
+  }
+  </script>
+
+  <!-- Dynamic JSON-LD slot (Movie/TVSeries/BreadcrumbList injected by app.js) -->
+  <script id="ld-dynamic" type="application/ld+json"></script>
+
+  <!-- ══════ FAQ Schema — Targets Hindi anime featured snippet positions ══════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is CineStream free to watch anime online?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! CineStream is 100% free. You can watch the latest Anime online in HD without any subscription or registration."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does CineStream have Hindi Dubbed anime?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, CineStream offers a large collection of Hindi Dubbed Anime. You can watch Naruto in Hindi, Demon Slayer Hindi Dubbed, One Piece in Hindi, Jujutsu Kaisen Hindi Dubbed, Attack on Titan Hindi Dubbed and many more — all free."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Where can I watch anime in Hindi for free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "CineStream is the best website to watch anime in Hindi for free. We have 1000+ anime series with Hindi dubbed and multi-audio options available in HD quality. No registration needed."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is Naruto available in Hindi on CineStream?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! Naruto Hindi Dubbed is available on CineStream. Watch all episodes of Naruto and Naruto Shippuden in Hindi for free in HD quality."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I watch Demon Slayer Hindi Dubbed on CineStream?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, Demon Slayer (Kimetsu no Yaiba) Hindi Dubbed is available on CineStream. Stream all seasons and episodes of Demon Slayer in Hindi free online."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I watch Anime online free on CineStream?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! CineStream has a dedicated Anime section with the latest and trending Anime series including Naruto, One Piece, Demon Slayer, and much more — all free in HD."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What quality is the anime on CineStream?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "CineStream streams anime in HD quality (720p and 1080p) with multiple server options and automatic failover to ensure the best viewing experience."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I watch the latest Trending anime on CineStream?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Simply visit CineStream and click on the Trending tab to see the latest trending Anime. No login required — just click and watch for free."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is One Piece available in Hindi on CineStream?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! Watch One Piece in Hindi on CineStream. All episodes of One Piece Hindi Dubbed are available free in HD. No subscription required."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Where can I watch Jujutsu Kaisen Hindi Dubbed free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Watch Jujutsu Kaisen Hindi Dubbed free on CineStream. All seasons and episodes are available in high quality Hindi dub with multiple server options."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- ══════ ItemList Schema — Hindi Dubbed Anime Collections ══════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Hindi Dubbed Anime — Watch Free on CineStream",
+    "description": "Watch the best Hindi Dubbed anime online free in HD on CineStream. Naruto Hindi Dubbed, Demon Slayer Hindi Dubbed, One Piece in Hindi and 1000+ more.",
+    "url": "https://cinestream.watch/",
+    "itemListOrder": "https://schema.org/ItemListOrderDescending",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Trending Anime in Hindi", "url": "https://cinestream.watch/#anime" },
+      { "@type": "ListItem", "position": 2, "name": "Naruto Hindi Dubbed", "url": "https://cinestream.watch/watch/tv/toon_naruto" },
+      { "@type": "ListItem", "position": 3, "name": "Demon Slayer Hindi Dubbed", "url": "https://cinestream.watch/watch/tv/toon_demon-slayer-kimetsu-no-yaiba-multi-audio" },
+      { "@type": "ListItem", "position": 4, "name": "One Piece in Hindi", "url": "https://cinestream.watch/watch/tv/toon_one-piece-multi-audio" },
+      { "@type": "ListItem", "position": 5, "name": "Jujutsu Kaisen Hindi Dubbed", "url": "https://cinestream.watch/watch/tv/toon_jujutsu-kaisen-multi-audio" },
+      { "@type": "ListItem", "position": 6, "name": "Attack on Titan Hindi Dubbed", "url": "https://cinestream.watch/watch/tv/toon_attack-on-titan-multi-audio" },
+      { "@type": "ListItem", "position": 7, "name": "My Hero Academia Hindi Dubbed", "url": "https://cinestream.watch/watch/tv/toon_my-hero-academia-multi-audio" },
+      { "@type": "ListItem", "position": 8, "name": "Dragon Ball Z Hindi Dubbed", "url": "https://cinestream.watch/watch/tv/toon_dragon-ball-z-multi-audio" }
+    ]
+  }
+  </script>
 </head>
 
 <body>
 
+  <!-- Skip to main content link (WCAG 2.1 Level A) -->
+  <a class="skip-to-main" href="#main-content">Skip to main content</a>
+
   <!-- Navigation -->
-  <nav id="navbar">
+  <nav id="navbar" role="navigation" aria-label="Main navigation">
     <div class="container nav-content">
-      <a href="#" class="logo">MOVIE<span>BOX</span></a>
+      <a href="/" class="logo" aria-label="CineStream — Home">Cine<span>Stream</span></a>
 
-      <ul class="nav-links">
-        <li><a href="#" class="nav-item active" data-type="movie">Movies</a></li>
-        <li><a href="#" class="nav-item" data-type="tv">Tv Series</a></li>
-        <li><a href="#" class="nav-item" data-type="anime">Anime</a></li>
-      </ul>
-
-      <div class="search-container">
-        <i class="fas fa-search"></i>
-        <input type="text" id="movie-search" placeholder="Search movies, anime..." autocomplete="off">
-      </div>
+      <form class="search-container" role="search" aria-label="Search anime" onsubmit="return false;">
+        <label for="movie-search" class="sr-only">Search anime</label>
+        <span class="search-icon-wrapper" aria-hidden="true"><i class="fas fa-search"></i></span>
+        <input type="search" id="movie-search" name="q" placeholder="Search anime..." autocomplete="off"
+          aria-label="Search anime">
+      </form>
     </div>
   </nav>
 
   <!-- Main Content -->
-  <main class="container">
+  <main id="main-content" class="container" role="main">
+
+    <!-- ══════ SEO Hero — Visible to Google crawlers, hidden visually ══════ -->
+    <section id="seo-hero" aria-label="CineStream — Free HD Anime Streaming"
+      style="padding: 1.5rem 0 0.5rem; margin-bottom: 0.5rem;">
+      <h1
+        style="font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; color: var(--text); margin: 0 0 0.5rem; line-height: 1.2;">
+        Watch Anime Online Free in Hindi
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0; max-width: 700px; line-height: 1.5;">
+        Stream the latest <strong>Trending Anime</strong>, <strong>Popular Series</strong>, and
+        <strong>Movies</strong> in Full HD.
+        Enjoy <strong>Hindi Dubbed</strong> anime — 100% free, no registration required.
+      </p>
+    </section>
+
+    <!-- Breadcrumb (shown dynamically when inside a category) -->
+    <nav id="breadcrumb-nav" aria-label="Breadcrumb" style="display:none; margin-bottom: 1rem;">
+      <ol id="breadcrumb-list" class="breadcrumb-list" itemscope itemtype="https://schema.org/BreadcrumbList">
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+          <a itemprop="item" href="/"><span itemprop="name">Home</span></a>
+          <meta itemprop="position" content="1">
+        </li>
+        <li id="breadcrumb-current" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+          <span id="breadcrumb-current-name" itemprop="name"></span>
+          <meta id="breadcrumb-position" itemprop="position" content="2">
+        </li>
+      </ol>
+    </nav>
+
+    <!-- Recently Viewed Section -->
+    <section id="recently-viewed-section" class="fade-in" style="display: none; margin-bottom: 2rem;">
+      <h2 class="section-title">Continue Watching</h2>
+      <div id="recently-viewed-grid" style="display: flex; overflow-x: auto; gap: 1.5rem; margin-top: 1.5rem; padding-bottom: 1rem; scroll-snap-type: x mandatory;"></div>
+    </section>
 
     <!-- Filters & Category Chips -->
-    <section class="filters-section fade-in">
-      <div class="filter-chip active" data-filter="trending">Trending</div>
-      <div class="filter-chip" data-filter="popular">Popular</div>
-      <div class="filter-chip" data-filter="top_rated">Top Rated</div>
-      <div class="filter-chip" data-filter="upcoming">Upcoming</div>
-
-      <select id="genre-select" class="filter-chip glass">
-        <option value="">All Genres</option>
-        <!-- Genres filled by JS -->
+    <section class="filters-section fade-in" aria-label="Content filters" style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+      <select id="media-type-filter-select" class="glass"
+        style="outline: none; border: 1px solid var(--glass-border); padding: 8px 24px; border-radius: 20px; color: white; background: #111; cursor: pointer; font-size: 0.95rem; font-family: 'Outfit', sans-serif; font-weight: 600;">
+        <option value="anime" selected>Anime</option>
+        <option value="cartoon">Cartoon</option>
       </select>
     </section>
 
-    <!-- Filter Heading -->
-    <!-- Filter Heading -->
-    <h2 id="filter-heading" class="section-title fade-in" style="display: none;"></h2>
-
-    <!-- Movie Grid Container -->
-    <section id="movie-container" class="movie-grid fade-in">
-      <!-- Movie cards injected here -->
-      <!-- Skeleton cards shown initially -->
-      <div class="movie-card skeleton"></div>
-      <div class="movie-card skeleton"></div>
-      <div class="movie-card skeleton"></div>
-      <div class="movie-card skeleton"></div>
-      <div class="movie-card skeleton"></div>
-      <div class="movie-card skeleton"></div>
-      <div class="movie-card skeleton"></div>
-      <div class="movie-card skeleton"></div>
-      <div class="movie-card skeleton"></div>
-      <div class="movie-card skeleton"></div>
+    <!-- Search Results Section -->
+    <section id="search-results-section" style="display: none; margin-bottom: 3rem;" aria-label="Search results"
+      aria-live="polite">
+      <h2 class="section-title">Search Results</h2>
+      <div id="search-results-container" class="movie-grid" role="list"></div>
     </section>
 
-    <!-- Admin Panel Section (Hidden by default) -->
-    <section id="admin-panel" class="admin-panel glass fade-in">
-      <h2><i class="fas fa-user-shield"></i> Admin Dashboard</h2>
+    <!-- Main Feed Section -->
+    <div id="main-feed-section">
+      <button id="back-to-feed-btn" class="btn-secondary" style="display: none; margin-bottom: 1.5rem;"
+        aria-label="Back to homepage feed">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Homepage
+      </button>
+      <div id="category-view-heading" class="fade-in"
+        style="display: none; margin-top: 1rem; margin-bottom: 1.5rem; justify-content: space-between; align-items: center; width: 100%;">
+        <h2 class="heading-text section-title" style="margin: 0;"></h2>
+      </div>
+
+      <!-- Movie Grid Container -->
+      <section id="movie-container" class="movie-grid fade-in" aria-label="Content grid" role="list">
+        <!-- Skeleton cards shown initially -->
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+        <div class="movie-card skeleton" aria-hidden="true"></div>
+      </section>
+    </div>
+
+    <!-- Admin Panel Section (Hidden by default, noindex) -->
+    <section id="admin-panel" class="admin-panel glass fade-in" aria-label="Admin dashboard" aria-hidden="true">
+      <h2><i class="fas fa-user-shield" aria-hidden="true"></i> Admin Dashboard</h2>
       <p>Manage custom movie links and Hindi dubbed status.</p>
       <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-        <input type="text" id="admin-movie-id" placeholder="Movie ID" class="filter-chip glass" style="width: 150px;">
+        <input type="text" id="admin-movie-id" placeholder="Movie ID" class="filter-chip glass" style="width: 150px;"
+          aria-label="Movie ID">
         <input type="text" id="admin-custom-link" placeholder="Custom Watch Link" class="filter-chip glass"
-          style="width: 250px;">
+          style="width: 250px;" aria-label="Custom watch link">
         <label style="display: flex; align-items: center; gap: 5px;">
           <input type="checkbox" id="admin-hindi-dubbed"> Force Hindi Dubbed
         </label>
-        <button id="admin-save-btn" class="btn-primary" style="padding: 10px 20px;">Save Data</button>
+        <button id="admin-save-btn" class="btn-primary" style="padding: 10px 20px;" aria-label="Save admin data">Save
+          Data</button>
       </div>
-      <div id="admin-status" style="margin-top: 1rem; color: #4caf50;"></div>
+      <div id="admin-status" style="margin-top: 1rem; color: #4caf50;" role="status" aria-live="polite"></div>
+      
+      <!-- Server Ads Configuration -->
+      <div id="admin-server-ads-config" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+        <h3 style="margin-bottom: 0.5rem;"><i class="fas fa-ad" aria-hidden="true"></i> Server Ads Management</h3>
+        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 1rem;">Select the servers that require ads to play (this disables sandbox constraints on those servers so they load successfully).</p>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 1rem;" id="admin-server-ads-checkboxes">
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 1"> Server 1</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 2"> Server 2</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 3"> Server 3</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 4"> Server 4</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 5"> Server 5</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 6"> Server 6</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 7"> Server 7</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 8"> Server 8</label>
+        </div>
+        <button id="admin-save-server-ads-btn" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem;" aria-label="Save server ads settings">Save Server Ads Settings</button>
+      </div>
+
       <div id="admin-list" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
         <!-- List of managed movies -->
       </div>
@@ -133,41 +500,91 @@
   </main>
 
   <!-- Movie Detail Modal -->
-  <div id="movie-modal" class="modal-overlay">
+  <div id="movie-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+    aria-describedby="modal-description">
     <div class="modal-content">
-      <div class="modal-hero">
-        <div id="trailer-container" style="width: 100%; height: 100%;">
-          <!-- YouTube iframe injected here -->
-          <div id="no-trailer"
-            style="display: none; height: 100%; justify-content: center; align-items: center; background: #111; color: #444; font-size: 2rem; font-weight: 800;">
-            TRAILER NOT AVAILABLE
-          </div>
-        </div>
-        <div class="modal-hero-overlay"></div>
-        <div id="sound-toggle" class="modal-sound-toggle"><i class="fas fa-volume-mute"></i> <span>Muted</span></div>
+      <!-- Loading Screen -->
+      <div id="modal-loading-screen" class="modal-loading-screen">
+        <div class="loading-spinner"></div>
       </div>
 
-      <!-- Close button outside hero so it's always visible on mobile -->
-      <div id="close-modal" class="modal-close"><i class="fas fa-times"></i></div>
+      <div class="modal-hero">
+        <div id="trailer-container" style="width: 100%; height: 100%;" aria-label="Video player">
+          <!-- Player injected here -->
+        </div>
+        <div id="no-trailer"
+          style="display: none; width: 100%; height: 100%; justify-content: center; align-items: center; background: #111; color: #444; font-size: 2rem; font-weight: 800; position: absolute; top: 0; left: 0; z-index: 1;"
+          aria-live="polite">
+          TRAILER NOT AVAILABLE
+        </div>
+        <div class="modal-hero-overlay" aria-hidden="true"></div>
+        <button id="back-to-details" class="modal-back-btn" style="display: none;" aria-label="Back to movie details">
+          <i class="fas fa-arrow-left" aria-hidden="true"></i> Details
+        </button>
+        <button id="sound-toggle" class="modal-sound-toggle" aria-label="Toggle sound: currently muted">
+          <i class="fas fa-volume-mute" aria-hidden="true"></i> <span>Muted</span>
+        </button>
+      </div>
+
+      <!-- Player Control Bar -->
+      <div id="player-control-bar"
+        style="display: none; justify-content: space-between; align-items: center; padding: 10px 20px; background: #111; border-bottom: 1px solid var(--glass-border); z-index: 1000; flex-shrink: 0; min-height: 50px; height: auto; width: 100%; box-sizing: border-box; flex-wrap: wrap; gap: 10px;"
+        role="toolbar" aria-label="Player controls">
+        <div id="custom-episode-selectors" style="display: none; align-items: center; gap: 8px; flex-wrap: wrap;"
+          role="group" aria-label="Episode selection"></div>
+        <div id="player-download-container"></div>
+      </div>
+
+      <!-- Close button -->
+      <button id="close-modal" class="modal-close" aria-label="Close details panel">
+        <i class="fas fa-times" aria-hidden="true"></i>
+      </button>
 
       <div class="modal-body">
         <div class="modal-poster-container">
-          <img id="modal-poster" src="" alt="Poster" class="modal-poster">
+          <img id="modal-poster" src="" alt="Movie poster" class="modal-poster" loading="lazy" decoding="async">
+          <div class="mobile-only-meta" style="display: none; justify-content: center; gap: 15px; margin-top: 10px; font-weight: 600; font-size: 0.9rem;">
+            <span id="modal-rating-mobile"></span>
+            <span id="modal-year-mobile"></span>
+          </div>
         </div>
         <div class="modal-details">
           <h1 id="modal-title">Movie Title</h1>
-          <div class="modal-meta">
-            <span id="modal-rating"><i class="fas fa-star rating-star"></i> 8.5</span>
-            <span id="modal-year"><i class="far fa-calendar-alt"></i> 2024</span>
-            <span id="modal-genres">Action, Adventure</span>
-            <span id="modal-language" style="color: var(--primary);"><i class="fas fa-language"></i> Hindi Dubbed</span>
+          <!-- Breadcrumb inside modal for SEO context -->
+          <nav id="modal-breadcrumb" aria-label="You are here"
+            style="margin-bottom:0.75rem; font-size:0.8rem; color: var(--text-muted);">
+            <a href="/" style="color:var(--text-muted); text-decoration:none;">Home</a>
+            <span aria-hidden="true"> › </span>
+            <span id="modal-breadcrumb-type" style="color:var(--text-muted);"></span>
+            <span aria-hidden="true"> › </span>
+            <span id="modal-breadcrumb-title" style="color:var(--primary);"></span>
+          </nav>
+          <div class="modal-meta" role="list">
+            <span id="modal-rating" role="listitem"><i class="fas fa-star rating-star" aria-hidden="true"></i> <span
+                class="sr-only">Rating:</span> 8.5</span>
+            <span id="modal-year" role="listitem"><i class="far fa-calendar-alt" aria-hidden="true"></i> <span
+                class="sr-only">Year:</span> 2024</span>
+            <span id="modal-genres" role="listitem">Action, Adventure</span>
+            <span id="modal-language" style="color: var(--primary);" role="listitem">
+              <i class="fas fa-language" aria-hidden="true"></i> <span class="sr-only">Language:</span> Hindi Dubbed
+            </span>
+          </div>
+          <div id="modal-dubbed-languages" style="margin-top: 1rem; display: none; align-items: center; gap: 0.5rem;">
+            <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted);">Audio:</span>
+            <select id="modal-lang-select" class="filter-dropdown-select glass"
+              style="outline: none; border: 1px solid var(--glass-border); padding: 4px 8px; border-radius: 20px; color: white; background: #222; cursor: pointer; font-size: 0.8rem; font-family: 'Outfit', sans-serif;">
+            </select>
           </div>
           <p id="modal-description" class="modal-description">
             This is a placeholder for the movie description.
           </p>
           <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-            <button id="modal-wishlist-btn" class="btn-secondary"><i class="far fa-heart"></i> Add to Wishlist</button>
-            <button id="modal-watch-btn" class="btn-primary"><i class="fas fa-play"></i> Watch Now</button>
+            <button id="modal-wishlist-btn" class="btn-secondary" aria-label="Add to Wishlist">
+              <i class="far fa-heart" aria-hidden="true"></i> Add to Wishlist
+            </button>
+            <button id="modal-watch-btn" class="btn-primary" aria-label="Watch Now">
+              <i class="fas fa-play" aria-hidden="true"></i> Watch Now
+            </button>
           </div>
         </div>
       </div>
@@ -175,32 +592,98 @@
   </div>
 
   <!-- Footer -->
-  <footer class="main-footer">
+  <footer class="main-footer" role="contentinfo">
     <div class="container footer-content">
       <div class="footer-brand">
-        <a href="#" class="logo">MOVIE<span>BOX</span></a>
-        <p>Your Ultimate Destination For The Latest Movies And Anime.</p>
+        <a href="/" class="logo" aria-label="CineStream — Home">Cine<span>Stream</span></a>
+        <p style="font-size:0.78rem; color: var(--text-muted); margin-top: 0.5rem; max-width: 320px;">
+          CineStream provides free access to trending &amp; popular Anime online. No subscription needed.
+        </p>
       </div>
-      <div class="footer-links">
-        <a href="about.html">About Us</a>
-        <a href="contact.html">Contact Us</a>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="disclaimer.html">Disclaimer</a>
+
+
+      <div class="footer-links" aria-label="Content Categories">
+        <strong
+          style="display:block; margin-bottom:0.6rem; color:var(--text); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em;">Categories</strong>
+        <a href="/#anime" onclick="App&&App.switchToCategory('anime')" aria-label="Watch Anime Online">Anime</a>
+        <a href="/#hindi" onclick="document.querySelector('[data-filter=popular]')?.click()"
+          aria-label="Hindi Dubbed Anime">Hindi Dubbed Anime</a>
+      </div>
+
+      <div class="footer-links" aria-label="Information pages">
+        <strong
+          style="display:block; margin-bottom:0.6rem; color:var(--text); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em;">Info</strong>
+        <a href="/about.html">About Us</a>
+        <a href="/contact.html">Contact Us</a>
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/disclaimer.html">Disclaimer</a>
       </div>
     </div>
+
+    <!-- SEO: Keyword-rich genre links for Googlebot -->
+    <div class="container" style="padding: 1rem 0; border-top: 1px solid var(--glass-border); margin-top: 1rem;">
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0 0 0.5rem; font-weight: 600;">Popular Categories:
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+        <a href="/#action"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Watch Action Anime">Action Anime</a>
+        <a href="/#adventure"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Watch Adventure Anime">Adventure Anime</a>
+        <a href="/#fantasy"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Watch Fantasy Anime">Fantasy Anime</a>
+        <a href="/#comedy"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Watch Comedy Anime">Comedy Anime</a>
+        <a href="/#scifi"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Watch Sci-Fi Anime">Sci-Fi Anime</a>
+        <a href="/#shonen"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Watch Shonen Anime">Shonen</a>
+        <a href="/#isekai"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Watch Isekai Anime">Isekai</a>
+        <a href="/#hindi-dubbed"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Hindi Dubbed Anime">Hindi Dubbed Anime</a>
+        <a href="/#naruto"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Naruto Anime">Naruto</a>
+        <a href="/#one-piece"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="One Piece Anime">One Piece</a>
+        <a href="/#demon-slayer"
+          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
+          aria-label="Demon Slayer Anime">Demon Slayer</a>
+      </div>
+    </div>
+
     <div class="footer-bottom">
-      <p>&copy; 2026 Movie Box | All Rights Reserved</p>
+      <p>&copy; 2026 CineStream | All Rights Reserved |
+        <a href="/privacy.html" style="color:var(--text-muted);" aria-label="Privacy Policy">Privacy Policy</a> |
+        <a href="/disclaimer.html" style="color:var(--text-muted);" aria-label="Disclaimer">Disclaimer</a>
+      </p>
+      <p style="font-size: 0.7rem; color: var(--text-muted); margin: 0.3rem;">
+        Watch Anime Online Free | Hindi Dubbed Anime | Anime Series Streaming | HD Quality
+      </p>
     </div>
   </footer>
 
   <!-- Toast Notifications -->
-  <div id="toast-container" class="toast-container"></div>
+  <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
 
   <!-- Scripts -->
-  <script src="env.js"></script>
-  <script src="api.js"></script>
-  <script src="app.js"></script>
-  <script src="admin.js"></script>
+  <script src="/env.js"></script>
+  <script src="/api.js"></script>
+  <!-- Fuse.js for fast fuzzy search -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js" crossorigin="anonymous"></script>
+  <!-- StreamPlayer: production streaming manager with failover -->
+  <script src="/public/player/StreamPlayer.js?v=2.0.35"></script>
+  <script src="/app.js?v=2.7.9"></script>
+  <script src="/admin.js?v=2.2"></script>
 
 </body>
 

@@ -3,60 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact Us - MovieBox</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#ff4757">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Contact Us — CineStream | Get In Touch Free Anime Support</title>
+  <meta name="description" content="Get in touch with the CineStream team for anime requests, suggestions, or technical support. We aim to respond within 24–48 hours.">
+  <meta name="keywords" content="contact CineStream, anime request, support CineStream, suggest anime, technical help CineStream">
+  <meta name="author" content="CineStream">
+  <link rel="canonical" href="https://cinestream.watch/contact.html">
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="Contact Us — CineStream | Get In Touch">
+  <meta property="og:description" content="Reach out to the CineStream team for anime requests, support, or partnership enquiries.">
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://cinestream.watch/contact.html">
+  <meta property="og:image"       content="https://cinestream.watch/images/og-banner.png">
+  <meta property="og:image:alt"   content="CineStream — Contact support">
+  <meta property="og:site_name"   content="CineStream">
+  <meta property="og:locale"      content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:site"        content="@CineStream">
+  <meta name="twitter:creator"     content="@CineStream">
+  <meta name="twitter:title"       content="Contact Us — CineStream | Support">
+  <meta name="twitter:description" content="Contact the CineStream team for help or suggestions.">
+  <meta name="twitter:image"       content="https://cinestream.watch/images/og-banner.png">
+
+  <!-- Favicons -->
+  <link rel="icon"             type="image/png" sizes="32x32" href="/images/fav-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180"                href="/images/fav-icon.png">
+
+  <!-- Fonts & Styles -->
+  <link rel="dns-prefetch" href="//fonts.googleapis.com">
+  <link rel="preconnect"   href="https://fonts.googleapis.com">
+  <link rel="preconnect"   href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"   href="style.css">
+  <link rel="stylesheet"   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "name": "Contact CineStream",
+    "url": "https://cinestream.watch/contact.html",
+    "description": "Contact the CineStream team for support or feedback.",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",       "item": "https://cinestream.watch/" },
+        { "@type": "ListItem", "position": 2, "name": "Contact Us", "item": "https://cinestream.watch/contact.html" }
+      ]
+    }
+  }
+  </script>
 </head>
 <body>
-  <nav id="navbar" class="scrolled">
+
+  <nav id="navbar" class="scrolled" role="navigation" aria-label="Main navigation">
     <div class="container nav-content">
-      <a href="index.html" class="logo">MOVIE<span>BOX</span></a>
-      <a href="index.html" class="btn-primary" style="padding: 8px 18px; font-size:0.9rem;">Back to Home</a>
+      <a href="/" class="logo" aria-label="CineStream — Home">Cine<span>Stream</span></a>
+      <a href="/" class="btn-primary" style="padding: 8px 18px; font-size:0.9rem;">Back to Home</a>
     </div>
   </nav>
 
-  <div class="container info-container">
+  <main id="main-content" class="container info-container" role="main">
+    <!-- Breadcrumb -->
+    <nav aria-label="Breadcrumb" style="margin-bottom:1.5rem; font-size:0.85rem; color:var(--text-muted);">
+      <ol style="list-style:none; padding:0; margin:0; display:flex; gap:0.5rem; align-items:center;" itemscope itemtype="https://schema.org/BreadcrumbList">
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+          <a itemprop="item" href="/" style="color:var(--text-muted); text-decoration:none;"><span itemprop="name">Home</span></a>
+          <meta itemprop="position" content="1">
+        </li>
+        <li aria-hidden="true">›</li>
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+          <span itemprop="name" style="color:var(--primary);">Contact Us</span>
+          <meta itemprop="position" content="2">
+        </li>
+      </ol>
+    </nav>
+
     <div class="info-grid">
       <div class="info-content">
-        <h1><i class="fas fa-paper-plane"></i> Get In Touch</h1>
-        <p>We love hearing from our community! Whether you have a suggestion for the site, a question about our reviews, or just want to talk about cinema, feel free to reach out to us at any time!</p>
-        <p>Our team is dedicated to providing the best experience for our users. We aim to respond to all inquiries within 24-48 hours. Your feedback helps us grow and improve MovieBox.</p>
+        <h1><i class="fas fa-paper-plane" aria-hidden="true"></i> Get In Touch</h1>
+        <p>We love hearing from our community! Whether you have a suggestion for the site, a question about our content, or just want to talk about anime, feel free to reach out at any time.</p>
+        <p>Our team is dedicated to providing the best experience for our users. We aim to respond to all inquiries within 24–48 hours. Your feedback helps us grow and improve CineStream.</p>
       </div>
 
-      <div class="contact-card">
-        <h3><i class="fas fa-user-circle"></i> Contact Details</h3>
+      <aside class="contact-card">
+        <h2><i class="fas fa-user-circle" aria-hidden="true"></i> Contact Details</h2>
         <div class="contact-item">
-          <i class="fas fa-user"></i>
-          <div class="text"><h4>Developer Name</h4><p>Tayyab Ali</p></div>
+          <i class="fas fa-user" aria-hidden="true"></i>
+          <div class="text"><h3>Developer</h3><p>Tayyab Ali</p></div>
         </div>
         <div class="contact-item">
-          <i class="fas fa-envelope"></i>
-          <div class="text"><h4>Email For Contact</h4><p>example@email.com</p></div>
+          <i class="fas fa-envelope" aria-hidden="true"></i>
+          <div class="text"><h3>Email</h3><p><a href="mailto:contact@cinestream.watch" style="color:var(--primary);">contact@cinestream.watch</a></p></div>
         </div>
         <div class="contact-item">
-          <i class="fas fa-globe"></i>
-          <div class="text"><h4>Location</h4><p>Karachi, Pakistan</p></div>
+          <i class="fas fa-globe" aria-hidden="true"></i>
+          <div class="text"><h3>Location</h3><p>Karachi, Pakistan</p></div>
         </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="main-footer" role="contentinfo">
+    <div class="container footer-content">
+      <div class="footer-brand">
+        <a href="/" class="logo" aria-label="CineStream — Home">Cine<span>Stream</span></a>
+        <p>Your ultimate destination for the latest anime.</p>
+      </div>
+      <div class="footer-links" aria-label="Footer navigation">
+        <a href="/about.html">About Us</a>
+        <a href="/contact.html">Contact Us</a>
+        <a href="/privacy.html">Privacy Policy</a>
       </div>
     </div>
-  </div>
-
-  <footer class="main-footer">
-      <div class="container footer-content">
-          <div class="footer-brand">
-              <a href="index.html" class="logo">MOVIE<span>BOX</span></a>
-              <p>Your ultimate destination for the latest movies and anime.</p>
-          </div>
-          <div class="footer-links">
-              <a href="about.html">About Us</a>
-              <a href="contact.html">Contact Us</a>
-              <a href="privacy.html">Privacy Policy</a>
-              <a href="disclaimer.html">Disclaimer</a>
-          </div>
-      </div>
-      <div class="footer-bottom">
-          <p>&copy; 2026 Movie Box | All Rights Reserved</p>
-      </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 CineStream | All Rights Reserved</p>
+    </div>
   </footer>
 </body>
 </html>

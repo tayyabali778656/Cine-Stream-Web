@@ -1,0 +1,93 @@
+{
+  "version": 2,
+  "buildCommand": "echo 'No build required'",
+  "installCommand": "npm install --omit=dev",
+  "framework": null,
+  "outputDirectory": ".",
+
+  "routes": [
+    {
+      "src": "/sitemap.xml",
+      "dest": "/api/sitemap"
+    },
+    {
+      "src": "/sitemap-index.xml",
+      "dest": "/api/sitemap-index"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/api/robots"
+    }
+  ],
+
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options",  "value": "nosniff" },
+        { "key": "X-Frame-Options",          "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection",         "value": "1; mode=block" },
+        { "key": "Referrer-Policy",           "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",        "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Content-Security-Policy",   "value": "default-src 'self'; script-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://pagead2.googlesyndication.com https://*.adtrafficquality.google https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' https: http: data: blob:; frame-src 'self' https: http:; connect-src 'self' https: http:; media-src 'self' blob: https: http:; object-src 'none'; base-uri 'self'; form-action 'self'" }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "X-Robots-Tag",  "value": "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" }
+      ]
+    },
+    {
+      "source": "/(about|contact|privacy|disclaimer).html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" },
+        { "key": "X-Robots-Tag",  "value": "index, follow" }
+      ]
+    },
+    {
+      "source": "/style.css",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/public/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/(app|api|admin|env).js(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400" },
+        { "key": "Content-Type",  "value": "application/manifest+json" }
+      ]
+    },
+    {
+      "source": "/tayyab/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    }
+  ]
+}

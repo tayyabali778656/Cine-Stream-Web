@@ -1,0 +1,63 @@
+# CineStream robots.txt — https://cinestream.watch
+# Last updated: 2026-07-21
+
+# ── Allow all legitimate crawlers ─────────────────────────────────────────────
+User-agent: *
+Allow: /
+Allow: /about.html
+Allow: /contact.html
+Allow: /privacy.html
+Allow: /disclaimer.html
+Allow: /images/
+Allow: /public/
+Allow: /sitemap.xml
+Allow: /sitemap-index.xml
+Allow: /manifest.json
+
+# Block admin, API, proxy, and internal areas
+Disallow: /tayyab/
+Disallow: /api/
+Disallow: /proxy
+Disallow: /health
+Disallow: /iframe-proxy
+
+# ── Googlebot — full access, no delay ─────────────────────────────────────────
+User-agent: Googlebot
+Allow: /
+Disallow: /tayyab/
+Disallow: /api/
+Disallow: /proxy
+Disallow: /health
+Disallow: /iframe-proxy
+
+# ── Google Image Bot — allow all images ───────────────────────────────────────
+User-agent: Googlebot-Image
+Allow: /images/
+Allow: /public/
+
+# ── Bingbot — mild crawl delay ────────────────────────────────────────────────
+User-agent: Bingbot
+Allow: /
+Disallow: /tayyab/
+Disallow: /api/
+Crawl-delay: 5
+
+# ── Block high-volume scraper bots ────────────────────────────────────────────
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+# ── Sitemaps ──────────────────────────────────────────────────────────────────
+Sitemap: https://cinestream.watch/sitemap.xml
+Sitemap: https://cinestream.watch/sitemap-index.xml

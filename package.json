@@ -1,0 +1,17 @@
+{
+  "name": "moviebox",
+  "version": "2.0.0",
+  "description": "Production-grade Movie Streaming Website",
+  "main": "serve.js",
+  "scripts": {
+    "start": "node serve.js",
+    "dev": "node --watch serve.js",
+    "test": "node --test tests/unit/cache.test.js tests/unit/auth.test.js tests/integration/api.test.js",
+    "update-catalogs": "node scripts/updateCatalogs.js",
+    "generate-sitemap": "node scripts/generateSitemap.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "mongodb": "^7.4.0"
+  }
+}

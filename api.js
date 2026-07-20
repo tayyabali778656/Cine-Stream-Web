@@ -1,110 +1,74 @@
 /**
- * MovieBox - API Service (TMDB Integration)
- * Cleaned URL construction to prevent any extra slashes or spaces.
+ * MovieBox - API Service (ToonStream MongoDB Integration)
  */
 
 window.API_CONFIG = {
-  // Reference the API key from env.js if it exists
-  KEY: (typeof ENV !== 'undefined' && ENV.TMDB_API_KEY) ? ENV.TMDB_API_KEY : '3370c7875d057cde17b3d68c22cba6e8',
-  BASE_URL: 'https://api.themoviedb.org/3',
-  IMG_URL: 'https://image.tmdb.org/t/p/w500',
-  BACKDROP_URL: 'https://image.tmdb.org/t/p/original',
-  CACHE_TIME: 86400000 // 24 hours
+  API_BASE: '/api/v1',
+  CACHE_TIME: 300000,   // 5 minutes for browse data
+  CACHE_VERSION: 'v4', // bump this to invalidate ALL old cached entries
 };
 
 const API = {
+
   async getMovies(type = 'movie', filter = 'trending', page = 1, query = '', genre = '') {
+    // Never cache search queries — always fetch fresh from server
+    const cacheKey = `${window.API_CONFIG.CACHE_VERSION}_toon_${type}_${filter}_${page}_${query}_${genre}`;
+    if (!query) {
+      const cached = this.getCachedData(cacheKey);
+      if (cached) return cached;
+    }
+
     let url = '';
-    const isAnime = type === 'anime';
-    const cacheKey = `mv5_${type}_${filter}_${page}_${query}_${genre}`;
-
-    const cached = this.getCachedData(cacheKey);
-    if (cached) return cached;
-
-    const { BASE_URL, KEY } = window.API_CONFIG;
-
     if (query) {
-      const endpoint = isAnime ? 'tv' : type;
-      url = `${BASE_URL}/search/${endpoint}?api_key=${KEY}&query=${encodeURIComponent(query)}&page=${page}`;
-      if (isAnime) url += '&with_genres=16';
-    } else if (filter === 'trending') {
-      if (isAnime) {
-        url = `${BASE_URL}/discover/tv?api_key=${KEY}&with_genres=16&sort_by=popularity.desc&page=${page}`;
-      } else {
-        url = `${BASE_URL}/trending/${type}/day?api_key=${KEY}&page=${page}`;
-      }
-    } else if (filter === 'upcoming') {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const dateStr = tomorrow.toISOString().split('T')[0];
-      if (type === 'movie') {
-        url = `${BASE_URL}/discover/movie?api_key=${KEY}&primary_release_date.gte=${dateStr}&sort_by=primary_release_date.asc&page=${page}`;
-      } else {
-        url = `${BASE_URL}/discover/tv?api_key=${KEY}&first_air_date.gte=${dateStr}&sort_by=first_air_date.asc&page=${page}&with_genres=16`;
-      }
+      url = `${window.API_CONFIG.API_BASE}/search?q=${encodeURIComponent(query)}`;
     } else {
-      const endpoint = (isAnime || type === 'tv') ? 'tv' : 'movie';
-      const sortBy = filter === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
-      url = `${BASE_URL}/discover/${endpoint}?api_key=${KEY}&sort_by=${sortBy}&page=${page}`;
-      if (genre) url += `&with_genres=${genre}`;
-      if (isAnime) url += genre.includes('16') ? '' : '&with_genres=16';
-      if (filter === 'top_rated') url += '&vote_count.gte=100';
+      url = `${window.API_CONFIG.API_BASE}/anime?filter=${filter}&page=${page}&genre=${encodeURIComponent(genre)}&type=${type === 'anime' ? '' : type}`;
     }
 
     try {
-      const resp = await fetch(url.trim(), { method: 'GET', mode: 'cors' });
-      if (!resp.ok) throw new Error(`Status ${resp.status}`);
-      const data = await resp.json();
+      const resp = await fetch(url);
+      let data = await resp.json();
 
-      if (isAnime) {
-        data.results = data.results.filter(m => m.genre_ids && m.genre_ids.includes(16));
+      if (query) {
+        // Search results are returned as direct list; format as { results: [...] }
+        data = { results: Array.isArray(data) ? data : [] };
+      } else {
+        // Only cache non-search browse results
+        this.cacheData(cacheKey, data);
       }
-
-      this.cacheData(cacheKey, data);
-
-      // Manual Merge Logic
-      try {
-        const manual = JSON.parse(localStorage.getItem('moviebox_admin') || '{}');
-        const items = Object.values(manual).filter(i => {
-          if (i.type !== (isAnime ? 'anime' : type)) return false;
-          if (query && !(i.title || i.name || '').toLowerCase().includes(query.toLowerCase())) return false;
-          return true;
-        });
-        if (items.length > 0 && page === 1) {
-          items.forEach(item => {
-            const f = { ...item, manual: true };
-            const idx = data.results.findIndex(r => r.id == f.id);
-            if (idx !== -1) data.results[idx] = f;
-            else data.results.unshift(f);
-          });
-        }
-      } catch (e) { }
 
       return data;
     } catch (err) {
-      return { _error: `${err.message} | URL: ${url}` };
+      return { _error: err.message, results: [] };
     }
   },
 
   async getTrailer(id, type = 'movie') {
-    const { BASE_URL, KEY } = window.API_CONFIG;
-    const url = `${BASE_URL}/${type}/${id}/videos?api_key=${KEY}`;
     try {
-      const resp = await fetch(url);
+      const resp = await fetch(`${window.API_CONFIG.API_BASE}/anime/details?id=${id}`);
       const data = await resp.json();
-      const t = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') || data.results[0];
-      return t ? `https://www.youtube.com/embed/${t.key}?autoplay=1&mute=1&loop=1&playlist=${t.key}&controls=0&showinfo=0&rel=0&enablejsapi=1` : null;
-    } catch (e) { return null; }
+      // If the crawler extracted a trailer iframe source from ToonStream details page
+      if (data && data.trailer) {
+        return data.trailer;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   },
 
   async getGenres(type = 'movie') {
-    const { BASE_URL, KEY } = window.API_CONFIG;
-    const url = `${BASE_URL}/genre/${type}/list?api_key=${KEY}`;
     try {
-      const resp = await fetch(url);
+      const resp = await fetch(`${window.API_CONFIG.API_BASE}/genres`);
       const data = await resp.json();
-      return data.genres || [];
-    } catch (e) { return []; }
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async getExternalIds(id, type = 'tv') {
+    return null;
   },
 
   cacheData(key, data) {
@@ -119,7 +83,15 @@ const API = {
       if ((Date.now() - o.ts) < window.API_CONFIG.CACHE_TIME) return o.data;
     } catch (e) { }
     return null;
-  }
+  },
+
+  async checkCatalog(title, id) {
+    return { inCatalog: true };
+  },
+
+  async initCatalog() {
+    return true;
+  },
 };
 
 window.API = API;

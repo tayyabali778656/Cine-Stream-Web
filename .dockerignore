@@ -1,0 +1,13 @@
+node_modules/
+.env
+env.js
+.DS_Store
+*.log
+.git/
+.gitignore
+tests/
+*.md
+.eslintrc.json
+Dockerfile
+.dockerignore
+tayyab/admin/dashboard.html

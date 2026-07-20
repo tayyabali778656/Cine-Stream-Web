@@ -1,0 +1,114 @@
+name: 📦 Auto-Update Catalogs
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Runs daily at 3:00 AM UTC (automatically)
+#  Can also be triggered manually from the GitHub Actions tab
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    - cron: '0 3 * * *'   # Every day at 03:00 UTC
+
+  workflow_dispatch:        # Manual trigger from GitHub Actions tab
+    inputs:
+      force_full_scrape:
+        description: 'Force full re-scrape (ignore early-stop)?'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions:
+  contents: write   # needed to commit catalog files back to repo
+
+jobs:
+  update-catalogs:
+    name: Scrape & Update Catalogs
+    runs-on: ubuntu-latest
+    timeout-minutes: 360   # 6 hour max (full site scrape can take ~1-2 hrs)
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: ⬇ Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      # ── 2. Node.js setup ─────────────────────────────────────────────────────
+      - name: ⚙ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── 3. Run the scraper ───────────────────────────────────────────────────
+      - name: 🕷 Run catalog scraper
+        id: scrape
+        run: node scripts/updateCatalogs.js
+        env:
+          NODE_ENV: production
+          # Increase memory limit for large JSON processing
+          NODE_OPTIONS: '--max-old-space-size=512'
+
+      # ── 4. Check for actual changes ──────────────────────────────────────────
+      - name: 🔍 Check for catalog changes
+        id: changes
+        run: |
+          if git diff --quiet 9xmovies_catalog.json allmovieland_catalog.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "📭 No catalog changes detected — skipping commit."
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            DIFF_9X=$(git diff --stat 9xmovies_catalog.json | tail -1 || echo "unchanged")
+            DIFF_ALL=$(git diff --stat allmovieland_catalog.json | tail -1 || echo "unchanged")
+            echo "📬 Changes found:"
+            echo "   9xmovies:     $DIFF_9X"
+            echo "   allmovieland: $DIFF_ALL"
+          fi
+
+      # ── 5. Commit and push ONLY the catalog JSON files ───────────────────────
+      #       (NOT any code files — only data files are committed automatically)
+      - name: 📤 Commit updated catalogs
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage ONLY the catalog JSON data files
+          git add 9xmovies_catalog.json allmovieland_catalog.json
+
+          # Count new entries for commit message
+          COUNT_9X=$(node -e "
+            const d = require('./9xmovies_catalog.json');
+            console.log(d.length);
+          " 2>/dev/null || echo '?')
+          COUNT_ALL=$(node -e "
+            const d = require('./allmovieland_catalog.json');
+            console.log(d.length);
+          " 2>/dev/null || echo '?')
+          DATE=$(date -u +'%Y-%m-%d %H:%M UTC')
+
+          git commit -m "🤖 catalog auto-update [${DATE}] — 9x:${COUNT_9X} all:${COUNT_ALL}"
+          git push
+
+      # ── 6. Summary ───────────────────────────────────────────────────────────
+      - name: 📊 Print run summary
+        if: always()
+        run: |
+          echo "========================================"
+          echo "  Catalog Update Run Summary"
+          echo "========================================"
+          echo "  Date/Time : $(date -u)"
+          echo "  Changed   : ${{ steps.changes.outputs.changed }}"
+          if [ -f 9xmovies_catalog.json ]; then
+            COUNT=$(node -e "console.log(require('./9xmovies_catalog.json').length)" 2>/dev/null || echo '?')
+            SIZE=$(du -sh 9xmovies_catalog.json | cut -f1)
+            echo "  9xmovies  : ${COUNT} entries (${SIZE})"
+          fi
+          if [ -f allmovieland_catalog.json ]; then
+            COUNT=$(node -e "console.log(require('./allmovieland_catalog.json').length)" 2>/dev/null || echo '?')
+            SIZE=$(du -sh allmovieland_catalog.json | cut -f1)
+            echo "  allmovieland: ${COUNT} entries (${SIZE})"
+          fi
+          echo "========================================"
