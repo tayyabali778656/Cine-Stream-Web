@@ -882,14 +882,32 @@
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify(item)
-        }).then(r => r.json());
+        }).then(r => {
+          if (!r.ok) {
+            return r.json().then(err => {
+              throw new Error(err.error || `HTTP ${r.status}`);
+            }).catch(e => {
+              throw new Error(e.message || `HTTP ${r.status}`);
+            });
+          }
+          return r.json();
+        });
       },
 
       async deleteItem(collection, id) {
         return fetch(`/api/v1/${collection}?id=${id}`, {
           method: 'DELETE',
           credentials: 'include'
-        }).then(r => r.json());
+        }).then(r => {
+          if (!r.ok) {
+            return r.json().then(err => {
+              throw new Error(err.error || `HTTP ${r.status}`);
+            }).catch(e => {
+              throw new Error(e.message || `HTTP ${r.status}`);
+            });
+          }
+          return r.json();
+        });
       }
     };
 
