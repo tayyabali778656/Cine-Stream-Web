@@ -659,7 +659,9 @@ async function handleApiV1(req, res, pathname) {
 
   if (req.method === 'GET') {
     const url = new URL(req.url, `http://localhost:${PORT}`);
-    const forceFresh = url.searchParams.has('_'); // client sent ?_=timestamp to bypass cache
+    // Only bypass server-side DB cache if explicitly requested via admin action,
+    // not by automatic timestamp cache-busters (?_=123) sent by browsers/fetch clients.
+    const forceFresh = url.searchParams.get('forceFresh') === 'true';
     const cacheKey = `db_${collectionName}`;
     if (!forceFresh) {
       const cached = cache.get(cacheKey);
@@ -804,11 +806,20 @@ function handleStatic(req, res, filePath, ext) {
 // Extracted to a named function so Vercel's @vercel/node can import it as a
 // serverless handler. Local dev still uses http.createServer + .listen().
 const requestHandler = async (req, res) => {
-  // Wait for DB + catalogs to be ready before processing any request.
-  // This is a no-op after the first request (promise is already resolved).
-  await ensureInit();
-
   const startMs = Date.now();
+  const pathname = (req.url || '').split('?')[0];
+
+  // Only await database initialization for routes that require the database/catalog
+  const needsDb = pathname.startsWith('/api/') ||
+                  pathname.startsWith('/proxy') ||
+                  pathname.startsWith('/iframe-proxy') ||
+                  pathname === '/health' ||
+                  pathname.endsWith('.xml') ||
+                  pathname.match(/^\/watch\/tv\/(toon_[^/?]+)/);
+
+  if (needsDb) {
+    await ensureInit();
+  }
 
   // Apply security headers to every response
   applySecurityHeaders(res);
@@ -822,8 +833,7 @@ const requestHandler = async (req, res) => {
     return;
   }
 
-  // Extract pathname early so we can use it in CORS logic
-  const pathname = (req.url || '').split('?')[0];
+  // (pathname is already extracted at the start of the requestHandler)
 
   // Apply CORS — only BLOCK for API/proxy routes (origin enforcement).
   // Static files (HTML, CSS, JS, manifest.json, images…) are public assets;

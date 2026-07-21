@@ -99,7 +99,11 @@ const mockDb = {
 
 function getCollection(name) {
   if (!db) {
-    logger.warn(`db_not_initialized_using_mock`, { collection: name });
+    logger.warn(`db_not_initialized_using_mock_database`, {
+      collection: name,
+      error: 'MongoDB is not connected. All database reads/writes will revert on page reload.',
+      tip: 'Please ensure that the MONGODB_URI environment variable is correctly set in your Vercel project settings.'
+    });
     return mockDb.collection(name);
   }
   return db.collection(name);

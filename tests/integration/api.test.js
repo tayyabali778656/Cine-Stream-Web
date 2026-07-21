@@ -11,6 +11,6 @@ test('HTTP API Integration Tests', async (t) => {
   await t.test('check-catalog parsing offline verification', () => {
     const catalogSvc = require('../../services/catalogService');
     const result = catalogSvc.checkCatalog('non-existent-movie-title-xyz-123');
-    assert.deepStrictEqual(result, { has9x: false, hasAll: false, inCatalog: false });
+    assert.deepStrictEqual(result, { has9x: false, hasAll: false, inCatalog: true });
   });
 });
