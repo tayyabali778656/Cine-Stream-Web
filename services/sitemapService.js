@@ -36,6 +36,10 @@ let _pendingAfter    = false;  // if a trigger came in while running, queue anot
 // ─── Core: Run the generator script ──────────────────────────────────────────
 
 function runGenerator(reason) {
+  if (process.env.VERCEL) {
+    logger.info('sitemap_regen_skipped', { reason: 'running_on_vercel', trigger: reason });
+    return Promise.resolve(false);
+  }
   return new Promise((resolve) => {
     if (_isRunning) {
       logger.info('sitemap_regen_skipped', { reason: 'already_running', trigger: reason });
@@ -87,6 +91,7 @@ function runGenerator(reason) {
  *   sitemapSvc.triggerRegen('new_movie_added');
  */
 function triggerRegen(reason = 'manual') {
+  if (process.env.VERCEL) return;
   if (_debounceTimer) clearTimeout(_debounceTimer);
   logger.info('sitemap_regen_queued', { trigger: reason, debounce_ms: DEBOUNCE_MS });
   _debounceTimer = setTimeout(() => {
@@ -103,6 +108,10 @@ function triggerRegen(reason = 'manual') {
  *  - Schedule periodic rebuild every 24h
  */
 function scheduleAutoRegen() {
+  if (process.env.VERCEL) {
+    logger.info('sitemap_scheduler_skipped', { reason: 'running_on_vercel' });
+    return;
+  }
   let needsImmediateRun = false;
 
   if (!fs.existsSync(SITEMAP_PATH)) {

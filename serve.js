@@ -105,7 +105,6 @@ function ensureInit() {
     } catch (err) {
       logger.warn('server_starting_without_db', { message: err.message });
       _initPromise = null; // Reset so next request retries connecting to the database
-      throw err;
     }
     sitemapSvc.scheduleAutoRegen();
   })();
@@ -676,18 +675,8 @@ async function handleApiV1(req, res, pathname) {
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
   if (req.method === 'GET') {
-    const url = new URL(req.url, `http://localhost:${PORT}`);
-    // Only bypass server-side DB cache if explicitly requested via admin action,
-    // not by automatic timestamp cache-busters (?_=123) sent by browsers/fetch clients.
-    const forceFresh = url.searchParams.get('forceFresh') === 'true';
-    const cacheKey = `db_${collectionName}`;
-    if (!forceFresh) {
-      const cached = cache.get(cacheKey);
-      if (cached) { sendJson(res, 200, cached); return; }
-    }
     try {
       const data = await collection.find({}).toArray();
-      cache.set(cacheKey, data, 5 * 60 * 1000); // 5-min DB cache
       logger.db('find', collectionName, Date.now() - dbStart);
       sendJson(res, 200, data);
     } catch (err) {
