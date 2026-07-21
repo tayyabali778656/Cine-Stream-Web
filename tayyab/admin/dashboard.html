@@ -847,7 +847,12 @@
 
       async init() {
         try {
-          const fetchJson = (url) => fetch(url, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []);
+          const fetchJson = (url) => {
+            const sep = url.includes('?') ? '&' : '?';
+            return fetch(`${url}${sep}_=${Date.now()}`, { credentials: 'include' })
+              .then(r => r.ok ? r.json() : [])
+              .catch(() => []);
+          };
           const [admin, broken, hindi, missing, hidden] = await Promise.all([
             fetchJson('/api/v1/admin-store'),
             fetchJson('/api/v1/broken-videos'),

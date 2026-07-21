@@ -135,7 +135,12 @@ function readBody(req) {
 // ── Helper: send JSON response ────────────────────────────────────────────────
 function sendJson(res, status, data) {
   const body = JSON.stringify(data);
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
   res.end(body);
 }
 
