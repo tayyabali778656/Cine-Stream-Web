@@ -86,6 +86,16 @@ function applyCors(req, res) {
     return true;
   }
 
+  // Always allow CORS for GET requests to public API endpoints
+  if (req.method === 'GET' && req.url.startsWith('/api/v1/')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+    return true;
+  }
+
   // Cross-origin: check against whitelist
   if (!isOriginAllowed(origin)) {
     logger.warn('cors_blocked', { origin, path: req.url });
