@@ -1426,69 +1426,43 @@ nav.scrolled {
 }
 
 /* APK Download Button styling */
+.logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-direction: row; /* Desktop/Tablet: button on left, logo on right */
+}
+
 .apk-download-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
   color: white;
-  border-radius: 50%;
   text-decoration: none;
-  transition: background-color var(--transition-smooth), border-color var(--transition-smooth), transform var(--transition-smooth), box-shadow var(--transition-smooth);
+  transition: color var(--transition-smooth), transform var(--transition-smooth);
   cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
+  padding: 4px;
 }
 
 .apk-download-btn:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-  transform: scale(1.08);
-  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+  color: var(--primary);
+  transform: scale(1.1);
 }
 
 .apk-download-btn i.fa-mobile-alt {
-  font-size: 1.25rem;
+  font-size: 1.4rem;
 }
 
 .apk-download-btn i.fa-arrow-down {
-  font-size: 0.6rem;
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  background: var(--primary);
-  color: white;
-  border-radius: 50%;
-  width: 14px;
-  height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #111;
+  font-size: 0.75rem;
+  margin-left: 3px;
+  color: var(--primary);
 }
 
 @media (max-width: 768px) {
-  .nav-content {
-    position: relative;
-  }
-  .apk-download-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 36px;
-    height: 36px;
-  }
-  .apk-download-btn i.fa-mobile-alt {
-    font-size: 1.1rem;
-  }
-  .apk-download-btn i.fa-arrow-down {
-    font-size: 0.55rem;
-    width: 12px;
-    height: 12px;
-    bottom: 4px;
-    right: 4px;
+  .logo-wrapper {
+    flex-direction: row-reverse; /* Mobile: logo on left, button on right */
+    justify-content: space-between;
+    width: 100%;
   }
 }
