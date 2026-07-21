@@ -158,6 +158,7 @@ const App = {
 
     this.setupEventListeners();
     this.setupRouting();
+    this.setupPwaInstall();
     if (window.API && typeof window.API.initCatalog === 'function') {
       await window.API.initCatalog();
     }
@@ -2193,6 +2194,33 @@ const App = {
     window.addEventListener('scroll', () => {
       window.scrollY > 50 ? nav.classList.add('scrolled') : nav.classList.remove('scrolled');
     }, { passive: true });
+  },
+
+  deferredPrompt: null,
+  setupPwaInstall() {
+    const installBtn = document.getElementById('pwa-install-btn');
+    if (!installBtn) return;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredPrompt = e;
+      installBtn.style.display = 'inline-flex';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!this.deferredPrompt) return;
+      this.deferredPrompt.prompt();
+      const { outcome } = await this.deferredPrompt.userChoice;
+      console.log(`User choice: ${outcome}`);
+      this.deferredPrompt = null;
+      installBtn.style.display = 'none';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      this.deferredPrompt = null;
+      installBtn.style.display = 'none';
+      console.log('App installed successfully');
+    });
   }
 };
 

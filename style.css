@@ -1424,3 +1424,30 @@ nav.scrolled {
     transform: rotate(360deg);
   }
 }
+
+/* PWA Install Button styling */
+.pwa-install-btn {
+  background: rgba(229, 9, 20, 0.15);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 5px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-smooth), color var(--transition-smooth), border-color var(--transition-smooth), transform var(--transition-smooth);
+  margin-left: 2px;
+}
+
+.pwa-install-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+.pwa-install-btn i {
+  font-size: 0.85rem;
+}
