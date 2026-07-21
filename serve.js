@@ -89,6 +89,29 @@ const ALLOWED_COLLECTIONS = config.allowedCollections;
 // Map hyphenated route names to underscore DB collection names
 const routeToCollection = (name) => name.replace(/-/g, '_');
 
+// ── Vercel-safe initialization ─────────────────────────────────────────────────
+// On Vercel, the module is loaded and requestHandler is called immediately,
+// possibly before the async startup IIFE finishes (connectDB race condition).
+// This cached promise ensures every request waits for DB + catalog to be ready
+// without re-running the init on each request after the first.
+let _initPromise = null;
+function ensureInit() {
+  if (_initPromise) return _initPromise;
+  _initPromise = (async () => {
+    await catalogSvc.loadCatalogs();
+    try {
+      await connectDB();
+      queue.injectDb({ getCollection });
+    } catch (err) {
+      logger.warn('server_starting_without_db', { message: err.message });
+    }
+    sitemapSvc.scheduleAutoRegen();
+  })();
+  return _initPromise;
+}
+// Kick off init immediately on module load (warm-start benefit)
+ensureInit();
+
 // ── Helper: read request body as string ──────────────────────────────────────
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -781,6 +804,10 @@ function handleStatic(req, res, filePath, ext) {
 // Extracted to a named function so Vercel's @vercel/node can import it as a
 // serverless handler. Local dev still uses http.createServer + .listen().
 const requestHandler = async (req, res) => {
+  // Wait for DB + catalogs to be ready before processing any request.
+  // This is a no-op after the first request (promise is already resolved).
+  await ensureInit();
+
   const startMs = Date.now();
 
   // Apply security headers to every response
@@ -1628,22 +1655,11 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('uncaughtException', (err) => logger.error('uncaught_exception', err));
 process.on('unhandledRejection', (reason) => logger.error('unhandled_rejection', { reason: String(reason) }));
 
-// ── Startup ───────────────────────────────────────────────────────────────────
-(async () => {
-  // Load catalogs into server memory (eliminates 3.7MB client downloads)
-  await catalogSvc.loadCatalogs();
-
-  // Connect to MongoDB (server starts even if DB is unavailable)
-  try {
-    await connectDB();
-    queue.injectDb({ getCollection });
-  } catch (err) {
-    logger.warn('server_starting_without_db', { message: err.message });
-  }
-
-  // Auto-generate sitemap on startup if missing/stale, then every 24 hours
-  sitemapSvc.scheduleAutoRegen();
-
+// ── Startup (local dev) ───────────────────────────────────────────────────────
+// On Vercel, ensureInit() is called at module load above and awaited inside
+// requestHandler, so there is no race condition. For local dev, we also start
+// the HTTP server listening on PORT.
+ensureInit().then(() => {
   server.listen(PORT, () => {
     logger.info('server_started', {
       port: PORT,
@@ -1651,7 +1667,10 @@ process.on('unhandledRejection', (reason) => logger.error('unhandled_rejection',
       db: isConnected() ? 'connected' : 'unavailable',
     });
   });
-})();
+}).catch((err) => {
+  logger.error('startup_failed', err);
+  process.exit(1);
+});
 
 // Export the handler function (not the server) for Vercel's @vercel/node runtime
 module.exports = requestHandler;
