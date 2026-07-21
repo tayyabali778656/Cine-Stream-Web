@@ -69,8 +69,8 @@ const COMPRESSIBLE = new Set([
 // Cache-Control values per file type
 const CACHE_CONTROL = {
   '.html': 'no-store, no-cache, must-revalidate, max-age=0',
-  '.css': 'no-store, no-cache, must-revalidate, max-age=0',
-  '.js': 'no-store, no-cache, must-revalidate, max-age=0',
+  '.css': 'public, max-age=31536000, immutable',
+  '.js': 'public, max-age=31536000, immutable',
   '.json': 'no-store', // catalog JSONs should NOT be cached by browser
   '.png': 'public, max-age=604800',
   '.jpg': 'public, max-age=604800',
