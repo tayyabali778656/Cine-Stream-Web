@@ -24,7 +24,7 @@ const CSP = [
   `font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:`,
   `img-src 'self' https: http: data: blob:`,
   `frame-src 'self' https: http:`,
-  `connect-src 'self' https: http:`,
+  `connect-src 'self' https: http: https://vitals.vercel-insights.com`,
   `media-src 'self' blob: https: http:`,
   "object-src 'none'",
   "base-uri 'self'",

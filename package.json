@@ -11,6 +11,8 @@
     "generate-sitemap": "node scripts/generateSitemap.js"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^2.4.3",
     "mongodb": "^7.4.0"
   }
