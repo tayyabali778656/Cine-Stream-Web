@@ -15,6 +15,7 @@ const App = {
     try { return JSON.parse(localStorage.getItem('recently_viewed')) || []; }
     catch (e) { return []; }
   })(),
+  renderedIds: new Set(),
 
   moviePool: [],
   tvPool: [],
@@ -197,6 +198,7 @@ const App = {
         this.animePage = 1;
         this.renderedCount = 0;
         this.grid.innerHTML = '';
+        this.renderedIds.clear();
         this.showSkeletons();
         this.fetchAndRenderBatch();
       });
@@ -227,6 +229,7 @@ const App = {
             this.animePage = 1;
           }
           this.grid.innerHTML = '';
+          this.renderedIds.clear();
           this.showSkeletons();
           this.fetchAndRenderBatch();
         } else {
@@ -285,6 +288,7 @@ const App = {
         this.animePool = [];
         this.animePage = 1;
         this.grid.innerHTML = '';
+        this.renderedIds.clear();
         this.showSkeletons();
         this.fetchAndRenderBatch();
 
@@ -373,6 +377,7 @@ const App = {
     this.animePool = [];
     this.renderedCount = 0;
     this.grid.innerHTML = '';
+    this.renderedIds.clear();
     this.showSkeletons();
 
     // Hide back to feed button & heading
@@ -416,6 +421,7 @@ const App = {
     this.tvPage = 1;
     this.animePage = 1;
     this.grid.innerHTML = '';
+    this.renderedIds.clear();
     this.showSkeletons();
 
     // Scroll to the start of the movie-container grid (with offset for fixed header)
@@ -490,11 +496,7 @@ const App = {
           if (data && data.results && data.results.length > 0) {
             let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
             const existingIds = new Set(pool.map(pItem => String(pItem.id)));
-            this.grid.querySelectorAll('.movie-card').forEach(el => {
-              const onclickAttr = el.getAttribute('onclick') || '';
-              const match = onclickAttr.match(/'([^']+)'/);
-              if (match) existingIds.add(match[1]);
-            });
+            this.renderedIds.forEach(id => existingIds.add(id));
             results = results.filter(item => {
               const idStr = String(item.id);
               if (existingIds.has(idStr)) return false;
@@ -546,6 +548,7 @@ const App = {
         }
 
         const cardsHtml = itemsToRender.map(m => {
+          this.renderedIds.add(String(m.id));
           // Support both ToonStream DB fields and legacy TMDB-shaped admin entries
           const title = m.title || m.name || 'Unknown';
           const safeTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -722,6 +725,7 @@ const App = {
         }
 
         const cardsHtml = items.map(m => {
+          this.renderedIds.add(String(m.id));
           const title = m.title || m.name || 'Unknown';
           const safeTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
           const year = (m.release_date || m.first_air_date || '????').split('-')[0];
@@ -772,6 +776,7 @@ const App = {
       };
 
       this.grid.innerHTML = '';
+      this.renderedIds.clear();
 
       const batchContainer = document.createElement('div');
       batchContainer.style.display = 'contents';
@@ -2113,7 +2118,7 @@ const App = {
     if (!nav) return;
     window.addEventListener('scroll', () => {
       window.scrollY > 50 ? nav.classList.add('scrolled') : nav.classList.remove('scrolled');
-    });
+    }, { passive: true });
   }
 };
 
