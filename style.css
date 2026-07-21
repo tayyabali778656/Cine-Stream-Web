@@ -1425,29 +1425,70 @@ nav.scrolled {
   }
 }
 
-/* PWA Install Button styling */
-.pwa-install-btn {
-  background: rgba(229, 9, 20, 0.15);
-  border: 1px solid rgba(229, 9, 20, 0.3);
-  color: var(--primary);
-  cursor: pointer;
-  font-size: 0.9rem;
-  padding: 5px 10px;
-  border-radius: 20px;
+/* APK Download Button styling */
+.apk-download-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color var(--transition-smooth), color var(--transition-smooth), border-color var(--transition-smooth), transform var(--transition-smooth);
-  margin-left: 2px;
+  width: 40px;
+  height: 40px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: white;
+  border-radius: 50%;
+  text-decoration: none;
+  transition: background-color var(--transition-smooth), border-color var(--transition-smooth), transform var(--transition-smooth), box-shadow var(--transition-smooth);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
 }
 
-.pwa-install-btn:hover {
+.apk-download-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: scale(1.08);
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+}
+
+.apk-download-btn i.fa-mobile-alt {
+  font-size: 1.25rem;
+}
+
+.apk-download-btn i.fa-arrow-down {
+  font-size: 0.6rem;
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
   background: var(--primary);
   color: white;
-  border-color: var(--primary);
-  transform: scale(1.05);
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #111;
 }
 
-.pwa-install-btn i {
-  font-size: 0.85rem;
+@media (max-width: 768px) {
+  .nav-content {
+    position: relative;
+  }
+  .apk-download-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 36px;
+    height: 36px;
+  }
+  .apk-download-btn i.fa-mobile-alt {
+    font-size: 1.1rem;
+  }
+  .apk-download-btn i.fa-arrow-down {
+    font-size: 0.55rem;
+    width: 12px;
+    height: 12px;
+    bottom: 4px;
+    right: 4px;
+  }
 }

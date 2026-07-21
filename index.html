@@ -378,12 +378,7 @@
   <!-- Navigation -->
   <nav id="navbar" role="navigation" aria-label="Main navigation">
     <div class="container nav-content">
-      <div class="logo-wrapper" style="display: flex; align-items: center; gap: 8px;">
-        <a href="/" class="logo" aria-label="CineStream — Home">Cine<span>Stream</span></a>
-        <button id="pwa-install-btn" class="pwa-install-btn" style="display: none;" aria-label="Install App">
-          <i class="fas fa-download"></i>
-        </button>
-      </div>
+      <a href="/" class="logo" aria-label="CineStream — Home">Cine<span>Stream</span></a>
 
       <form class="search-container" role="search" aria-label="Search anime" onsubmit="return false;">
         <label for="movie-search" class="sr-only">Search anime</label>
@@ -391,6 +386,11 @@
         <input type="search" id="movie-search" name="q" placeholder="Search anime..." autocomplete="off"
           aria-label="Search anime">
       </form>
+
+      <a href="/public/CineStream.apk" download class="apk-download-btn" aria-label="Download Android App">
+        <i class="fas fa-mobile-alt"></i>
+        <i class="fas fa-arrow-down"></i>
+      </a>
     </div>
   </nav>
 
