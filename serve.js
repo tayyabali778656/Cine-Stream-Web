@@ -104,6 +104,8 @@ function ensureInit() {
       queue.injectDb({ getCollection });
     } catch (err) {
       logger.warn('server_starting_without_db', { message: err.message });
+      _initPromise = null; // Reset so next request retries connecting to the database
+      throw err;
     }
     sitemapSvc.scheduleAutoRegen();
   })();
