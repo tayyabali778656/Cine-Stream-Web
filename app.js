@@ -17,6 +17,7 @@ const App = {
   })(),
   renderedIds: new Set(),
   episodeSourcesCache: {},
+  animeDetailsCache: {},
 
   moviePool: [],
   tvPool: [],
@@ -1070,6 +1071,8 @@ const App = {
       const adminStore = this.adminCache || {};
       if (adminStore[movieId] || adminStore[String(movieId)]) {
         movie = adminStore[movieId] || adminStore[String(movieId)];
+      } else if (this.animeDetailsCache[movieId]) {
+        movie = this.animeDetailsCache[movieId];
       } else {
         // ── Fetch anime details from database ────────────────────────────────
         const detailsRes = await fetch(`/api/v1/anime/details?id=${encodeURIComponent(movieId)}`).then(r => r.json());
@@ -1098,6 +1101,7 @@ const App = {
             recommendations: detailsRes.recommendations || [],
             _isToonStream: true
           };
+          this.animeDetailsCache[movieId] = movie;
         } else {
           throw new Error('Anime not found in database. Please run the crawler first.');
         }
@@ -1321,6 +1325,10 @@ const App = {
               url.searchParams.set('s', s);
               url.searchParams.set('e', e);
               window.history.replaceState(window.history.state, '', url.pathname + url.search);
+            }
+
+            if (this.activePlayer) {
+              this.activePlayer._showLoading(`Season ${s} Episode ${e}`);
             }
 
             const cacheKey = `${movieId}_${s}_${e}`;

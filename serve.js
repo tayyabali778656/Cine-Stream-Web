@@ -349,13 +349,24 @@ async function handleApiV1(req, res, pathname) {
     const url = new URL(req.url, `http://localhost:${PORT}`);
     const id = url.searchParams.get('id') || '';
     const slug = url.searchParams.get('slug') || '';
+    const cleanSlug = slug || (id ? id.replace('toon_', '') : '');
+    const cacheKey = `details_${id}_${cleanSlug}`;
+
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      sendJson(res, 200, cachedData);
+      return;
+    }
+
     try {
-      const anime = await liveSvc.getLiveAnimeDetails(id, slug);
+      const anime = await liveSvc.getLiveAnimeDetails(id, cleanSlug);
       if (!anime) {
         sendJson(res, 404, { error: 'Anime not found' });
         return;
       }
-      sendJson(res, 200, { ...anime, related: [], recommendations: [] });
+      const responseData = { ...anime, related: [], recommendations: [] };
+      cache.set(cacheKey, responseData, 12 * 60 * 60 * 1000);
+      sendJson(res, 200, responseData);
     } catch (err) {
       sendJson(res, 500, { error: err.message });
     }
