@@ -106,7 +106,14 @@ const App = {
    * Initialize the application
    */
   async init() {
-    await this.syncDatabaseCache();
+    // Show skeletons instantly so the user sees a loading state immediately
+    if (this.grid) {
+      this.grid.innerHTML = '';
+      this.showSkeletons();
+    }
+
+    const cachePromise = this.syncDatabaseCache();
+
     // Clear stale single-episode anime selector caches so they get rebuilt properly
     try {
       const staleSelectorKeys = [];
@@ -152,6 +159,8 @@ const App = {
     if (window.API && typeof window.API.initCatalog === 'function') {
       await window.API.initCatalog();
     }
+    
+    await cachePromise;
     await this.resetAndFetch();
     this.renderRecentlyViewed();
     this.setupNavScroll();
@@ -1306,6 +1315,12 @@ const App = {
 
 
           const playWithFailover = async (s = 1, e = 1) => {
+            if (isWatching) {
+              const url = new URL(window.location.href);
+              url.searchParams.set('s', s);
+              url.searchParams.set('e', e);
+              window.history.replaceState(window.history.state, '', url.pathname + url.search);
+            }
             const sources = [];
 
             // 1. Primary Source: Custom link from admin panel (trusted — skip health check & timeout)
@@ -1519,7 +1534,19 @@ const App = {
                     await playWithFailover(parseInt(seasonSelect.value, 10), parseInt(episodeSelect.value, 10));
                   };
 
-                  const defaultSeason = availableSeasons[0] || 1;
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const paramS = parseInt(urlParams.get('s'), 10);
+                  const paramE = parseInt(urlParams.get('e'), 10);
+
+                  let defaultSeason = availableSeasons[0] || 1;
+                  if (!isNaN(paramS) && availableSeasons.includes(paramS)) {
+                    defaultSeason = paramS;
+                  }
+                  
+                  if (seasonSelect) {
+                    seasonSelect.value = defaultSeason;
+                  }
+
                   await updateEpisodesList(defaultSeason);
 
                   // Restore watch button
@@ -1531,7 +1558,18 @@ const App = {
                   if (wb) { wb.disabled = false; wb.innerHTML = '<i class="fas fa-play"></i> Watch Now'; }
 
                   // Default episode option check
-                  const defaultEpisodeVal = episodeSelect.value ? parseInt(episodeSelect.value, 10) : 1;
+                  let defaultEpisodeVal = episodeSelect && episodeSelect.value ? parseInt(episodeSelect.value, 10) : 1;
+                  if (!isNaN(paramE)) {
+                    const eps = seasonMap[defaultSeason] || [];
+                    if (eps.some(ep => ep.episode === paramE)) {
+                      defaultEpisodeVal = paramE;
+                    }
+                  }
+
+                  if (episodeSelect) {
+                    episodeSelect.value = defaultEpisodeVal;
+                  }
+
                   await playWithFailover(defaultSeason, defaultEpisodeVal);
                 } catch (err) {
                   console.error('Failed to load episode list:', err);

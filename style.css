@@ -1094,37 +1094,9 @@ nav.scrolled {
     margin-top: 0 !important;
   }
 
-  /* Wishlist icon-only on mobile */
+  /* Hide wishlist button on mobile */
   #modal-wishlist-btn {
-    padding: 12px;
-    min-width: auto;
-  }
-
-  #modal-wishlist-btn .fa-heart {
-    margin: 0;
-  }
-
-  #modal-wishlist-btn:not(.added) {
-    font-size: 0;
-  }
-
-  #modal-wishlist-btn:not(.added)::before {
-    content: "\f004";
-    font-family: "Font Awesome 6 Free";
-    font-weight: 400;
-    font-size: 1rem;
-  }
-
-  #modal-wishlist-btn.added {
-    font-size: 0;
-  }
-
-  #modal-wishlist-btn.added::before {
-    content: "\f004";
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    font-size: 1rem;
-    color: var(--primary);
+    display: none !important;
   }
 
   /* Close button position */
