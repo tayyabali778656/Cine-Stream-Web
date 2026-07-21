@@ -849,11 +849,11 @@
         try {
           const fetchJson = (url) => fetch(url, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []);
           const [admin, broken, hindi, missing, hidden] = await Promise.all([
-            fetchJson('/api/admin-store'),
-            fetchJson('/api/broken-videos'),
-            fetchJson('/api/hindi-dubbed'),
-            fetchJson('/api/missing-catalog'),
-            fetchJson('/api/hidden-items')
+            fetchJson('/api/v1/admin-store'),
+            fetchJson('/api/v1/broken-videos'),
+            fetchJson('/api/v1/hindi-dubbed'),
+            fetchJson('/api/v1/missing-catalog'),
+            fetchJson('/api/v1/hidden-items')
           ]);
 
           this.adminStore = {};
