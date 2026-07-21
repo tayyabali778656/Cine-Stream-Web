@@ -71,8 +71,22 @@ function isOriginAllowed(origin) {
  */
 function applyCors(req, res) {
   const origin = req.headers.origin;
-  if (!origin) return true; // same-origin request
+  if (!origin) return true; // same-origin or server-to-server request
 
+  // Always allow same-origin requests — origin matches the server's own host.
+  // This ensures the admin panel (on the same Vercel domain) can always reach
+  // /api/v1/auth/login regardless of the ALLOWED_ORIGINS env variable.
+  const host = req.headers.host || '';
+  if (origin === `https://${host}` || origin === `http://${host}`) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+    return true;
+  }
+
+  // Cross-origin: check against whitelist
   if (!isOriginAllowed(origin)) {
     logger.warn('cors_blocked', { origin, path: req.url });
     res.writeHead(403, { 'Content-Type': 'application/json' });
