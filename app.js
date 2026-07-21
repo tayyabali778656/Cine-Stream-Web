@@ -1624,9 +1624,9 @@ const App = {
           const dlContainer = document.getElementById('player-download-container');
           if (dlContainer) {
             // PLACEHOLDER: Replace '#' with the path to your app file (e.g. '/app-release.apk' or direct link)
-            const downloadUrl = '#';
+            const downloadUrl = '/public/CineStream.apk';
             dlContainer.innerHTML = `
-              <a href="${downloadUrl}" target="_blank" class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); border: none; cursor: pointer; color: white;">
+              <a href="${downloadUrl}" download class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); border: none; cursor: pointer; color: white;">
                 <i class="fas fa-mobile-alt"></i> Download App
               </a>
               <select id="player-server-select" class="glass" 

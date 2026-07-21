@@ -106,7 +106,9 @@ class StreamPlayer {
         }
         return true;
       } catch (e) {
-        return false;
+        // Network/timeout error (often caused by ad-blockers) - assume healthy and let the iframe try loading.
+        // This prevents false broken video reports.
+        return true;
       }
     }
 
