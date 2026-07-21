@@ -420,7 +420,7 @@ async function handleApiV1(req, res, pathname) {
           title: details.title,
           sources: details.movieSources || []
         }];
-        cache.set(cacheKey, movieEpisodes, 15 * 60 * 1000);
+        cache.set(cacheKey, movieEpisodes, 12 * 60 * 60 * 1000);
         sendJson(res, 200, movieEpisodes);
         return;
       }
@@ -461,7 +461,7 @@ async function handleApiV1(req, res, pathname) {
         episodes.sort((a, b) => a.season !== b.season ? a.season - b.season : a.episode - b.episode);
       }
 
-      cache.set(cacheKey, episodes, 15 * 60 * 1000);
+      cache.set(cacheKey, episodes, 12 * 60 * 60 * 1000);
       sendJson(res, 200, episodes);
     } catch (err) {
       sendJson(res, 500, { error: err.message });

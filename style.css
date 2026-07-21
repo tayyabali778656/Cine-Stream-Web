@@ -1229,6 +1229,19 @@ nav.scrolled {
     margin: 0 auto;
     padding-top: 15px;
   }
+
+  /* Reduce SEO Hero size on mobile */
+  #seo-hero {
+    padding: 0.8rem 0 0.2rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+  #seo-hero h1 {
+    font-size: 1.1rem !important;
+  }
+  #seo-hero p {
+    font-size: 0.76rem !important;
+    line-height: 1.45 !important;
+  }
 }
 
 /* Info Pages Professional Styling */

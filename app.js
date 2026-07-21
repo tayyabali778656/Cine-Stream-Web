@@ -16,6 +16,7 @@ const App = {
     catch (e) { return []; }
   })(),
   renderedIds: new Set(),
+  episodeSourcesCache: {},
 
   moviePool: [],
   tvPool: [],
@@ -1321,6 +1322,29 @@ const App = {
               url.searchParams.set('e', e);
               window.history.replaceState(window.history.state, '', url.pathname + url.search);
             }
+
+            const cacheKey = `${movieId}_${s}_${e}`;
+            if (this.episodeSourcesCache[cacheKey]) {
+              const cachedSources = [...this.episodeSourcesCache[cacheKey]];
+              const defaultPlayServer = localStorage.getItem('moviebox_default_play_server');
+              if (defaultPlayServer) {
+                const defaultIdx = cachedSources.findIndex(src => {
+                  const cleanLabel = src.label.replace(/\s*\(Ads\)/gi, '').replace(/\s*\(No Ads\)/gi, '').trim();
+                  return cleanLabel === defaultPlayServer.trim();
+                });
+                if (defaultIdx > -1) {
+                  const [defaultSrc] = cachedSources.splice(defaultIdx, 1);
+                  cachedSources.unshift(defaultSrc);
+                }
+              }
+
+              if (this.activePlayer) {
+                this.activePlayer.currentSeason = s;
+                this.activePlayer.currentEpisode = e;
+                await this.activePlayer.updateSources(cachedSources);
+              }
+              return;
+            }
             const sources = [];
 
             // 1. Primary Source: Custom link from admin panel (trusted — skip health check & timeout)
@@ -1417,6 +1441,10 @@ const App = {
             // Reconstruct sources in counting order
             sources.length = 0;
             sources.push(...customSources, ...normalSources);
+
+            if (sources.length > 0) {
+              this.episodeSourcesCache[cacheKey] = [...sources];
+            }
 
             // Reorder sources based on user's default server selection
             const defaultPlayServer = localStorage.getItem('moviebox_default_play_server');
