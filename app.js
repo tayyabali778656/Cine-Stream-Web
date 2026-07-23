@@ -558,7 +558,7 @@ const App = {
           return;
         }
 
-        const cardsHtml = itemsToRender.map(m => {
+        const cardsHtml = itemsToRender.map((m, idx) => {
           this.renderedIds.add(String(m.id));
           // Support both ToonStream DB fields and legacy TMDB-shaped admin entries
           const title = m.title || m.name || 'Unknown';
@@ -579,16 +579,22 @@ const App = {
           const typeVal = m.type || (m.title ? 'movie' : 'tv');
           const contentType = this.getContentType(m, typeVal);
 
+          const isAboveFold = idx < (isMobile ? 4 : 8);
+          const imgAttrs = isAboveFold 
+            ? `fetchpriority="high" decoding="async"` 
+            : `loading="lazy" decoding="async"`;
+
           return `
             <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${typeVal}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle} (${year}) - ${contentType}">
               <span class="type-badge" aria-hidden="true">${contentType}</span>
               <img
                 src="${poster}"
                 alt="${safeTitle} poster"
-                loading="lazy"
-                decoding="async"
+                ${imgAttrs}
                 width="500"
                 height="750"
+                onload="this.parentElement.classList.add('loaded')"
+                onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');"
               >
               <div class="movie-card-info">
                 <h4 class="movie-title">${safeTitle}</h4>
@@ -735,7 +741,7 @@ const App = {
           `;
         }
 
-        const cardsHtml = items.map(m => {
+        const cardsHtml = items.map((m, idx) => {
           this.renderedIds.add(String(m.id));
           const title = m.title || m.name || 'Unknown';
           const safeTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -753,6 +759,11 @@ const App = {
 
           const contentType = this.getContentType(m, type);
 
+          const isAboveFold = idx < (isMobile ? 2 : 4);
+          const imgAttrs = isAboveFold 
+            ? `fetchpriority="high" decoding="async"` 
+            : `loading="lazy" decoding="async"`;
+
           return `
             <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${type}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle}">
               <span class="type-badge" aria-hidden="true">${contentType}</span>
@@ -761,10 +772,11 @@ const App = {
                 srcset="${posterSm} 200w, ${posterMd} 342w, ${poster} 500w"
                 sizes="(max-width:480px) 160px, (max-width:768px) 200px, 240px"
                 alt="${safeTitle} poster"
-                loading="lazy"
-                decoding="async"
+                ${imgAttrs}
                 width="500"
                 height="750"
+                onload="this.parentElement.classList.add('loaded')"
+                onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');"
               >
               <div class="movie-card-info">
                 <h4 class="movie-title">${safeTitle}</h4>

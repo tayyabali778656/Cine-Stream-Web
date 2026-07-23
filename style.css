@@ -561,7 +561,18 @@ nav.scrolled {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: var(--transition-smooth);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter var(--transition-smooth);
+  opacity: 0;
+}
+
+.movie-card.loaded img {
+  opacity: 1;
+}
+
+.movie-card:not(.loaded):not(.skeleton) {
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background-size: 936px 100%;
+  animation: shimmer 2s infinite linear;
 }
 
 .movie-card:hover img {
@@ -872,7 +883,7 @@ nav.scrolled {
   padding-top: 0;
 }
 
-.modal-details h1 {
+.modal-details h2 {
   font-size: 3rem;
   margin-bottom: 0.5rem;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
