@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cinestream-v2';
+const CACHE_NAME = 'cinestream-v2.1';
 const ASSETS = [
   '/',
   '/index.html',
@@ -15,7 +15,10 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS);
+      // Use catch to ensure installation succeeds even if one of the assets fails
+      return cache.addAll(ASSETS).catch(err => {
+        console.warn('Pre-caching warning during install:', err);
+      });
     }).then(() => self.skipWaiting())
   );
 });
@@ -39,20 +42,44 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then(response => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
+  const isDocOrStyleOrScript = event.request.mode === 'navigate' || 
+                               event.request.destination === 'style' || 
+                               event.request.destination === 'script';
+
+  if (isDocOrStyleOrScript) {
+    // Network-First strategy to ensure latest styles/code are always served
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    // Cache-First strategy for images, fonts, manifests, and icons
+    event.respondWith(
+      caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
-        return response;
-      });
-    })
-  );
+        return fetch(event.request).then(response => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        });
+      })
+    );
+  }
 });
