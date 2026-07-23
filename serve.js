@@ -993,6 +993,23 @@ const requestHandler = async (req, res) => {
       return;
     }
 
+    // ── sw.js — PWA Service Worker served with no-cache headers ─────────────────
+    if (pathname === '/sw.js' || pathname === '/service-worker.js') {
+      const swPath = path.join(PUBLIC_DIR, 'sw.js');
+      try {
+        const content = fs.readFileSync(swPath, 'utf8');
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        res.writeHead(200);
+        res.end(content);
+      } catch {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('404 Not Found');
+      }
+      logger.request(req, 200, Date.now() - startMs);
+      return;
+    }
+
     // ── Dynamic env.js — serves frontend config from environment variables ───
     // This lets Vercel serve env.js without the file being in git
     if (pathname === '/env.js') {

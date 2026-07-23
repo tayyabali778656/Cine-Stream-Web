@@ -233,6 +233,7 @@
     .hero-content h1 span {
       background: linear-gradient(135deg, #ff4d4d, #e50914);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
@@ -959,11 +960,19 @@
   <!-- Footer -->
   <footer>
     <a href="/" class="footer-logo">
-      <img src="/images/fav-icon.png" alt="CineStream Logo" class="logo-img">
+      <img src="/images/fav-icon.png" alt="CineStream Logo" class="logo-img" width="32" height="32">
       <span class="brand">Cine<span>Stream</span></span>
     </a>
     <p class="footer-copyright">&copy; 2026 CineStream. All rights reserved.</p>
   </footer>
-
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>
