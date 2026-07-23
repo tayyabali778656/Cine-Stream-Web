@@ -835,7 +835,13 @@ const requestHandler = async (req, res) => {
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    if (!applyCors(req, res)) return;
+    if (pathname.startsWith('/api/') || pathname.startsWith('/proxy') || pathname.startsWith('/iframe-proxy')) {
+      if (!applyCors(req, res)) return;
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    }
     res.writeHead(204);
     res.end();
     logger.request(req, 204, Date.now() - startMs);
