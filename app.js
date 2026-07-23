@@ -43,13 +43,32 @@ const App = {
   },
 
   async syncDatabaseCache(force = false) {
-    // Throttle: only re-sync if cache is older than 30 seconds (unless forced)
     const now = Date.now();
     if (!force && this._lastDbSync && (now - this._lastDbSync) < 30_000) return;
     this._lastDbSync = now;
 
     try {
-      const fetchJson = (url) => fetch(`${url}?_=${Date.now()}`, { cache: 'no-store', credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []);
+      const fetchJson = async (url) => {
+        const cacheKey = `db_cache_${url.replace(/\//g, '_')}`;
+        if (!force) {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            try {
+              const { data, timestamp } = JSON.parse(cached);
+              if (now - timestamp < 60_000) { // 1 minute local cache
+                return data;
+              }
+            } catch (e) {}
+          }
+        }
+        const r = await fetch(url, { credentials: 'include' });
+        const data = r.ok ? await r.json() : [];
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: now }));
+        } catch (e) {}
+        return data;
+      };
+
       const [adminData, hiddenData, hindiData] = await Promise.all([
         fetchJson('/api/v1/admin-store'),
         fetchJson('/api/v1/hidden-items'),
