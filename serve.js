@@ -1560,7 +1560,8 @@ const requestHandler = async (req, res) => {
     let filePath = path.join(PUBLIC_DIR, pathname);
 
     // Directory traversal protection
-    if (!filePath.startsWith(PUBLIC_DIR)) {
+    const relative = path.relative(PUBLIC_DIR, filePath);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
       res.writeHead(403, { 'Content-Type': 'text/plain' });
       res.end('403 Forbidden');
       logger.request(req, 403, Date.now() - startMs);
