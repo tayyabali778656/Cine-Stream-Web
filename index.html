@@ -32,10 +32,12 @@
 
   <!-- PWA Tags -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CineStream">
   <meta name="application-name" content="CineStream">
-  <meta name="msapplication-TileColor" content="#ff4757">
+  <meta name="msapplication-config" content="/browserconfig.xml">
+  <meta name="msapplication-TileColor" content="#0a0a0a">
 
   <!-- ═══════════════ SEO — Dynamic (updated by app.js on modal open) ═══════════════ -->
   <title id="seo-title">CineStream — Watch Anime in Hindi Dubbed Free Online</title>
@@ -78,10 +80,11 @@
   <meta name="twitter:creator" content="@CineStream">
 
   <!-- Favicons -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/fav-icon.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/fav-icon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/fav-icon.png">
-  <link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 
   <!-- ══════ Geo / Regional SEO (Optimized for India Market) ══════ -->
   <meta name="geo.region" content="IN">
@@ -169,9 +172,31 @@
     }
   </style>
 
-  <!-- AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2555027481119393"
-    crossorigin="anonymous"></script>
+  <!-- AdSense (Optimized: Lazy loaded on first interaction to prevent render blocking) -->
+  <script>
+    (function() {
+      let adsLoaded = false;
+      function loadAdSense() {
+        if (adsLoaded) return;
+        adsLoaded = true;
+        const sc = document.createElement('script');
+        sc.type = 'text/javascript';
+        sc.async = true;
+        sc.crossOrigin = 'anonymous';
+        sc.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2555027481119393';
+        const s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(sc, s);
+        
+        window.removeEventListener('scroll', loadAdSense);
+        window.removeEventListener('mousemove', loadAdSense);
+        window.removeEventListener('touchstart', loadAdSense);
+      }
+      window.addEventListener('scroll', loadAdSense, { passive: true });
+      window.addEventListener('mousemove', loadAdSense, { passive: true });
+      window.addEventListener('touchstart', loadAdSense, { passive: true });
+    })();
+  </script>
+
 
   <!-- ═══════════════ Structured Data — Base (updated dynamically on modal open) ═══════════════ -->
   <script id="ld-website" type="application/ld+json">
@@ -393,7 +418,7 @@
           aria-label="Search anime">
       </form>
 
-      <a href="/public/CineStream.apk" download class="apk-download-btn" aria-label="Download Android App">
+      <a href="/app" class="apk-download-btn" aria-label="Download Android App">
         <svg class="apk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
           <line x1="5" y1="16" x2="19" y2="16"></line>
@@ -401,7 +426,7 @@
           <line x1="12" y1="5" x2="12" y2="11"></line>
           <polyline points="9 8 12 11 15 8"></polyline>
         </svg>
-        <span class="btn-text">Download</span>
+        <span class="btn-text">App</span>
       </a>
     </div>
   </nav>

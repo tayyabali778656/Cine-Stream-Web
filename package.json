@@ -15,5 +15,8 @@
     "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^2.4.3",
     "mongodb": "^7.4.0"
+  },
+  "devDependencies": {
+    "jimp": "^1.6.1"
   }
 }

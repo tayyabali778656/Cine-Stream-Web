@@ -64,10 +64,26 @@
 </head>
 <body>
 
-  <nav id="navbar" class="scrolled" role="navigation" aria-label="Main navigation">
+  <nav id="navbar" class="scrolled info-nav" role="navigation" aria-label="Main navigation">
     <div class="container nav-content">
-      <a href="/" class="logo" aria-label="CineStream — Home">Cine<span>Stream</span></a>
-      <a href="/" class="btn-primary" style="padding: 8px 18px; font-size:0.9rem;">Back to Home</a>
+      <div class="logo-wrapper">
+        <a href="/" class="logo" aria-label="CineStream — Home">Cine<span>Stream</span></a>
+      </div>
+      <div class="nav-actions">
+        <a href="/app" class="apk-download-btn" aria-label="Download Android App">
+          <svg class="apk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="5" y1="16" x2="19" y2="16"></line>
+            <circle cx="12" cy="19" r="1" fill="currentColor"></circle>
+            <line x1="12" y1="5" x2="12" y2="11"></line>
+            <polyline points="9 8 12 11 15 8"></polyline>
+          </svg>
+          <span class="btn-text">App</span>
+        </a>
+        <a href="/" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem; border-radius: 20px; height: 38px; display: inline-flex; align-items: center; text-decoration: none;">
+          Home
+        </a>
+      </div>
     </div>
   </nav>
 

@@ -41,6 +41,7 @@ const TMDB_IMG_URL  = 'https://image.tmdb.org/t/p/w500';
 // These are served from real files on disk, or rewritten by vercel.json.
 const STATIC_PAGES = [
   { loc: `${BASE_URL}/`,                 priority: '1.0', changefreq: 'daily'   },
+  { loc: `${BASE_URL}/app`,              priority: '0.9', changefreq: 'weekly'  },
   { loc: `${BASE_URL}/about.html`,       priority: '0.6', changefreq: 'monthly' },
   { loc: `${BASE_URL}/contact.html`,     priority: '0.5', changefreq: 'monthly' },
   { loc: `${BASE_URL}/privacy.html`,     priority: '0.3', changefreq: 'yearly'  },
