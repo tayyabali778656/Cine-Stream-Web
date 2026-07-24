@@ -124,8 +124,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+  <!-- FOUC Preventer: Keep page invisible until stylesheet successfully loads -->
+  <style id="fouc-preventer">
+    body {
+      opacity: 0 !important;
+      transition: opacity 0.3s ease;
+    }
+  </style>
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="/style.css?v=2.1.1">
+  <link rel="stylesheet" href="/style.css?v=2.1.1" onload="document.getElementById('fouc-preventer')?.remove()">
 
   <style>
     /* Inline cache-busting loader styles to guarantee display on reload/cache updates */

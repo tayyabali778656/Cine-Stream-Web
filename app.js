@@ -127,6 +127,9 @@ const App = {
    * Initialize the application
    */
   async init() {
+    // Remove FOUC preventer fallback
+    document.getElementById('fouc-preventer')?.remove();
+
     // Show skeletons instantly so the user sees a loading state immediately
     if (this.grid) {
       this.grid.innerHTML = '';
