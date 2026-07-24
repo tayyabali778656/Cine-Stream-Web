@@ -8,13 +8,13 @@ const ADMIN_STORAGE_KEY = 'moviebox_admin';
 
 // HTML escape utility to prevent XSS in admin list rendering
 function escHtml(str) {
-  if (typeof str !== 'string') return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+   if (typeof str !== 'string') return '';
+   return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
 }
 
 const Admin = {
@@ -23,10 +23,10 @@ const Admin = {
     */
    getAdminData() {
       try {
-        const data = localStorage.getItem(ADMIN_STORAGE_KEY);
-        return data ? JSON.parse(data) : {};
+         const data = localStorage.getItem(ADMIN_STORAGE_KEY);
+         return data ? JSON.parse(data) : {};
       } catch (e) {
-        return {};
+         return {};
       }
    },
 
@@ -49,16 +49,16 @@ const Admin = {
 
       // Persist to MongoDB via authenticated server API
       fetch('/api/v1/admin-store', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data[id])
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         credentials: 'include',
+         body: JSON.stringify(data[id])
       }).then(res => {
-        if (!res.ok) {
-          console.warn('[Admin] Failed to persist to MongoDB:', res.status);
-        }
+         if (!res.ok) {
+            console.warn('[Admin] Failed to persist to MongoDB:', res.status);
+         }
       }).catch(err => {
-        console.warn('[Admin] Network error persisting to MongoDB:', err.message);
+         console.warn('[Admin] Network error persisting to MongoDB:', err.message);
       });
 
       this.updateAdminList();
@@ -83,10 +83,10 @@ const Admin = {
 
       // Delete from MongoDB via authenticated API
       fetch(`/api/v1/admin-store?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        credentials: 'include',
+         method: 'DELETE',
+         credentials: 'include',
       }).catch(err => {
-        console.warn('[Admin] Failed to delete from MongoDB:', err.message);
+         console.warn('[Admin] Failed to delete from MongoDB:', err.message);
       });
 
       this.updateAdminList();
@@ -98,32 +98,29 @@ const Admin = {
    /**
     * Load global configuration settings (like requires_ads_servers) from MongoDB
     */
-    async loadGlobalSettings() {
-       try {
-         const response = await fetch('/api/v1/admin-store').catch(() => null);
-         if (!response || !response.ok) return;
-         const res = await response.json().catch(() => null);
-         if (!res) return;
+   async loadGlobalSettings() {
+      try {
+         const res = await fetch('/api/v1/admin-store').then(r => r.json());
          const settings = Array.isArray(res) ? res.find(item => item.id === 'global_settings') : null;
          if (settings) {
-           if (settings.requires_ads_servers) {
-             const checkboxes = document.querySelectorAll('#admin-server-ads-checkboxes input[type="checkbox"]');
-             checkboxes.forEach(cb => {
-               const serverName = cb.getAttribute('data-server');
-               cb.checked = settings.requires_ads_servers.includes(serverName);
-             });
-             localStorage.setItem('moviebox_requires_ads_servers', JSON.stringify(settings.requires_ads_servers));
-           }
-           if (settings.default_play_server) {
-             localStorage.setItem('moviebox_default_play_server', settings.default_play_server);
-           } else {
-             localStorage.removeItem('moviebox_default_play_server');
-           }
+            if (settings.requires_ads_servers) {
+               const checkboxes = document.querySelectorAll('#admin-server-ads-checkboxes input[type="checkbox"]');
+               checkboxes.forEach(cb => {
+                  const serverName = cb.getAttribute('data-server');
+                  cb.checked = settings.requires_ads_servers.includes(serverName);
+               });
+               localStorage.setItem('moviebox_requires_ads_servers', JSON.stringify(settings.requires_ads_servers));
+            }
+            if (settings.default_play_server) {
+               localStorage.setItem('moviebox_default_play_server', settings.default_play_server);
+            } else {
+               localStorage.removeItem('moviebox_default_play_server');
+            }
          }
-       } catch (err) {
-         // Silently handle to avoid polluting console under crawlers/offline states
-       }
-    },
+      } catch (err) {
+         console.warn('[Admin] Failed to load global settings:', err);
+      }
+   },
 
    /**
     * Initialize Admin UI
@@ -235,11 +232,11 @@ const Admin = {
          const m = data[id];
          const isHindi = m.hindi || m.original_language === 'hi';
          // Escape all dynamic values before inserting into HTML
-         const safeId   = escHtml(String(id));
+         const safeId = escHtml(String(id));
          const safeLink = escHtml(m.customLink || '');
          const linkHtml = safeLink
-           ? `<a href="${safeLink}" target="_blank" rel="noopener noreferrer" style="color:#007bff; font-size:0.8rem;">Custom Link</a>`
-           : '<span style="color:grey;font-size:0.8rem;">No Link</span>';
+            ? `<a href="${safeLink}" target="_blank" rel="noopener noreferrer" style="color:#007bff; font-size:0.8rem;">Custom Link</a>`
+            : '<span style="color:grey;font-size:0.8rem;">No Link</span>';
          html += `
          <li style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
              <div>

@@ -11,7 +11,20 @@
         event.preventDefault(); // Suppress the exception
       }
     });
+
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
+    }
   </script>
+
+  <!-- Vercel Analytics & Speed Insights -->
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="/_vercel/speed-insights/script.js"></script>
 
 
   <!-- Google Search Console Verification -->
@@ -105,21 +118,16 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 
   <!-- ══════ Preload Critical Resources ══════ -->
-  <link rel="preload" href="/style.css?v=3.0.0" as="style">
+  <link rel="preload" href="/style.css?v=2.1.1" as="style">
   <!-- Note: JS is deferred, no preload needed -->
 
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- FOUC Preventer: Keep page invisible until stylesheet successfully loads -->
-  <style id="fouc-preventer">
-    body {
-      opacity: 0 !important;
-      transition: opacity 0.3s ease;
-    }
-  </style>
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="/style.css?v=3.0.0" onload="document.getElementById('fouc-preventer')?.remove()">
+  <link rel="stylesheet" href="/style.css?v=2.1.1">
 
   <style>
     /* Inline cache-busting loader styles to guarantee display on reload/cache updates */
@@ -164,7 +172,7 @@
 
   <!-- AdSense (Optimized: Lazy loaded on first interaction to prevent render blocking) -->
   <script>
-    (function() {
+    (function () {
       let adsLoaded = false;
       function loadAdSense() {
         if (adsLoaded) return;
@@ -176,7 +184,7 @@
         sc.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2555027481119393';
         const s = document.getElementsByTagName('script')[0];
         s.parentNode.insertBefore(sc, s);
-        
+
         window.removeEventListener('scroll', loadAdSense);
         window.removeEventListener('mousemove', loadAdSense);
         window.removeEventListener('touchstart', loadAdSense);
@@ -409,7 +417,8 @@
       </form>
 
       <a href="/app" class="apk-download-btn" aria-label="Download Android App">
-        <svg class="apk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="apk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
           <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
           <line x1="5" y1="16" x2="19" y2="16"></line>
           <circle cx="12" cy="19" r="1" fill="currentColor"></circle>
@@ -443,11 +452,14 @@
     <!-- Recently Viewed Section -->
     <section id="recently-viewed-section" class="fade-in" style="display: none; margin-bottom: 2rem;">
       <h2 class="section-title">Continue Watching</h2>
-      <div id="recently-viewed-grid" style="display: flex; overflow-x: auto; gap: 1.5rem; margin-top: 1.5rem; padding-bottom: 1rem; scroll-snap-type: x mandatory;"></div>
+      <div id="recently-viewed-grid"
+        style="display: flex; overflow-x: auto; gap: 1.5rem; margin-top: 1.5rem; padding-bottom: 1rem; scroll-snap-type: x mandatory;">
+      </div>
     </section>
 
     <!-- Filters & Category Chips -->
-    <section class="filters-section fade-in" aria-label="Content filters" style="display: flex; justify-content: flex-end;">
+    <section class="filters-section fade-in" aria-label="Content filters"
+      style="display: flex; justify-content: flex-end;">
       <select id="media-type-filter-select" class="glass"
         style="outline: none; border: 1px solid var(--glass-border); padding: 8px 24px; border-radius: 20px; color: white; background: #111; cursor: pointer; font-size: 0.95rem; font-family: 'Outfit', sans-serif; font-weight: 600;">
         <option value="anime" selected>Anime</option>
@@ -505,22 +517,33 @@
           Data</button>
       </div>
       <div id="admin-status" style="margin-top: 1rem; color: #4caf50;" role="status" aria-live="polite"></div>
-      
+
       <!-- Server Ads Configuration -->
-      <div id="admin-server-ads-config" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+      <div id="admin-server-ads-config"
+        style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
         <h3 style="margin-bottom: 0.5rem;"><i class="fas fa-ad" aria-hidden="true"></i> Server Ads Management</h3>
-        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 1rem;">Select the servers that require ads to play (this disables sandbox constraints on those servers so they load successfully).</p>
+        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 1rem;">Select the servers that require ads to play
+          (this disables sandbox constraints on those servers so they load successfully).</p>
         <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 1rem;" id="admin-server-ads-checkboxes">
-          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 1"> Server 1</label>
-          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 2"> Server 2</label>
-          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 3"> Server 3</label>
-          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 4"> Server 4</label>
-          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 5"> Server 5</label>
-          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 6"> Server 6</label>
-          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 7"> Server 7</label>
-          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input type="checkbox" data-server="Server 8"> Server 8</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input
+              type="checkbox" data-server="Server 1"> Server 1</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input
+              type="checkbox" data-server="Server 2"> Server 2</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input
+              type="checkbox" data-server="Server 3"> Server 3</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input
+              type="checkbox" data-server="Server 4"> Server 4</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input
+              type="checkbox" data-server="Server 5"> Server 5</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input
+              type="checkbox" data-server="Server 6"> Server 6</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input
+              type="checkbox" data-server="Server 7"> Server 7</label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;"><input
+              type="checkbox" data-server="Server 8"> Server 8</label>
         </div>
-        <button id="admin-save-server-ads-btn" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem;" aria-label="Save server ads settings">Save Server Ads Settings</button>
+        <button id="admin-save-server-ads-btn" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem;"
+          aria-label="Save server ads settings">Save Server Ads Settings</button>
       </div>
 
       <div id="admin-list" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
@@ -574,7 +597,8 @@
       <div class="modal-body">
         <div class="modal-poster-container">
           <img id="modal-poster" src="" alt="Movie poster" class="modal-poster" loading="lazy" decoding="async">
-          <div class="mobile-only-meta" style="display: none; justify-content: center; gap: 15px; margin-top: 10px; font-weight: 600; font-size: 0.9rem;">
+          <div class="mobile-only-meta"
+            style="display: none; justify-content: center; gap: 15px; margin-top: 10px; font-weight: 600; font-size: 0.9rem;">
             <span id="modal-rating-mobile"></span>
             <span id="modal-year-mobile"></span>
           </div>
@@ -707,27 +731,14 @@
   <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
 
   <!-- Scripts -->
-  <script src="/env.js?v=3.0.0" defer></script>
-  <script src="/api.js?v=3.0.0" defer></script>
+  <script src="/env.js" defer></script>
+  <script src="/api.js" defer></script>
   <!-- Fuse.js for fast fuzzy search -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js" crossorigin="anonymous" defer></script>
   <!-- StreamPlayer: production streaming manager with failover -->
-  <script src="/public/player/StreamPlayer.js?v=3.0.0" defer></script>
-  <script src="/app.js?v=3.0.0" defer></script>
-  <script src="/admin.js?v=3.0.0" defer></script>
-
-  <!-- PWA Service Worker Registration & Vercel Analytics (Deferred to execute only after page load/challenge resolution) -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
-          .catch(err => console.error('Service Worker registration failed:', err));
-      });
-    }
-  </script>
-  <script defer src="/_vercel/insights/script.js"></script>
-  <script defer src="/_vercel/speed-insights/script.js"></script>
+  <script src="/public/player/StreamPlayer.js?v=2.0.35" defer></script>
+  <script src="/app.js?v=2.7.9" defer></script>
+  <script src="/admin.js?v=2.2" defer></script>
 
 </body>
 

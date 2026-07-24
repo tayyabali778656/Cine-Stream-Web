@@ -58,14 +58,14 @@ const App = {
               if (now - timestamp < 60_000) { // 1 minute local cache
                 return data;
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         }
         const r = await fetch(url, { credentials: 'include' });
         const data = r.ok ? await r.json() : [];
         try {
           localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: now }));
-        } catch (e) {}
+        } catch (e) { }
         return data;
       };
 
@@ -127,9 +127,6 @@ const App = {
    * Initialize the application
    */
   async init() {
-    // Remove FOUC preventer fallback
-    document.getElementById('fouc-preventer')?.remove();
-
     // Show skeletons instantly so the user sees a loading state immediately
     if (this.grid) {
       this.grid.innerHTML = '';
@@ -183,7 +180,7 @@ const App = {
     if (window.API && typeof window.API.initCatalog === 'function') {
       await window.API.initCatalog();
     }
-    
+
     await cachePromise;
     await this.resetAndFetch();
     this.renderRecentlyViewed();
@@ -602,8 +599,8 @@ const App = {
           const contentType = this.getContentType(m, typeVal);
 
           const isAboveFold = idx < (isMobile ? 4 : 8);
-          const imgAttrs = isAboveFold 
-            ? `fetchpriority="high" decoding="async"` 
+          const imgAttrs = isAboveFold
+            ? `fetchpriority="high" decoding="async"`
             : `loading="lazy" decoding="async"`;
 
           return `
@@ -782,8 +779,8 @@ const App = {
           const contentType = this.getContentType(m, type);
 
           const isAboveFold = idx < (isMobile ? 2 : 4);
-          const imgAttrs = isAboveFold 
-            ? `fetchpriority="high" decoding="async"` 
+          const imgAttrs = isAboveFold
+            ? `fetchpriority="high" decoding="async"`
             : `loading="lazy" decoding="async"`;
 
           return `
@@ -1593,7 +1590,7 @@ const App = {
 
                     await updateEpisodesList(sNum);
                     if (isStale()) return;
-                    
+
                     const firstEpOfSeason = seasonMap[sNum] && seasonMap[sNum][0] ? seasonMap[sNum][0].episode : 1;
                     episodeSelect.value = firstEpOfSeason;
                     await playWithFailover(sNum, firstEpOfSeason);
@@ -1612,7 +1609,7 @@ const App = {
                   if (!isNaN(paramS) && availableSeasons.includes(paramS)) {
                     defaultSeason = paramS;
                   }
-                  
+
                   if (seasonSelect) {
                     seasonSelect.value = defaultSeason;
                   }
