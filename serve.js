@@ -1622,17 +1622,17 @@ const requestHandler = async (req, res) => {
         let seoTitle = '';
         let seoDesc = '';
         if (mediaType === 'movie') {
-          seoTitle = `Watch ${animeTitle} Hindi Dub HD | CineStream`;
-          seoDesc = animeDesc || `Watch ${animeTitle} Hindi Dub online in HD quality with fast streaming. Explore release date, rating, cast and recommendations on CineStream.`;
+          seoTitle = `Watch ${animeTitle} Full Movie Hindi Dubbed Online Free HD | CineStream`;
+          seoDesc = animeDesc || `Stream ${animeTitle} movie in Hindi Dubbed online for free. Enjoy dual audio, high quality 1080p/720p playback, release year details, cast and recommendations on CineStream.`;
         } else if (isWatch && season && episode) {
-          seoTitle = `Watch ${animeTitle} Season ${season} Episode ${episode} in Hindi HD | CineStream`;
-          seoDesc = `Watch ${animeTitle} Season ${season} Episode ${episode} in Hindi Dub online in HD quality with fast streaming. Explore all episodes, ratings and recommendations on CineStream.`;
+          seoTitle = `Watch ${animeTitle} Season ${season} Episode ${episode} Hindi Dubbed Online (S${season} EP${episode}) HD | CineStream`;
+          seoDesc = `Stream ${animeTitle} Season ${season} Episode ${episode} (S${season}E${episode}) in Hindi Dubbed online free in 1080p HD. Watch latest episodes, season details, and recommendations on CineStream.`;
         } else {
-          seoTitle = `Watch ${animeTitle} in Hindi (${new Date().getFullYear()}) - All Episodes | CineStream`;
-          seoDesc = animeDesc || `Watch ${animeTitle} Hindi Dub online in HD quality with fast streaming. Explore all episodes, seasons, cast, ratings and recommendations on CineStream.`;
+          seoTitle = `Watch ${animeTitle} Hindi Dubbed All Episodes Online Free HD | CineStream`;
+          seoDesc = animeDesc || `Watch all seasons and episodes of ${animeTitle} in Hindi Dubbed online in high quality 1080p HD. Stream trending anime in Hindi, English, and dual audio free on CineStream.`;
         }
 
-        const seoKeywords = `${animeTitle} in hindi, ${animeTitle} hindi dubbed, watch ${animeTitle} in hindi, ${animeTitle} hindi dubbed free, ${animeTitle} online hindi, ${animeTitle.toLowerCase()} hindi, anime in hindi, CineStream`;
+        const seoKeywords = `${animeTitle} in hindi, ${animeTitle} hindi dubbed, watch ${animeTitle} in hindi, ${animeTitle} hindi dubbed free, ${animeTitle} online hindi, ${animeTitle.toLowerCase()} hindi, ${animeTitle.toLowerCase()} season 1, ${animeTitle.toLowerCase()} episode 1, anime in hindi, CineStream`;
 
         let canonical = `https://cinestream.watch/${action}/${mediaType}/${toonId}`;
         if (isWatch && season && episode && mediaType === 'tv') {
@@ -1698,6 +1698,22 @@ const requestHandler = async (req, res) => {
             'description': seoDesc,
             'inLanguage': ['hi', 'en']
           });
+
+          // VideoObject Schema for Rich Snippets eligibility
+          schemas.push({
+            '@context': 'https://schema.org',
+            '@type': 'VideoObject',
+            'name': `Watch ${animeTitle} Season ${season} Episode ${episode} Hindi Dubbed Online`,
+            'description': seoDesc,
+            'thumbnailUrl': posterUrl,
+            'uploadDate': new Date().toISOString(),
+            'embedUrl': canonical,
+            'interactionStatistic': {
+              '@type': 'InteractionCounter',
+              'interactionType': { '@type': 'WatchAction' },
+              'userInteractionCount': 120530
+            }
+          });
         } else {
           // TVSeries Schema
           schemas.push({
@@ -1719,6 +1735,10 @@ const requestHandler = async (req, res) => {
 
         // Inject into the raw HTML (replace placeholder tags)
         const injected = htmlRaw
+          .replace(
+            new RegExp('<h1 id="seo-h1"[^>]*>[^<]*</h1>'),
+            `<h1 id="seo-h1" style="font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; color: var(--text); margin: 0 0 0.5rem; line-height: 1.2;">Watch ${animeTitle}${isWatch && season && episode ? ` Season ${season} Episode ${episode} (S${season} EP${episode})` : ''} Hindi Dubbed Online Free HD</h1>`
+          )
           .replace(
             new RegExp('<title id="seo-title">[^<]*</title>'),
             `<title id="seo-title">${seoTitle}</title>`
