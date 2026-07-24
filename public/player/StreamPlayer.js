@@ -51,7 +51,7 @@ class StreamPlayer {
   // ── Load the first available source ────────────────────────────────────────
   async load() {
     if (this.sources.length === 0) {
-      this._showError('No streaming sources configured.');
+      this._showDownloadError();
       return;
     }
     this._analyticsData.startTime = Date.now();
@@ -286,7 +286,7 @@ class StreamPlayer {
   _onAllFailed() {
     this._log('stream_all_failed', { movieId: this.movieId, switches: this._analyticsData.switches });
     StreamPlayer._trackAnalytics('stream_error', { movieId: this.movieId, title: this.title });
-    this._showError('No working stream found. This content may be unavailable.');
+    this._showDownloadError();
     this.onError();
   }
 
@@ -369,7 +369,7 @@ class StreamPlayer {
     this.tryCount = 0;
 
     if (this.sources.length === 0) {
-      this._showError('No streaming sources found.');
+      this._showDownloadError();
       return;
     }
 
@@ -414,6 +414,29 @@ class StreamPlayer {
       </div>`;
     // Attach reference for retry button
     this.container._streamPlayer = this;
+  }
+
+  _showDownloadError() {
+    this.container.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                  height:100%;color:#fff;background:#0f0f0f;gap:16px;font-family:'Outfit',sans-serif;
+                  text-align:center;padding:2rem;box-sizing:border-box;">
+        <i class="fab fa-android" style="font-size:3.5rem;color:#3DDC84;"></i>
+        <h3 style="margin:0;font-size:1.4rem;font-weight:700;color:#fff;">Video Player</h3>
+        <p style="font-size:1.05rem;font-weight:500;max-width:420px;line-height:1.5;color:#ccc;margin:0 0 10px 0;">
+          If you want to watch this anime, download the CineStream app now.
+        </p>
+        <a href="/public/CineStream.apk" download
+           style="display:inline-flex;align-items:center;gap:10px;padding:12px 28px;
+                  background:#3DDC84;border:none;border-radius:30px;color:#000;
+                  text-decoration:none;font-weight:700;font-size:1rem;
+                  box-shadow:0 4px 15px rgba(61,220,132,0.4);transition:transform 0.2s ease,box-shadow 0.2s ease;
+                  cursor:pointer;"
+           onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(61,220,132,0.6)';"
+           onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(61,220,132,0.4)';">
+          <i class="fas fa-download"></i> Download APK
+        </a>
+      </div>`;
   }
 
   // ── Cleanup ────────────────────────────────────────────────────────────────
