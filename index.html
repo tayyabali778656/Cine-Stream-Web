@@ -11,20 +11,7 @@
         event.preventDefault(); // Suppress the exception
       }
     });
-
-    // PWA Service Worker Registration
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
-          .catch(err => console.error('Service Worker registration failed:', err));
-      });
-    }
   </script>
-
-  <!-- Vercel Analytics & Speed Insights -->
-  <script defer src="/_vercel/insights/script.js"></script>
-  <script defer src="/_vercel/speed-insights/script.js"></script>
 
 
   <!-- Google Search Console Verification -->
@@ -728,6 +715,19 @@
   <script src="/public/player/StreamPlayer.js?v=3.0.0" defer></script>
   <script src="/app.js?v=3.0.0" defer></script>
   <script src="/admin.js?v=3.0.0" defer></script>
+
+  <!-- PWA Service Worker Registration & Vercel Analytics (Deferred to execute only after page load/challenge resolution) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="/_vercel/speed-insights/script.js"></script>
 
 </body>
 
