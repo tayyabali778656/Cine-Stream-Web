@@ -38,6 +38,47 @@
 
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/proxy",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/iframe-proxy",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/health",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/watch/(.*)",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/media/(.*)",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/sitemap(.*)",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/(index\\.html)?",
+      "has": [
+        {
+          "type": "query",
+          "key": "q"
+        }
+      ],
+      "dest": "serve.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
       "src": "/(.*)",
       "dest": "serve.js"
     }
