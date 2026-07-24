@@ -1901,7 +1901,7 @@ const App = {
         const altText = `${title} ${cardType === 'movie' ? 'Movie' : 'TV Series'} poster`;
         return `
           <div class="movie-card" role="listitem" style="aspect-ratio: 2/3; flex: 0 0 auto; width: 150px; scroll-snap-align: start;" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${cardType}')" tabindex="0" onkeydown="if(event.key==='Enter'){this.click();}" aria-label="Continue watching ${title}">
-             <img src="${poster}" alt="${altText}" loading="eager" fetchpriority="${idx < 6 ? 'high' : 'auto'}" decoding="sync" width="150" height="225">
+             <img src="${poster}" alt="${altText}" loading="eager" fetchpriority="${idx < 6 ? 'high' : 'auto'}" decoding="sync" width="150" height="225" onload="this.parentElement.classList.add('loaded')" onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');">
              <div class="movie-card-info" style="padding: 0.5rem;"><h4 class="movie-title" style="font-size: 0.8rem;">${title}</h4></div>
           </div>
         `;
