@@ -727,13 +727,13 @@
   <script src="/app.js?v=3.1.0" defer></script>
   <script src="/admin.js?v=3.1.0" defer></script>
 
-  <!-- PWA Service Worker Cleanup (Unregister to prevent 403 cached asset interception) -->
+  <!-- PWA Service Worker Registration & Vercel Analytics (Deferred to execute only after page load) -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+          .catch(err => console.error('Service Worker registration failed:', err));
       });
     }
   </script>
