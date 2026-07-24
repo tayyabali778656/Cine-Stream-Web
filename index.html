@@ -11,20 +11,7 @@
         event.preventDefault(); // Suppress the exception
       }
     });
-
-    // PWA Service Worker Registration
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
-          .catch(err => console.error('Service Worker registration failed:', err));
-      });
-    }
   </script>
-
-  <!-- Vercel Analytics & Speed Insights -->
-  <script defer src="/_vercel/insights/script.js"></script>
-  <script defer src="/_vercel/speed-insights/script.js"></script>
 
 
   <!-- Google Search Console Verification -->
@@ -118,7 +105,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 
   <!-- ══════ Preload Critical Resources ══════ -->
-  <link rel="preload" href="/style.css?v=2.1.1" as="style">
+  <link rel="preload" href="/style.css?v=3.1.0" as="style">
   <!-- Note: JS is deferred, no preload needed -->
 
   <link
@@ -127,7 +114,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="/style.css?v=2.1.1">
+  <link rel="stylesheet" href="/style.css?v=3.1.0">
 
   <style>
     /* Inline cache-busting loader styles to guarantee display on reload/cache updates */
@@ -731,14 +718,27 @@
   <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
 
   <!-- Scripts -->
-  <script src="/env.js" defer></script>
-  <script src="/api.js" defer></script>
+  <script src="/env.js?v=3.1.0" defer></script>
+  <script src="/api.js?v=3.1.0" defer></script>
   <!-- Fuse.js for fast fuzzy search -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js" crossorigin="anonymous" defer></script>
   <!-- StreamPlayer: production streaming manager with failover -->
-  <script src="/public/player/StreamPlayer.js?v=2.0.35" defer></script>
-  <script src="/app.js?v=2.7.9" defer></script>
-  <script src="/admin.js?v=2.2" defer></script>
+  <script src="/public/player/StreamPlayer.js?v=3.1.0" defer></script>
+  <script src="/app.js?v=3.1.0" defer></script>
+  <script src="/admin.js?v=3.1.0" defer></script>
+
+  <!-- PWA Service Worker Registration & Vercel Analytics (Deferred to execute only after page load) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="/_vercel/speed-insights/script.js"></script>
 
 </body>
 
