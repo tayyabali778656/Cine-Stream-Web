@@ -1070,6 +1070,101 @@ const App = {
     }
   },
 
+  populateModalUI(movie, type, isNetMirror, movieId) {
+    // Reset sound toggle UI at modal open
+    const soundToggle = document.getElementById('sound-toggle');
+    if (soundToggle) {
+      soundToggle.querySelector('span').textContent = 'Muted';
+      soundToggle.querySelector('i').className = 'fas fa-volume-mute';
+    }
+
+    // Display poster — ToonStream records use `.poster`, admin entries may use `.poster_path`
+    const posterSrc = movie.poster
+      ? movie.poster
+      : (movie.poster_path
+        ? (movie.poster_path.startsWith('http') ? movie.poster_path : 'https://image.tmdb.org/t/p/w500' + movie.poster_path)
+        : 'https://placehold.co/500x750?text=No+Poster');
+    document.getElementById('modal-poster').src = posterSrc;
+    document.getElementById('modal-title').textContent = movie.title || movie.name;
+
+    const ratingVal = movie.vote_average || movie.rating || 7.5;
+    const ratingHtml = `<i class="fas fa-star rating-star"></i> ${parseFloat(ratingVal).toFixed(1)}`;
+    const yearHtml = `<i class="far fa-calendar-alt"></i> ${(movie.release_date || movie.first_air_date || '????').split('-')[0]}`;
+
+    document.getElementById('modal-rating').innerHTML = ratingHtml;
+    document.getElementById('modal-year').innerHTML = yearHtml;
+
+    const mobRating = document.getElementById('modal-rating-mobile');
+    const mobYear = document.getElementById('modal-year-mobile');
+    if (mobRating) mobRating.innerHTML = ratingHtml;
+    if (mobYear) mobYear.innerHTML = yearHtml;
+
+    document.getElementById('modal-description').textContent = movie.overview || movie.description || 'No description available.';
+
+    this.updateMetaTags(movie, type);
+
+    const genresEl = document.getElementById('modal-genres');
+    if (genresEl) {
+      let genreNames = '';
+      if (movie.genres) {
+        genreNames = movie.genres.map(g => (typeof g === 'string' ? g : g.name)).join(', ');
+      } else if (movie.genres_str) {
+        genreNames = movie.genres_str;
+      }
+      genresEl.textContent = genreNames || '';
+      genresEl.style.display = genreNames ? '' : 'none';
+    }
+
+    const langEl = document.getElementById('modal-language');
+    if (langEl) {
+      const isHindi = this.isHindiDubbed(movie) || movie.original_language === 'hi';
+      langEl.style.display = isHindi ? '' : 'none';
+      if (isHindi) langEl.innerHTML = '<i class="fas fa-language" aria-hidden="true"></i> <span class="sr-only">Language:</span> Hindi Dubbed';
+    }
+
+    const wishlistBtn = document.getElementById('modal-wishlist-btn');
+    if (wishlistBtn) {
+      const favs = JSON.parse(localStorage.getItem('moviebox_favorites') || '[]');
+      const isFav = favs.some(f => f.id === movie.id);
+      if (isFav) {
+        wishlistBtn.classList.add('added');
+        wishlistBtn.innerHTML = '<i class="fas fa-heart"></i> Remove Wishlist';
+      } else {
+        wishlistBtn.classList.remove('added');
+        wishlistBtn.innerHTML = '<i class="far fa-heart"></i> Add to Wishlist';
+      }
+
+      wishlistBtn.onclick = () => {
+        const currentFavs = JSON.parse(localStorage.getItem('moviebox_favorites') || '[]');
+        const index = currentFavs.findIndex(f => f.id === movie.id);
+        if (index !== -1) {
+          currentFavs.splice(index, 1);
+          wishlistBtn.classList.remove('added');
+          wishlistBtn.innerHTML = '<i class="far fa-heart"></i> Add to Wishlist';
+        } else {
+          currentFavs.push(movie);
+          wishlistBtn.classList.add('added');
+          wishlistBtn.innerHTML = '<i class="fas fa-heart"></i> Remove Wishlist';
+        }
+        localStorage.setItem('moviebox_favorites', JSON.stringify(currentFavs));
+      };
+    }
+
+    const watchBtn = document.getElementById('modal-watch-btn');
+    if (watchBtn) {
+      watchBtn.onclick = () => {
+        this.openModal(movieId, type, true, true, isNetMirror);
+      };
+    }
+
+    const backBtn = document.getElementById('back-to-details');
+    if (backBtn) {
+      backBtn.onclick = () => {
+        this.openModal(movieId, type, true, false, isNetMirror);
+      };
+    }
+  },
+
   /**
    * Modal Logic
    */
@@ -1106,137 +1201,154 @@ const App = {
       this.syncDatabaseCache(true).catch(() => { });
 
       const adminStore = this.adminCache || {};
-      if (adminStore[movieId] || adminStore[String(movieId)]) {
-        movie = adminStore[movieId] || adminStore[String(movieId)];
-      } else if (this.animeDetailsCache[movieId]) {
-        movie = this.animeDetailsCache[movieId];
-      } else {
-        // ── Fetch anime details from database ────────────────────────────────
-        const detailsRes = await fetch(`/api/v1/anime/details?id=${encodeURIComponent(movieId)}`).then(r => r.json());
-        if (detailsRes && detailsRes.id) {
-          // Map ToonStream fields to the shape the rest of the modal code expects
-          movie = {
-            id: detailsRes.id,
-            title: detailsRes.title,
-            name: detailsRes.title,
-            poster: detailsRes.poster || 'https://placehold.co/500x750?text=No+Poster',
-            poster_path: null,
-            banner: detailsRes.banner,
-            overview: detailsRes.description || 'No description available.',
-            vote_average: parseFloat(detailsRes.rating || '7.5'),
-            release_date: detailsRes.release_year ? `${detailsRes.release_year}-01-01` : '',
-            first_air_date: detailsRes.release_year ? `${detailsRes.release_year}-01-01` : '',
-            genres: (detailsRes.genres || []).map(g => ({ name: g })),
-            type: detailsRes.type,
-            status: detailsRes.status,
-            duration: detailsRes.duration,
-            language: detailsRes.language,
-            slug: detailsRes.slug,
-            seasonCount: detailsRes.seasonCount || 1,
-            episodeCount: detailsRes.episodeCount || 0,
-            related: detailsRes.related || [],
-            recommendations: detailsRes.recommendations || [],
-            _isToonStream: true
+      const getLocalMovie = () => {
+        if (adminStore[movieId] || adminStore[String(movieId)]) {
+          return adminStore[movieId] || adminStore[String(movieId)];
+        }
+        if (this.animeDetailsCache[movieId]) {
+          return this.animeDetailsCache[movieId];
+        }
+        // Find in local memory pools
+        const local = (this.movies && this.movies.find(m => String(m.id) === String(movieId))) ||
+                      (this.moviePool && this.moviePool.find(m => String(m.id) === String(movieId))) ||
+                      (this.tvPool && this.tvPool.find(m => String(m.id) === String(movieId))) ||
+                      (this.animePool && this.animePool.find(m => String(m.id) === String(movieId)));
+        if (local) {
+          return {
+            id: local.id,
+            title: local.title || local.name,
+            name: local.title || local.name,
+            poster: local.poster || (local.poster_path ? (local.poster_path.startsWith('http') ? local.poster_path : 'https://image.tmdb.org/t/p/w500' + local.poster_path) : 'https://placehold.co/500x750?text=No+Poster'),
+            poster_path: local.poster_path || null,
+            banner: local.banner || local.poster,
+            overview: local.overview || local.description || 'Loading details...',
+            vote_average: parseFloat(local.vote_average || local.rating || '7.5'),
+            release_date: local.release_date || (local.release_year ? `${local.release_year}-01-01` : ''),
+            first_air_date: local.first_air_date || (local.release_year ? `${local.release_year}-01-01` : ''),
+            genres: Array.isArray(local.genres) ? local.genres.map(g => typeof g === 'string' ? { name: g } : g) : [],
+            type: local.type || (local.title ? 'movie' : 'tv'),
+            status: local.status || 'Loading...',
+            duration: local.duration || '',
+            language: local.language || 'Hindi / English',
+            slug: local.slug || '',
+            seasonCount: local.seasonCount || 1,
+            episodeCount: local.episodeCount || 0,
+            related: local.related || [],
+            recommendations: local.recommendations || []
           };
-          this.animeDetailsCache[movieId] = movie;
-        } else {
-          throw new Error('Anime not found in database. Please run the crawler first.');
         }
-      }
+        return null;
+      };
 
-
-      // Reset sound toggle UI at modal open
-      const soundToggle = document.getElementById('sound-toggle');
-      if (soundToggle) {
-        soundToggle.querySelector('span').textContent = 'Muted';
-        soundToggle.querySelector('i').className = 'fas fa-volume-mute';
-      }
-
-
-      // Display poster — ToonStream records use `.poster`, admin entries may use `.poster_path`
-      const posterSrc = movie.poster
-        ? movie.poster
-        : (movie.poster_path
-          ? (movie.poster_path.startsWith('http') ? movie.poster_path : 'https://image.tmdb.org/t/p/w500' + movie.poster_path)
-          : 'https://placehold.co/500x750?text=No+Poster');
-      document.getElementById('modal-poster').src = posterSrc;
-      document.getElementById('modal-title').textContent = movie.title || movie.name;
-
-      const ratingVal = movie.vote_average || movie.rating || 7.5;
-      const ratingHtml = `<i class="fas fa-star rating-star"></i> ${parseFloat(ratingVal).toFixed(1)}`;
-      const yearHtml = `<i class="far fa-calendar-alt"></i> ${(movie.release_date || movie.first_air_date || '????').split('-')[0]}`;
-
-      document.getElementById('modal-rating').innerHTML = ratingHtml;
-      document.getElementById('modal-year').innerHTML = yearHtml;
-
-      const mobRating = document.getElementById('modal-rating-mobile');
-      const mobYear = document.getElementById('modal-year-mobile');
-      if (mobRating) mobRating.innerHTML = ratingHtml;
-      if (mobYear) mobYear.innerHTML = yearHtml;
-
-      document.getElementById('modal-description').textContent = movie.overview || movie.description || 'No description available.';
-
-      this.updateMetaTags(movie, type);
-
-      const genresEl = document.getElementById('modal-genres');
-      if (genresEl) {
-        let genreNames = '';
-        if (movie.genres) {
-          genreNames = movie.genres.map(g => (typeof g === 'string' ? g : g.name)).join(', ');
-        } else if (movie.genres_str) {
-          genreNames = movie.genres_str;
-        }
-        genresEl.textContent = genreNames || '';
-        genresEl.style.display = genreNames ? '' : 'none';
-      }
-
-      const langEl = document.getElementById('modal-language');
-      if (langEl) {
-        const isHindi = this.isHindiDubbed(movie) || movie.original_language === 'hi';
-        langEl.style.display = isHindi ? '' : 'none';
-        if (isHindi) langEl.innerHTML = '<i class="fas fa-language" aria-hidden="true"></i> <span class="sr-only">Language:</span> Hindi Dubbed';
-      }
-
-      const wishlistBtn = document.getElementById('modal-wishlist-btn');
-      if (wishlistBtn) {
-        const favs = JSON.parse(localStorage.getItem('moviebox_favorites') || '[]');
-        const isFav = favs.some(f => f.id === movie.id);
-        if (isFav) {
-          wishlistBtn.classList.add('added');
-          wishlistBtn.innerHTML = '<i class="fas fa-heart"></i> Remove Wishlist';
-        } else {
-          wishlistBtn.classList.remove('added');
-          wishlistBtn.innerHTML = '<i class="far fa-heart"></i> Add to Wishlist';
-        }
-
-        wishlistBtn.onclick = () => {
-          const currentFavs = JSON.parse(localStorage.getItem('moviebox_favorites') || '[]');
-          const index = currentFavs.findIndex(f => f.id === movie.id);
-          if (index !== -1) {
-            currentFavs.splice(index, 1);
-            wishlistBtn.classList.remove('added');
-            wishlistBtn.innerHTML = '<i class="far fa-heart"></i> Add to Wishlist';
-          } else {
-            currentFavs.push(movie);
-            wishlistBtn.classList.add('added');
-            wishlistBtn.innerHTML = '<i class="fas fa-heart"></i> Remove Wishlist';
+      // 1. Check if we have local movie data to load instantly
+      let localMovie = getLocalMovie();
+      if (localMovie) {
+        movie = localMovie;
+        this.populateModalUI(movie, type, isNetMirror, movieId);
+        
+        // Hide loading screen instantly!
+        const loadingScreen = document.getElementById('modal-loading-screen');
+        const modalContent = this.modal.querySelector('.modal-content');
+        if (loadingScreen) {
+          loadingScreen.classList.remove('active');
+          if (modalContent) {
+            modalContent.style.overflowY = '';
           }
-          localStorage.setItem('moviebox_favorites', JSON.stringify(currentFavs));
-        };
+        }
       }
 
-      const watchBtn = document.getElementById('modal-watch-btn');
-      if (watchBtn) {
-        watchBtn.onclick = () => {
-          this.openModal(movieId, type, true, true, isNetMirror);
-        };
-      }
-
-      const backBtn = document.getElementById('back-to-details');
-      if (backBtn) {
-        backBtn.onclick = () => {
-          this.openModal(movieId, type, true, false, isNetMirror);
-        };
+      // 2. Fetch full details from server
+      if (!localMovie || (!localMovie.description && !localMovie.overview) || !this.animeDetailsCache[movieId]) {
+        try {
+          const fetchPromise = fetch(`/api/v1/anime/details?id=${encodeURIComponent(movieId)}`).then(r => r.json());
+          
+          if (!localMovie) {
+            // Blocking fetch if we have absolutely no local data
+            const detailsRes = await fetchPromise;
+            if (detailsRes && detailsRes.id) {
+              movie = {
+                id: detailsRes.id,
+                title: detailsRes.title,
+                name: detailsRes.title,
+                poster: detailsRes.poster || 'https://placehold.co/500x750?text=No+Poster',
+                poster_path: null,
+                banner: detailsRes.banner,
+                overview: detailsRes.description || 'No description available.',
+                vote_average: parseFloat(detailsRes.rating || '7.5'),
+                release_date: detailsRes.release_year ? `${detailsRes.release_year}-01-01` : '',
+                first_air_date: detailsRes.release_year ? `${detailsRes.release_year}-01-01` : '',
+                genres: (detailsRes.genres || []).map(g => ({ name: g })),
+                type: detailsRes.type,
+                status: detailsRes.status,
+                duration: detailsRes.duration,
+                language: detailsRes.language,
+                slug: detailsRes.slug,
+                seasonCount: detailsRes.seasonCount || 1,
+                episodeCount: detailsRes.episodeCount || 0,
+                related: detailsRes.related || [],
+                recommendations: detailsRes.recommendations || [],
+                _isToonStream: true
+              };
+              this.animeDetailsCache[movieId] = movie;
+              this.populateModalUI(movie, type, isNetMirror, movieId);
+              
+              const loadingScreen = document.getElementById('modal-loading-screen');
+              const modalContent = this.modal.querySelector('.modal-content');
+              if (loadingScreen) {
+                loadingScreen.classList.remove('active');
+                if (modalContent) {
+                  modalContent.style.overflowY = '';
+                }
+              }
+            } else {
+              throw new Error('Anime not found in database.');
+            }
+          } else {
+            // Asynchronous fetch in the background to update detail fields (like episodes) smoothly
+            fetchPromise.then(detailsRes => {
+              if (detailsRes && detailsRes.id && this.activeMovieId === movieId) {
+                const updatedMovie = {
+                  id: detailsRes.id,
+                  title: detailsRes.title,
+                  name: detailsRes.title,
+                  poster: detailsRes.poster || 'https://placehold.co/500x750?text=No+Poster',
+                  poster_path: null,
+                  banner: detailsRes.banner,
+                  overview: detailsRes.description || 'No description available.',
+                  vote_average: parseFloat(detailsRes.rating || '7.5'),
+                  release_date: detailsRes.release_year ? `${detailsRes.release_year}-01-01` : '',
+                  first_air_date: detailsRes.release_year ? `${detailsRes.release_year}-01-01` : '',
+                  genres: (detailsRes.genres || []).map(g => ({ name: g })),
+                  type: detailsRes.type,
+                  status: detailsRes.status,
+                  duration: detailsRes.duration,
+                  language: detailsRes.language,
+                  slug: detailsRes.slug,
+                  seasonCount: detailsRes.seasonCount || 1,
+                  episodeCount: detailsRes.episodeCount || 0,
+                  related: detailsRes.related || [],
+                  recommendations: detailsRes.recommendations || [],
+                  _isToonStream: true
+                };
+                this.animeDetailsCache[movieId] = updatedMovie;
+                
+                // Only overwrite if user is still on the same modal
+                if (this.activeMovieId === movieId) {
+                  movie = updatedMovie;
+                  this.populateModalUI(movie, type, isNetMirror, movieId);
+                  
+                  // Also re-render episodes selectors if currently watching
+                  if (isWatching && typeof updateEpisodesList === 'function') {
+                    updateEpisodesList();
+                  }
+                }
+              }
+            }).catch(err => console.warn("Background details fetch failed:", err));
+          }
+        } catch (err) {
+          console.error("Failed loading movie details:", err);
+          if (!localMovie) throw err;
+        }
       }
 
       const trailerContainer = document.getElementById('trailer-container');
