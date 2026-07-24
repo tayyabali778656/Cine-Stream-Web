@@ -1521,7 +1521,14 @@ const requestHandler = async (req, res) => {
             #play-btn, #play-button, .playicon, .playbutton, .play-wrapper, 
             .play-overlay, .fake-play, .player-poster, .poster-image, 
             .click-to-play, #click-to-play, [class*="play-overlay"], 
-            [class*="fake-play"], .play-button-overlay, .play-btn-overlay {
+            [class*="fake-play"], .play-button-overlay, .play-btn-overlay,
+            
+            /* Hide fake notification alerts, message popups, and ad overlays */
+            .notification, .toast, .alert, .popup, .dialog, .modal-ads, .message-box, 
+            .ad-overlay, .pop-notification, .notify, .notify-ads, .push-notify,
+            [id*="notification"], [class*="notification"], [class*="message-box"], 
+            [class*="popup-ads"], [class*="ad-box"], [id*="ad-box"], 
+            [class*="toast-ad"], [id*="toast-ad"] {
               display: none !important;
               opacity: 0 !important;
               pointer-events: none !important;
