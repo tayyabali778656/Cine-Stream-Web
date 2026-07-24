@@ -595,6 +595,8 @@ const App = {
             : (m.poster_path
               ? (m.poster_path.startsWith('http') ? m.poster_path : 'https://image.tmdb.org/t/p/w500' + m.poster_path)
               : 'https://placehold.co/500x750?text=No+Poster');
+          const posterSm = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w185/') : poster;
+          const posterMd = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w342/') : poster;
           const typeVal = m.type || (m.title ? 'movie' : 'tv');
           const contentType = this.getContentType(m, typeVal);
 
@@ -608,6 +610,8 @@ const App = {
               <span class="type-badge" aria-hidden="true">${contentType}</span>
               <img
                 src="${poster}"
+                srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"
+                sizes="(max-width: 480px) 150px, (max-width: 768px) 185px, 240px"
                 alt="${safeTitle} poster"
                 ${imgAttrs}
                 width="500"
@@ -772,8 +776,8 @@ const App = {
             : (m.poster_path
               ? (m.poster_path.startsWith('http') ? m.poster_path : 'https://image.tmdb.org/t/p/w500' + m.poster_path)
               : 'https://placehold.co/500x750?text=No+Poster');
-          const posterSm = poster;
-          const posterMd = poster;
+          const posterSm = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w185/') : poster;
+          const posterMd = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w342/') : poster;
           const type = isManual ? (m.type || fallbackType) : (m.title ? 'movie' : 'tv');
 
           const contentType = this.getContentType(m, type);
@@ -788,7 +792,7 @@ const App = {
               <span class="type-badge" aria-hidden="true">${contentType}</span>
               <img
                 src="${poster}"
-                srcset="${posterSm} 200w, ${posterMd} 342w, ${poster} 500w"
+                srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"
                 sizes="(max-width:480px) 160px, (max-width:768px) 200px, 240px"
                 alt="${safeTitle} poster"
                 ${imgAttrs}
@@ -1026,8 +1030,8 @@ const App = {
           : (m.poster_path
             ? (m.poster_path.startsWith('http') ? m.poster_path : 'https://image.tmdb.org/t/p/w500' + m.poster_path)
             : 'https://placehold.co/500x750?text=No+Poster');
-        const posterSm = poster;
-        const posterMd = poster;
+        const posterSm = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w185/') : poster;
+        const posterMd = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w342/') : poster;
 
         const contentType = this.getContentType(m, m.type);
 
@@ -1036,13 +1040,15 @@ const App = {
             <span class="type-badge" aria-hidden="true">${contentType}</span>
             <img
               src="${poster}"
-              srcset="${posterSm} 200w, ${posterMd} 342w, ${poster} 500w"
+              srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"
               sizes="(max-width:480px) 160px, (max-width:768px) 200px, 240px"
               alt="${safeTitle} poster"
               loading="lazy"
               decoding="async"
               width="500"
               height="750"
+              onload="this.parentElement.classList.add('loaded')"
+              onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');"
             >
             <div class="movie-card-info">
               <h4 class="movie-title">${safeTitle}</h4>
@@ -1904,10 +1910,12 @@ const App = {
           : (m.poster_path
             ? (m.poster_path.startsWith('http') ? m.poster_path : 'https://image.tmdb.org/t/p/w500' + m.poster_path)
             : 'https://placehold.co/500x750?text=No+Poster');
+        const posterSm = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w185/') : poster;
+        const posterMd = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w342/') : poster;
         const altText = `${title} ${cardType === 'movie' ? 'Movie' : 'TV Series'} poster`;
         return `
           <div class="movie-card" role="listitem" style="aspect-ratio: 2/3; flex: 0 0 auto; width: 150px; scroll-snap-align: start;" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${cardType}')" tabindex="0" onkeydown="if(event.key==='Enter'){this.click();}" aria-label="Continue watching ${title}">
-             <img src="${poster}" alt="${altText}" loading="eager" fetchpriority="${idx < 6 ? 'high' : 'auto'}" decoding="sync" width="150" height="225" onload="this.parentElement.classList.add('loaded')" onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');">
+             <img src="${poster}" srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w" sizes="(max-width: 480px) 150px, (max-width: 768px) 185px, 240px" alt="${altText}" loading="eager" fetchpriority="${idx < 6 ? 'high' : 'auto'}" decoding="sync" width="150" height="225" onload="this.parentElement.classList.add('loaded')" onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');">
              <div class="movie-card-info" style="padding: 0.5rem;"><h4 class="movie-title" style="font-size: 0.8rem;">${title}</h4></div>
           </div>
         `;

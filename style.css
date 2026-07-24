@@ -1585,3 +1585,15 @@ nav.scrolled {
     gap: 8px !important;
   }
 }
+
+/* AV Avatar / Icon Perfect Circle */
+.logo-img, .avatar, .user-avatar, .av-avatar, .av-icon, .avatar-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
