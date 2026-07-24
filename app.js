@@ -1407,6 +1407,12 @@ const App = {
                   let activeIdx = 1;
                   ep.sources.forEach(src => {
                     if (src.url) {
+                      const cleanLabel = (src.label || '').replace(/\s*\(Ads\)/gi, '').replace(/\s*\(No Ads\)/gi, '').trim().toLowerCase();
+                      const excludedServers = ['cloudy', 'multiq', 'short', 'sd', 'hd', 'fhd', 'watch/dl'];
+                      if (excludedServers.includes(cleanLabel)) {
+                        return;
+                      }
+
                       const isAdServer = src.label && (
                         src.label.includes('Server 4') ||
                         src.label.includes('Server 5') ||
