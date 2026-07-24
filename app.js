@@ -1408,7 +1408,7 @@ const App = {
                   ep.sources.forEach(src => {
                     if (src.url) {
                       const cleanLabel = (src.label || '').replace(/\s*\(Ads\)/gi, '').replace(/\s*\(No Ads\)/gi, '').trim().toLowerCase();
-                      const excludedServers = ['cloudy', 'multiq', 'short', 'sd', 'hd', 'fhd', 'watch/dl', 'gdmirrorbot', 'ruby'];
+                      const excludedServers = ['cloudy', 'multiq', 'short', 'sd', 'hd', 'fhd', 'watch/dl', 'gdmirrorbot'];
                       if (excludedServers.includes(cleanLabel)) {
                         return;
                       }

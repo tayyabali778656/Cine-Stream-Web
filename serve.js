@@ -1401,7 +1401,7 @@ const requestHandler = async (req, res) => {
         };
         const isMirror = checkUrl(targetUrl) || (result && checkUrl(result.iframeUrl));
 
-        if (isMirror) {
+        if (false && isMirror) {
           res.writeHead(200, { 'Content-Type': 'text/html' });
           res.end(`
             <!DOCTYPE html>
