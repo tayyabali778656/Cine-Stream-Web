@@ -98,29 +98,32 @@ const Admin = {
    /**
     * Load global configuration settings (like requires_ads_servers) from MongoDB
     */
-   async loadGlobalSettings() {
-      try {
-        const res = await fetch('/api/v1/admin-store').then(r => r.json());
-        const settings = Array.isArray(res) ? res.find(item => item.id === 'global_settings') : null;
-        if (settings) {
-          if (settings.requires_ads_servers) {
-            const checkboxes = document.querySelectorAll('#admin-server-ads-checkboxes input[type="checkbox"]');
-            checkboxes.forEach(cb => {
-              const serverName = cb.getAttribute('data-server');
-              cb.checked = settings.requires_ads_servers.includes(serverName);
-            });
-            localStorage.setItem('moviebox_requires_ads_servers', JSON.stringify(settings.requires_ads_servers));
-          }
-          if (settings.default_play_server) {
-            localStorage.setItem('moviebox_default_play_server', settings.default_play_server);
-          } else {
-            localStorage.removeItem('moviebox_default_play_server');
-          }
-        }
-      } catch (err) {
-        console.warn('[Admin] Failed to load global settings:', err);
-      }
-   },
+    async loadGlobalSettings() {
+       try {
+         const response = await fetch('/api/v1/admin-store').catch(() => null);
+         if (!response || !response.ok) return;
+         const res = await response.json().catch(() => null);
+         if (!res) return;
+         const settings = Array.isArray(res) ? res.find(item => item.id === 'global_settings') : null;
+         if (settings) {
+           if (settings.requires_ads_servers) {
+             const checkboxes = document.querySelectorAll('#admin-server-ads-checkboxes input[type="checkbox"]');
+             checkboxes.forEach(cb => {
+               const serverName = cb.getAttribute('data-server');
+               cb.checked = settings.requires_ads_servers.includes(serverName);
+             });
+             localStorage.setItem('moviebox_requires_ads_servers', JSON.stringify(settings.requires_ads_servers));
+           }
+           if (settings.default_play_server) {
+             localStorage.setItem('moviebox_default_play_server', settings.default_play_server);
+           } else {
+             localStorage.removeItem('moviebox_default_play_server');
+           }
+         }
+       } catch (err) {
+         // Silently handle to avoid polluting console under crawlers/offline states
+       }
+    },
 
    /**
     * Initialize Admin UI
