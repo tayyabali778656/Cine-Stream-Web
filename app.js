@@ -1196,6 +1196,8 @@ const App = {
 
     try {
       let movie;
+      const soundToggle = document.getElementById('sound-toggle');
+      const backBtn = document.getElementById('back-to-details');
 
       // Sync admin cache in background (non-blocking, fire-and-forget)
       this.syncDatabaseCache(true).catch(() => { });
