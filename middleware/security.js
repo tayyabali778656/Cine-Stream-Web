@@ -19,7 +19,7 @@ const STREAMING_SOURCES = [
 
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://pagead2.googlesyndication.com https://*.adtrafficquality.google https://cdn.jsdelivr.net https://*.effectivecpmnetwork.com https://*.highperformanceformat.com 'unsafe-inline'`,
+  `script-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://pagead2.googlesyndication.com https://*.adtrafficquality.google https://cdn.jsdelivr.net https://*.effectivecpmnetwork.com https://*.highperformanceformat.com 'unsafe-inline' 'unsafe-eval'`,
   `style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com 'unsafe-inline'`,
   `font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:`,
   `img-src 'self' https: http: data: blob:`,
@@ -63,7 +63,17 @@ function applySecurityHeaders(res) {
  */
 function isOriginAllowed(origin) {
   if (!origin) return true;
-  return config.allowedOrigins.includes(origin);
+  if (config.allowedOrigins.includes(origin)) return true;
+
+  // Allow localhost & loopback with any port (for local development)
+  const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin);
+  if (isLocal) return true;
+
+  // Allow Vercel preview/deployment subdomains
+  const isVercel = /^https:\/\/.*\.vercel\.app$/.test(origin);
+  if (isVercel) return true;
+
+  return false;
 }
 
 /**
