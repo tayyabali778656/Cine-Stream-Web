@@ -421,6 +421,22 @@
   <!-- Main Content -->
   <main id="main-content" class="container" role="main">
 
+    <!-- Ad Block 3: 728x90 Leaderboard (Top) -->
+    <div class="ad-leaderboard-wrapper" style="display: flex; justify-content: center; margin: 1rem auto; overflow: hidden; max-width: 100%; width: 100%;">
+      <div style="width: 728px; max-width: 100%; display: flex; justify-content: center;">
+        <script>
+          atOptions = {
+            'key' : 'e4a05adf80ab2cb129adfd7080b699c2',
+            'format' : 'iframe',
+            'height' : 90,
+            'width' : 728,
+            'params' : {}
+          };
+        </script>
+        <script src="https://www.highperformanceformat.com/e4a05adf80ab2cb129adfd7080b699c2/invoke.js"></script>
+      </div>
+    </div>
+
     <!-- ══════ SEO Hero — Visible to Google crawlers, hidden visually ══════ -->
     <section id="seo-hero" aria-label="CineStream — Free HD Anime Streaming"
       style="padding: 1.5rem 0 0.5rem; margin-bottom: 0.5rem;">
@@ -539,6 +555,12 @@
       </div>
     </section>
 
+    <!-- Ad Block 1: Native Banner (Bottom) -->
+    <div class="ad-native-wrapper" style="display: flex; justify-content: center; margin: 2rem auto; padding: 0 1rem; overflow: hidden; max-width: 100%;">
+      <script async="async" data-cfasync="false" src="https://pl30550860.effectivecpmnetwork.com/9eabd5370394a4bf238074ed4cc60368/invoke.js"></script>
+      <div id="container-9eabd5370394a4bf238074ed4cc60368" style="width: 100%; max-width: 1200px; min-height: 250px;"></div>
+    </div>
+
   </main>
 
   <!-- Movie Detail Modal -->
@@ -550,9 +572,26 @@
         <div class="loading-spinner"></div>
       </div>
 
-      <div class="modal-hero">
+      <div class="modal-hero" style="position: relative;">
         <div id="trailer-container" style="width: 100%; height: 100%;" aria-label="Video player">
           <!-- Player injected here -->
+        </div>
+        <!-- Player Ad Overlay -->
+        <div id="player-ad-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10; justify-content: center; align-items: center; flex-direction: column;">
+          <div style="position: relative; padding: 15px; background: #111; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center;">
+            <button onclick="document.getElementById('player-ad-overlay').style.display='none'" style="position: absolute; top: 8px; right: 8px; background: rgba(229, 9, 20, 0.9); color: white; border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.background='#ff0f22'" onmouseout="this.style.background='rgba(229, 9, 20, 0.9)'">Skip Ad</button>
+            <div style="font-size: 11px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Outfit', sans-serif; margin-top: 15px;">Advertisement</div>
+            <script>
+              atOptions = {
+                'key' : '8d2d71d511245419b703c77e7805e213',
+                'format' : 'iframe',
+                'height' : 250,
+                'width' : 300,
+                'params' : {}
+              };
+            </script>
+            <script src="https://www.highperformanceformat.com/8d2d71d511245419b703c77e7805e213/invoke.js"></script>
+          </div>
         </div>
         <div id="no-trailer"
           style="display: none; width: 100%; height: 100%; justify-content: center; align-items: center; background: #111; color: #444; font-size: 2rem; font-weight: 800; position: absolute; top: 0; left: 0; z-index: 1;"

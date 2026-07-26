@@ -1370,6 +1370,12 @@ const App = {
         if (backBtn) backBtn.style.display = 'flex';
         if (heroOverlay) heroOverlay.style.display = 'none';
 
+        // Show player ad overlay when starting to watch
+        const playerAd = document.getElementById('player-ad-overlay');
+        if (playerAd) {
+          playerAd.style.display = 'flex';
+        }
+
         if (movieId) {
           const { STREAM_PLAYER_URL } = window.API_CONFIG;
           const title = movie.title || movie.name || '';
@@ -1809,6 +1815,8 @@ const App = {
       } else {
         if (backBtn) backBtn.style.display = 'none';
         if (heroOverlay) heroOverlay.style.display = 'block';
+        const playerAd = document.getElementById('player-ad-overlay');
+        if (playerAd) playerAd.style.display = 'none';
 
         const trailerUrl = await API.getTrailer(movieId, type);
 
@@ -1940,6 +1948,9 @@ const App = {
     const controlBar = document.getElementById('player-control-bar');
     if (controlBar) controlBar.style.display = 'none';
     if (heroOverlay) heroOverlay.style.display = 'block';
+
+    const playerAd = document.getElementById('player-ad-overlay');
+    if (playerAd) playerAd.style.display = 'none';
 
     if (updHistory) {
       if (window.location.pathname !== '/') {
