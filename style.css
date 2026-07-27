@@ -1654,6 +1654,7 @@ nav.scrolled {
   .modal-overlay.watching .modal-hero {
     margin-top: 50px !important;
     height: calc(100% - 50px) !important;
+    overflow: visible !important;
   }
 
   .modal-overlay.watching .modal-back-btn {
