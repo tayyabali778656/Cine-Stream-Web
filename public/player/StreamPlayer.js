@@ -417,6 +417,13 @@ class StreamPlayer {
   }
 
   _showDownloadError() {
+    const season = this.currentSeason || 1;
+    const episode = this.currentEpisode || 1;
+    
+    // Find the last tried server name (we try up to sources.length - 1)
+    const lastSource = this.sources && this.sources.length > 0 ? this.sources[this.sources.length - 1] : null;
+    const serverLabel = lastSource ? lastSource.label : 'N/A';
+
     this.container.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
                   height:100%;color:#fff;background:#0f0f0f;gap:16px;font-family:'Outfit',sans-serif;
@@ -426,6 +433,13 @@ class StreamPlayer {
         <p style="font-size:1.05rem;font-weight:500;max-width:420px;line-height:1.5;color:#ccc;margin:0 0 10px 0;">
           If you want to watch this anime, download the CineStream app now.
         </p>
+        <div style="font-size:0.85rem;color:#aaa;background:rgba(255,255,255,0.05);padding:8px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);margin-bottom:8px;display:flex;gap:12px;align-items:center;justify-content:center;">
+          <span><strong>Season:</strong> ${season}</span>
+          <span>•</span>
+          <span><strong>Episode:</strong> ${episode}</span>
+          <span>•</span>
+          <span><strong>Server:</strong> ${serverLabel}</span>
+        </div>
         <a href="/public/CineStream.apk" download
            style="display:inline-flex;align-items:center;gap:10px;padding:12px 28px;
                   background:#3DDC84;border:none;border-radius:30px;color:#000;
