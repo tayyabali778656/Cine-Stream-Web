@@ -91,46 +91,9 @@ class StreamPlayer {
 
   // ── Health check via proxy HEAD request ────────────────────────────────────
   async _healthCheck(url) {
-    if (!url) return false;
-    if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('netmirror.global')) return true;
-
-    // For local iframe-proxy URLs, check if they are healthy by fetching them and checking for "Server Unavailable"
-    if (url.startsWith('/iframe-proxy')) {
-      try {
-        const res = await fetch(url, {
-          signal: AbortSignal.timeout(8000), // Resolution can take a few seconds
-        });
-        const text = await res.text();
-        if (text.includes('Server Unavailable') || text.includes('deleted from the host')) {
-          return false;
-        }
-        return true;
-      } catch (e) {
-        // Network/timeout error (often caused by ad-blockers) - assume healthy and let the iframe try loading.
-        // This prevents false broken video reports.
-        return true;
-      }
-    }
-
-    if (url.startsWith('/')) return true;
-
-    try {
-      const res = await fetch(`/proxy?url=${encodeURIComponent(url)}`, {
-        signal: AbortSignal.timeout(5000),
-      });
-      const json = await res.json();
-      // Consider 404 as unhealthy
-      if (json.statusCode === 404) return false;
-      if (json.content && (
-        json.content.toLowerCase().includes('404 not found') ||
-        json.content.toLowerCase().includes('page not found') ||
-        json.content.toLowerCase().includes('video not found')
-      )) return false;
-      return true;
-    } catch {
-      // Network error — try loading anyway (proxy might be unavailable)
-      return true;
-    }
+    // Background health checks via proxy are disabled to prevent false negatives
+    // on client-side iframe players due to Cloudflare/referer security.
+    return true;
   }
 
   // ── Inject the player iframe/video into the container ─────────────────────
@@ -417,13 +380,6 @@ class StreamPlayer {
   }
 
   _showDownloadError() {
-    const season = this.currentSeason || 1;
-    const episode = this.currentEpisode || 1;
-    
-    // Find the last tried server name (we try up to sources.length - 1)
-    const lastSource = this.sources && this.sources.length > 0 ? this.sources[this.sources.length - 1] : null;
-    const serverLabel = lastSource ? lastSource.label : 'N/A';
-
     this.container.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
                   height:100%;color:#fff;background:#0f0f0f;gap:16px;font-family:'Outfit',sans-serif;
@@ -433,13 +389,6 @@ class StreamPlayer {
         <p style="font-size:1.05rem;font-weight:500;max-width:420px;line-height:1.5;color:#ccc;margin:0 0 10px 0;">
           If you want to watch this anime, download the CineStream app now.
         </p>
-        <div style="font-size:0.85rem;color:#aaa;background:rgba(255,255,255,0.05);padding:8px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);margin-bottom:8px;display:flex;gap:12px;align-items:center;justify-content:center;">
-          <span><strong>Season:</strong> ${season}</span>
-          <span>•</span>
-          <span><strong>Episode:</strong> ${episode}</span>
-          <span>•</span>
-          <span><strong>Server:</strong> ${serverLabel}</span>
-        </div>
         <a href="/public/CineStream.apk" download
            style="display:inline-flex;align-items:center;gap:10px;padding:12px 28px;
                   background:#3DDC84;border:none;border-radius:30px;color:#000;
