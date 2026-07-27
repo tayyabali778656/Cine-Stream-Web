@@ -57,6 +57,40 @@ const App = {
     }, 4000);
   },
 
+  showNoTrailer(noTrailerEl, text = null) {
+    if (!noTrailerEl) return;
+    if (text) {
+      const msgEl = noTrailerEl.querySelector('.no-trailer-text');
+      if (msgEl) msgEl.textContent = text;
+    }
+    // Restore layout
+    noTrailerEl.style.display = 'flex';
+    noTrailerEl.style.position = '';
+    noTrailerEl.style.visibility = '';
+    noTrailerEl.style.opacity = '';
+    noTrailerEl.style.pointerEvents = '';
+    noTrailerEl.style.height = '';
+    noTrailerEl.style.padding = '';
+  },
+
+  hideNoTrailer(noTrailerEl) {
+    if (!noTrailerEl) return;
+    // Hide visually but keep iframe alive to prevent third-party script crashes
+    noTrailerEl.style.position = 'absolute';
+    noTrailerEl.style.visibility = 'hidden';
+    noTrailerEl.style.opacity = '0';
+    noTrailerEl.style.pointerEvents = 'none';
+    noTrailerEl.style.height = '0';
+    noTrailerEl.style.padding = '0';
+  },
+
+  decodeHtmlEntities(str) {
+    if (!str) return '';
+    const tempEl = document.createElement('textarea');
+    tempEl.innerHTML = str;
+    return tempEl.value;
+  },
+
   async syncDatabaseCache(force = false) {
     const now = Date.now();
     if (!force && this._lastDbSync && (now - this._lastDbSync) < 30_000) return;
@@ -200,7 +234,7 @@ const App = {
     }
 
     // Sync database cache in background (non-blocking)
-    this.syncDatabaseCache().catch(() => {});
+    this.syncDatabaseCache().catch(() => { });
 
     // Clear stale single-episode anime selector caches so they get rebuilt properly
     try {
@@ -1151,7 +1185,7 @@ const App = {
         ? (movie.poster_path.startsWith('http') ? movie.poster_path : 'https://image.tmdb.org/t/p/w500' + movie.poster_path)
         : 'https://placehold.co/500x750?text=No+Poster');
     document.getElementById('modal-poster').src = posterSrc;
-    document.getElementById('modal-title').textContent = movie.title || movie.name;
+    document.getElementById('modal-title').textContent = this.decodeHtmlEntities(movie.title || movie.name);
 
     const ratingVal = movie.vote_average || movie.rating || 7.5;
     const ratingHtml = `<i class="fas fa-star rating-star"></i> ${parseFloat(ratingVal).toFixed(1)}`;
@@ -1165,21 +1199,35 @@ const App = {
     if (mobRating) mobRating.innerHTML = ratingHtml;
     if (mobYear) mobYear.innerHTML = yearHtml;
 
-    document.getElementById('modal-description').textContent = movie.overview || movie.description || 'No description available.';
+    const descRaw = movie.overview || movie.description || 'No description available.';
+    const descText = this.decodeHtmlEntities(descRaw);
+    const descEl = document.getElementById('modal-description');
+    const descToggle = document.getElementById('modal-desc-toggle');
+
+    if (descEl) {
+      descEl.textContent = descText;
+      descEl.classList.remove('expanded');
+    }
+
+    if (descToggle) {
+      if (descText.length > 200) {
+        descToggle.style.display = 'inline-block';
+        descToggle.textContent = 'View More';
+        descToggle.onclick = () => {
+          if (descEl.classList.contains('expanded')) {
+            descEl.classList.remove('expanded');
+            descToggle.textContent = 'View More';
+          } else {
+            descEl.classList.add('expanded');
+            descToggle.textContent = 'View Less';
+          }
+        };
+      } else {
+        descToggle.style.display = 'none';
+      }
+    }
 
     this.updateMetaTags(movie, type);
-
-    const genresEl = document.getElementById('modal-genres');
-    if (genresEl) {
-      let genreNames = '';
-      if (movie.genres) {
-        genreNames = movie.genres.map(g => (typeof g === 'string' ? g : g.name)).join(', ');
-      } else if (movie.genres_str) {
-        genreNames = movie.genres_str;
-      }
-      genresEl.textContent = genreNames || '';
-      genresEl.style.display = genreNames ? '' : 'none';
-    }
 
     const langEl = document.getElementById('modal-language');
     if (langEl) {
@@ -1226,15 +1274,70 @@ const App = {
     const backBtn = document.getElementById('back-to-details');
     if (backBtn) {
       backBtn.onclick = () => {
-        this.openModal(movieId, type, true, false, isNetMirror);
+        // Smooth in-place switch back to details (no full reload)
+        if (this.activePlayer) {
+          this.activePlayer.destroy();
+          this.activePlayer = null;
+        }
+        if (this.playerMessageHandler) {
+          window.removeEventListener('message', this.playerMessageHandler);
+          this.playerMessageHandler = null;
+        }
+        const trailerContainer = document.getElementById('trailer-container');
+        if (trailerContainer) trailerContainer.innerHTML = '';
+
+        const body = document.querySelector('.modal-body');
+        const hero = document.querySelector('.modal-hero');
+        const controlBar = document.getElementById('player-control-bar');
+        const soundToggle = document.getElementById('sound-toggle');
+        const heroOverlay = document.querySelector('.modal-hero-overlay');
+        const noTrailerEl = document.getElementById('no-trailer');
+        const modalSeoEl = document.getElementById('modal-seo-content');
+
+        this.modal.classList.remove('watching');
+        if (body) body.style.display = 'flex';
+        if (hero) { hero.style.height = ''; hero.style.display = ''; }
+        if (controlBar) controlBar.style.display = 'none';
+        if (heroOverlay) heroOverlay.style.display = 'block';
+        if (backBtn) backBtn.style.display = 'none';
+        if (modalSeoEl) modalSeoEl.style.display = 'block';
+
+        const playerAd = document.getElementById('player-ad-overlay');
+        if (playerAd) playerAd.style.display = 'none';
+
+        // Restore trailer or show no-trailer ad smoothly
+        const hasTrailer = !!movie._trailerUrl;
+        if (hasTrailer) {
+          if (soundToggle) soundToggle.style.display = 'flex';
+          if (trailerContainer) trailerContainer.innerHTML = `<iframe id="trailer-video" src="${movie._trailerUrl}" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+          this.hideNoTrailer(noTrailerEl);
+        } else {
+          if (soundToggle) soundToggle.style.display = 'none';
+          if (trailerContainer) trailerContainer.innerHTML = '';
+          this.showNoTrailer(noTrailerEl, 'TRAILER NOT AVAILABLE');
+        }
+
+        // Restore watch button
+        const wb = document.getElementById('modal-watch-btn');
+        if (wb) { wb.disabled = false; wb.innerHTML = '<i class="fas fa-play"></i> Watch Now'; }
+
+        // Update URL back to details path
+        const detailsPath = `/media/${type}/${movieId}`;
+        if (window.location.pathname !== detailsPath) {
+          window.history.pushState({}, '', detailsPath);
+        }
+
+        // Scroll modal to top smoothly
+        const modalContent = this.modal.querySelector('.modal-content');
+        if (modalContent) modalContent.scrollTo({ top: 0, behavior: 'smooth' });
       };
     }
 
-    // Populate Modal SEO & FAQ Area
+    // Populate Modal SEO & FAQ Area — only shown in details mode (not while watching)
     const modalSeo = document.getElementById('modal-seo-content');
     if (modalSeo) {
-      const animeTitle = movie.title || movie.name || '';
-      const animeDesc = movie.overview || movie.description || '';
+      const animeTitle = this.decodeHtmlEntities(movie.title || movie.name || '');
+      const animeDesc = this.decodeHtmlEntities(movie.overview || movie.description || '');
       const faqList = [
         {
           name: `Where to watch ${animeTitle} in Hindi dubbed?`,
@@ -1251,16 +1354,15 @@ const App = {
       ];
 
       const visibleSeoContent = `
-        <div class="ssr-seo-modal-inner" style="color:var(--text);font-family:system-ui,-apple-system,sans-serif;">
-          <h3 style="font-size:1.2rem;font-weight:700;margin:0 0 0.5rem;color:var(--primary);">Synopsis and Story Details</h3>
-          <p style="line-height:1.6;color:var(--text-muted);font-size:0.9rem;margin-bottom:1.5rem;">${animeDesc}</p>
-
-          <h3 style="font-size:1.2rem;font-weight:700;margin:0 0 0.5rem;color:var(--primary);">Frequently Asked Questions (FAQs)</h3>
+        <div class="ssr-seo-modal-inner" itemscope itemtype="https://schema.org/FAQPage" style="color:var(--text);font-family:system-ui,-apple-system,sans-serif;">
+          <h3 style="font-size:1.2rem;font-weight:700;margin:0 0 0.75rem;color:var(--primary);">Frequently Asked Questions (FAQs)</h3>
           <div style="line-height:1.6;font-size:0.9rem;">
             ${faqList.map(faq => `
-              <div style="margin-bottom:1rem;">
-                <strong style="color:var(--text);display:block;margin-bottom:0.2rem;">Q: ${faq.name}</strong>
-                <span style="color:var(--text-muted);display:block;padding-left:1rem;border-left:2px solid var(--primary);">${faq.text}</span>
+              <div itemprop="mainEntity" itemscope itemtype="https://schema.org/Question" style="margin-bottom:1rem;">
+                <strong itemprop="name" class="faq-question" style="color:var(--text);display:block;margin-bottom:0.25rem;">Q: ${faq.name}</strong>
+                <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+                  <span itemprop="text" class="faq-answer" style="color:var(--text-muted);display:block;padding-left:1rem;border-left:2px solid var(--primary);">${faq.text}</span>
+                </div>
               </div>
             `).join('')}
           </div>
@@ -1319,9 +1421,9 @@ const App = {
         }
         // Find in local memory pools
         const local = (this.movies && this.movies.find(m => String(m.id) === String(movieId))) ||
-                      (this.moviePool && this.moviePool.find(m => String(m.id) === String(movieId))) ||
-                      (this.tvPool && this.tvPool.find(m => String(m.id) === String(movieId))) ||
-                      (this.animePool && this.animePool.find(m => String(m.id) === String(movieId)));
+          (this.moviePool && this.moviePool.find(m => String(m.id) === String(movieId))) ||
+          (this.tvPool && this.tvPool.find(m => String(m.id) === String(movieId))) ||
+          (this.animePool && this.animePool.find(m => String(m.id) === String(movieId)));
         if (local) {
           return {
             id: local.id,
@@ -1354,7 +1456,7 @@ const App = {
       if (localMovie) {
         movie = localMovie;
         this.populateModalUI(movie, type, isNetMirror, movieId);
-        
+
         // Hide loading screen instantly!
         const loadingScreen = document.getElementById('modal-loading-screen');
         const modalContent = this.modal.querySelector('.modal-content');
@@ -1370,7 +1472,7 @@ const App = {
       if (!localMovie || (!localMovie.description && !localMovie.overview) || !this.animeDetailsCache[movieId]) {
         try {
           const fetchPromise = fetch(`/api/v1/anime/details?id=${encodeURIComponent(movieId)}`).then(r => r.json());
-          
+
           if (!localMovie) {
             // Blocking fetch if we have absolutely no local data
             const detailsRes = await fetchPromise;
@@ -1400,7 +1502,7 @@ const App = {
               };
               this.animeDetailsCache[movieId] = movie;
               this.populateModalUI(movie, type, isNetMirror, movieId);
-              
+
               const loadingScreen = document.getElementById('modal-loading-screen');
               const modalContent = this.modal.querySelector('.modal-content');
               if (loadingScreen) {
@@ -1440,12 +1542,12 @@ const App = {
                   _isToonStream: true
                 };
                 this.animeDetailsCache[movieId] = updatedMovie;
-                
+
                 // Only overwrite if user is still on the same modal
                 if (this.activeMovieId === movieId) {
                   movie = updatedMovie;
                   this.populateModalUI(movie, type, isNetMirror, movieId);
-                  
+
                   // Also re-render episodes selectors if currently watching
                   if (isWatching && typeof updateEpisodesList === 'function') {
                     updateEpisodesList();
@@ -1473,7 +1575,7 @@ const App = {
       if (trailerContainer) {
         trailerContainer.innerHTML = '';
       }
-      if (noTrailer) noTrailer.style.display = 'none';
+      if (noTrailer) this.hideNoTrailer(noTrailer);
 
       if (isWatching) {
         this.modal.classList.add('watching');
@@ -1927,9 +2029,7 @@ const App = {
           }
         } else {
           if (noTrailer) {
-            const msgEl = noTrailer.querySelector('.no-trailer-text');
-            if (msgEl) msgEl.textContent = 'STREAM NOT AVAILABLE';
-            noTrailer.style.display = 'flex';
+            this.showNoTrailer(noTrailer, 'STREAM NOT AVAILABLE');
           }
         }
       } else {
@@ -1939,18 +2039,20 @@ const App = {
         const playerAd = document.getElementById('player-ad-overlay');
         if (playerAd) playerAd.style.display = 'none';
 
-        const trailerUrl = await API.getTrailer(movieId, type);
+        let trailerUrl = movie._trailerUrl;
+        if (typeof trailerUrl === 'undefined') {
+          trailerUrl = await API.getTrailer(movieId, type);
+          movie._trailerUrl = trailerUrl;
+        }
 
         if (trailerContainer && noTrailer) {
           if (trailerUrl) {
             if (soundToggle) soundToggle.style.display = 'flex';
             trailerContainer.innerHTML = `<iframe id="trailer-video" src="${trailerUrl}" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-            noTrailer.style.display = 'none';
+            this.hideNoTrailer(noTrailer);
           } else {
             trailerContainer.innerHTML = '';
-            const msgEl = noTrailer.querySelector('.no-trailer-text');
-            if (msgEl) msgEl.textContent = 'TRAILER NOT AVAILABLE';
-            noTrailer.style.display = 'flex';
+            this.showNoTrailer(noTrailer, 'TRAILER NOT AVAILABLE');
             if (soundToggle) soundToggle.style.display = 'none';
           }
         }
@@ -1959,17 +2061,20 @@ const App = {
       const body = document.querySelector('.modal-body');
       const hero = document.querySelector('.modal-hero');
       const controlBar = document.getElementById('player-control-bar');
+      const modalSeoEl = document.getElementById('modal-seo-content');
       if (body && hero) {
         if (isWatching) {
           body.style.display = 'none';
           hero.style.height = 'calc(100% - 50px)';
           hero.style.display = 'block'; // Bypass mobile hide rule
           if (controlBar) controlBar.style.display = 'flex';
+          if (modalSeoEl) modalSeoEl.style.display = 'none';
         } else {
           body.style.display = 'flex';
           hero.style.height = ''; // Revert to stylesheet height rule
           hero.style.display = ''; // Revert to stylesheet display rule
           if (controlBar) controlBar.style.display = 'none';
+          if (modalSeoEl) modalSeoEl.style.display = 'block';
         }
       }
 
@@ -2065,7 +2170,7 @@ const App = {
     if (bodyEl) { bodyEl.style.display = ''; }
 
     if (trailerContainer) trailerContainer.innerHTML = '';
-    if (noTrailer) noTrailer.style.display = 'none';
+    if (noTrailer) this.hideNoTrailer(noTrailer);
     if (backBtn) backBtn.style.display = 'none';
     const controlBar = document.getElementById('player-control-bar');
     if (controlBar) controlBar.style.display = 'none';
@@ -2073,6 +2178,23 @@ const App = {
 
     const playerAd = document.getElementById('player-ad-overlay');
     if (playerAd) playerAd.style.display = 'none';
+
+    // Clear movie-specific SEO content from home page area
+    const seoArea = document.getElementById('seo-content-area');
+    if (seoArea) seoArea.innerHTML = '';
+
+    // Reset modal SEO/FAQ area so stale content is not shown on next open
+    const modalSeo = document.getElementById('modal-seo-content');
+    if (modalSeo) {
+      modalSeo.innerHTML = '';
+      modalSeo.style.display = 'none';
+    }
+
+    // Reset description toggle
+    const descEl = document.getElementById('modal-description');
+    const descToggle = document.getElementById('modal-desc-toggle');
+    if (descEl) { descEl.textContent = ''; descEl.classList.remove('expanded'); }
+    if (descToggle) { descToggle.style.display = 'none'; descToggle.textContent = 'View More'; }
 
     if (updHistory) {
       if (window.location.pathname !== '/') {

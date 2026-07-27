@@ -227,6 +227,23 @@ async function run() {
     console.warn(`      ⚠ MongoDB unavailable: ${err.message}`);
   }
 
+  // ── Step 2.4: Genre collection pages ──────────────────────────────────────
+  console.log('[2.4/4] Adding genre collection pages...');
+  const genresList = [
+    'action', 'adventure', 'comedy', 'drama', 'fantasy', 'sci-fi', 'romance',
+    'thriller', 'slice-of-life', 'shounen', 'isekai', 'mecha', 'supernatural',
+    'sports', 'mystery', 'historical', 'school'
+  ];
+  for (const g of genresList) {
+    const genreSlug = g.toLowerCase().replace(/\s+/g, '-');
+    addEntry({
+      loc:          `${BASE_URL}/genre/${genreSlug}`,
+      priority:     '0.6',
+      changefreq:   'weekly',
+      lastmod:      TODAY
+    });
+  }
+
   // ── Step 2.5: Fetch live entries from ToonStream categories (Live Scraping) ──
   console.log('[2.5/4] Fetching live entries from ToonStream...');
   try {

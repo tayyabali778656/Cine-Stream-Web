@@ -17,6 +17,7 @@
   z-index: 99999;
   transition: top 0.2s ease;
 }
+
 .skip-to-main:focus {
   top: 0;
   outline: 3px solid #fff;
@@ -48,12 +49,17 @@
   font-size: 0.82rem;
   color: var(--text-muted, #b3b3b3);
 }
+
 .breadcrumb-list a {
   color: var(--text-muted, #b3b3b3);
   text-decoration: none;
 }
-.breadcrumb-list a:hover { color: var(--primary, #ff4757); }
-.breadcrumb-list li + li::before {
+
+.breadcrumb-list a:hover {
+  color: var(--primary, #ff4757);
+}
+
+.breadcrumb-list li+li::before {
   content: '›';
   margin-right: 0.4rem;
   color: var(--text-muted, #b3b3b3);
@@ -70,7 +76,10 @@
   font-size: 1rem;
   line-height: 1;
 }
-.search-clear-btn:hover { color: #fff; }
+
+.search-clear-btn:hover {
+  color: #fff;
+}
 
 /* Custom Search Clear/Cancel Button (Webkit) */
 input[type="search"]::-webkit-search-cancel-button {
@@ -84,6 +93,7 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-right: 4px;
   transition: transform 0.2s;
 }
+
 input[type="search"]::-webkit-search-cancel-button:hover {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>");
   transform: scale(1.1);
@@ -120,7 +130,7 @@ body {
   font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;
   line-height: 1.5;
-  padding-top: 80px;
+  padding-top: 130px;
 }
 
 /* Scrollbar Global */
@@ -291,7 +301,7 @@ nav {
   left: 0;
   width: 100%;
   z-index: 1000;
-  height: 80px;
+  height: 110px;
   display: flex;
   align-items: center;
   transition: all 0.3s ease-out;
@@ -305,7 +315,7 @@ nav.scrolled {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--glass-border);
-  height: 90px;
+  height: 110px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
 }
 
@@ -422,7 +432,7 @@ nav.scrolled {
 /* Mobile Responsive Navbar */
 @media (max-width: 768px) {
   body {
-    padding-top: 140px;
+    padding-top: 110px;
   }
 
   nav {
@@ -721,29 +731,38 @@ nav.scrolled {
 }
 
 .modal-content {
-  position: relative;
-  width: 90%;
-  max-width: 1100px;
-  height: 90vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   background: #000;
-  border-radius: var(--border-radius);
+  border-radius: 0;
   overflow-y: auto;
   box-shadow: 0 0 50px rgba(0, 0, 0, 1);
   display: flex;
   flex-direction: column;
-  transform: scale(0.92) translateY(30px);
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(0.97) translateY(20px);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-overlay.active .modal-content {
   transform: scale(1) translateY(0);
 }
 
+/* Modal hero fills more height on full-screen modal */
+.modal-overlay.active .modal-hero {
+  height: 50vh;
+  overflow: visible;
+}
+
 .modal-hero {
   position: relative;
   width: 100%;
-  height: 60%;
-  overflow: hidden;
+  height: 50vh;
+  overflow: visible;
 }
 
 .modal-hero iframe {
@@ -832,7 +851,7 @@ nav.scrolled {
   gap: 2rem;
   position: relative;
   z-index: 10;
-  margin-top: -120px;
+  margin-top: 0;
 }
 
 .modal-poster-container {
@@ -884,7 +903,7 @@ nav.scrolled {
 }
 
 .modal-details h2 {
-  font-size: 3rem;
+  font-size: 2.2rem;
   margin-bottom: 0.5rem;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
@@ -917,6 +936,14 @@ nav.scrolled {
   line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.modal-description.expanded {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
+  overflow: visible !important;
 }
 
 .modal-ad {
@@ -950,6 +977,13 @@ nav.scrolled {
   z-index: 3000;
 }
 
+#no-trailer {
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  padding: 8px 4px !important;
+  order: -1;
+}
+
 .toast {
   background: #333;
   color: white;
@@ -975,6 +1009,7 @@ nav.scrolled {
 }
 
 @media (max-width: 900px) {
+
   /* ── Modal Overlay: full viewport on mobile ── */
   .modal-overlay {
     width: 100vw !important;
@@ -1008,14 +1043,33 @@ nav.scrolled {
     box-sizing: border-box !important;
   }
 
-  /* ── Hero trailer: 200px on mobile details, full height when watching ── */
+  /* ── Hero trailer: hidden on mobile details view, full height when watching ── */
   .modal-hero {
-    display: block !important;
+    display: none !important;
     height: 160px !important;
     min-height: 130px;
     flex-shrink: 0 !important;
     width: 100% !important;
     overflow: hidden;
+  }
+
+  /* Show hero only when watching video on mobile */
+  .modal-overlay.watching .modal-hero {
+    display: block !important;
+  }
+
+  /* ── No-trailer ad banner: compact strip right after hero on mobile ── */
+  #no-trailer {
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    padding: 8px 4px !important;
+    order: -1;
+  }
+
+  #no-trailer>div {
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-content: center;
   }
 
   .modal-overlay.watching .modal-content {
@@ -1080,19 +1134,32 @@ nav.scrolled {
     margin-bottom: 0.75rem;
   }
 
-  #modal-rating, #modal-year {
+  #modal-rating,
+  #modal-year {
     display: none !important;
-  }
-
-  #modal-genres {
-    font-size: 0.75rem !important;
   }
 
   .modal-description {
     font-size: 0.85rem;
-    margin: 0 auto 1rem;
+    margin: 0 auto 1.5rem;
     -webkit-line-clamp: 3;
     line-clamp: 3;
+  }
+
+  #modal-seo-content {
+    padding: 1rem 1.25rem !important;
+  }
+
+  .ssr-seo-modal-inner h3 {
+    font-size: 1.05rem !important;
+  }
+
+  .ssr-seo-modal-inner .faq-question {
+    font-size: 0.85rem !important;
+  }
+
+  .ssr-seo-modal-inner .faq-answer {
+    font-size: 0.8rem !important;
   }
 
   /* Buttons row */
@@ -1129,7 +1196,8 @@ nav.scrolled {
   }
 
   .modal-sound-toggle span {
-    display: none; /* hide "Muted" text, keep only icon */
+    display: none;
+    /* hide "Muted" text, keep only icon */
   }
 
   /* Poster: bigger on mobile */
@@ -1246,9 +1314,11 @@ nav.scrolled {
     padding: 0.8rem 0 0.2rem !important;
     margin-bottom: 0.2rem !important;
   }
+
   #seo-hero h1 {
     font-size: 1.1rem !important;
   }
+
   #seo-hero p {
     font-size: 0.76rem !important;
     line-height: 1.45 !important;
@@ -1477,6 +1547,7 @@ nav.scrolled {
   .nav-content {
     position: relative;
   }
+
   .apk-download-btn {
     position: absolute;
     top: 15px;
@@ -1488,6 +1559,7 @@ nav.scrolled {
     justify-content: center;
     background: rgba(229, 9, 20, 0.15);
   }
+
   .apk-download-btn svg.apk-icon {
     width: 18px;
     height: 18px;
@@ -1572,22 +1644,30 @@ nav.scrolled {
   .info-nav {
     height: 70px !important;
   }
+
   .info-nav .nav-content {
     padding: 0 12px !important;
   }
+
   .info-nav .apk-download-btn,
   .info-nav .btn-primary {
     height: 34px !important;
     padding: 0 12px !important;
     font-size: 0.8rem !important;
   }
+
   .info-nav .nav-actions {
     gap: 8px !important;
   }
 }
 
 /* AV Avatar / Icon Perfect Circle */
-.logo-img, .avatar, .user-avatar, .av-avatar, .av-icon, .avatar-icon {
+.logo-img,
+.avatar,
+.user-avatar,
+.av-avatar,
+.av-icon,
+.avatar-icon {
   width: 32px;
   height: 32px;
   border-radius: 50% !important;
@@ -1599,6 +1679,7 @@ nav.scrolled {
 
 /* ── Native Ads: 2 in a Row on Mobile Devices ── */
 @media (max-width: 768px) {
+
   /* Enforce flex-row wrap on the wrapper to keep two separate ad divs side-by-side */
   .ad-native-wrapper {
     display: flex !important;
@@ -1610,7 +1691,7 @@ nav.scrolled {
     padding: 0 4px !important;
   }
 
-  .ad-native-wrapper > div {
+  .ad-native-wrapper>div {
     flex: 1 1 calc(50% - 8px) !important;
     max-width: calc(50% - 8px) !important;
     width: calc(50% - 8px) !important;
@@ -1618,14 +1699,14 @@ nav.scrolled {
   }
 
   /* Ensure the ad container itself spans full width (not restricted to 50%) */
-  .ad-native-wrapper > div[id^="container-"] {
+  .ad-native-wrapper>div[id^="container-"] {
     flex: 1 1 100% !important;
     max-width: 100% !important;
     width: 100% !important;
   }
 
   /* Force internal layout of a single native ad widget to show as a 2-column grid */
-  .ad-native-wrapper [id^="container-"] > div {
+  .ad-native-wrapper [id^="container-"]>div {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 8px !important;
@@ -1633,7 +1714,7 @@ nav.scrolled {
     max-width: 100% !important;
   }
 
-  .ad-native-wrapper [id^="container-"] > div > div {
+  .ad-native-wrapper [id^="container-"]>div>div {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
@@ -1686,6 +1767,28 @@ nav.scrolled {
   }
 }
 
+/* Responsive scale for video player ad overlay card so it never clips on mobile */
+.player-ad-card {
+  transform-origin: center center;
+  max-width: 95vw !important;
+}
 
+@media (max-width: 480px),
+(max-height: 480px) {
+  .player-ad-card {
+    transform: scale(0.8) !important;
+  }
+}
 
+@media (max-width: 360px),
+(max-height: 380px) {
+  .player-ad-card {
+    transform: scale(0.68) !important;
+  }
+}
 
+@media (max-height: 280px) {
+  .player-ad-card {
+    transform: scale(0.55) !important;
+  }
+}

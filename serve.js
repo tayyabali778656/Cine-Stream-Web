@@ -1811,6 +1811,10 @@ const requestHandler = async (req, res) => {
           animeCreatedAt = details.createdAt || details.updatedAt || '';
         }
 
+        const animeDuration = details ? (details.duration || details.runtime || '') : '';
+        const animeStatus = details ? (details.status || '') : '';
+        const animeLanguage = details ? (details.language || '') : '';
+
         // Build a rich 160-char description
         const buildDesc = (title, type, genres, year, rating) => {
           const genrePart = genres.length > 0 ? ` (${genres.slice(0, 3).join(', ')})` : '';
@@ -1839,8 +1843,8 @@ const requestHandler = async (req, res) => {
         if (seoDesc.length > 160) seoDesc = seoDesc.slice(0, 157) + '...';
 
         const genreKeywords = animeGenres.map(g => `${g} anime in hindi`).join(', ');
-        // Target Hinglish & intent search strings: where to watch, kahan dekhen, ep 1, reviews, release date
-        const intentKeywords = `${animeTitle} ep 1 hindi dubbed, ${animeTitle} season 1, where to watch ${animeTitle} in hindi, ${animeTitle} hindi dubbed kahan dekhen, is ${animeTitle} available in hindi, ${animeTitle} hindi dubbed reviews, ${animeTitle} episode guide`;
+        // Target Hinglish, Urdu, & regional searches: Urdu, reviews, cast, story, trailer, release date, watch online
+        const intentKeywords = `${animeTitle} ep 1 hindi dubbed, ${animeTitle} season 1, where to watch ${animeTitle} in hindi, ${animeTitle} hindi dubbed kahan dekhen, is ${animeTitle} available in hindi, ${animeTitle} urdu dubbed, ${animeTitle} watch online, ${animeTitle} free streaming, ${animeTitle} full details, ${animeTitle} trailer, ${animeTitle} release date, ${animeTitle} story review cast`;
         const seoKeywords = `${animeTitle} in hindi, ${animeTitle} hindi dubbed, watch ${animeTitle} online free, ${animeTitle} hindi dubbed episodes, ${animeTitle} ${animeYear || ''}, ${genreKeywords}, ${intentKeywords}, anime in hindi, CineStream, cinestream.watch`.replace(/,\s*,/g, ',');
 
         let canonical = `https://cinestream.watch/${action}/${mediaType}/${toonId}`;
@@ -1881,7 +1885,7 @@ const requestHandler = async (req, res) => {
           'url': canonical,
           'image': { '@type': 'ImageObject', 'url': posterUrl, 'width': 500, 'height': 750 },
           'description': seoDesc,
-          'inLanguage': ['hi', 'en'],
+          'inLanguage': animeLanguage ? ['hi', 'en', animeLanguage] : ['hi', 'en'],
           'isAccessibleForFree': true,
           'datePublished': datePublished,
           'dateModified': dateModified,
@@ -1891,6 +1895,16 @@ const requestHandler = async (req, res) => {
         };
         if (animeGenres.length > 0) commonMediaFields['genre'] = animeGenres;
         if (animeRating) commonMediaFields['aggregateRating'] = { '@type': 'AggregateRating', 'ratingValue': animeRating, 'bestRating': '10', 'ratingCount': 1000 };
+        if (animeDuration) {
+          // Schema duration format is ISO 8601 (e.g. PT23M)
+          const cleanMinutes = parseInt(animeDuration, 10);
+          if (!isNaN(cleanMinutes)) {
+            commonMediaFields['duration'] = `PT${cleanMinutes}M`;
+          }
+        }
+        if (animeStatus) {
+          commonMediaFields['creativeWorkStatus'] = animeStatus;
+        }
 
         if (mediaType === 'movie') {
           schemas.push({ '@context': 'https://schema.org', '@type': 'Movie', ...commonMediaFields });
@@ -2079,46 +2093,7 @@ const requestHandler = async (req, res) => {
           injected = injected.replace(webpageSearch[0], webpageSearch[0].replace(webpageSearch[1], dateModified));
         }
 
-        // ── Internal Linking: inject related anime section for Googlebot ────────
-        try {
-          const animeCol = getCollection('anime');
-          // Find up to 10 related anime: same type, same genre if possible, exclude current
-          let relatedQuery = { id: { $ne: toonId }, type: mediaType === 'movie' ? 'movie' : 'tv' };
-          if (animeGenres.length > 0) {
-            relatedQuery.genres = { $elemMatch: { $in: animeGenres } };
-          }
-          let relatedAnime = await animeCol.find(relatedQuery, {
-            projection: { id: 1, title: 1, poster: 1, type: 1 },
-            limit: 10
-          }).toArray();
-          // If same-genre results < 6, also fetch popular ones without genre filter
-          if (relatedAnime.length < 6) {
-            const fallback = await animeCol.find(
-              { id: { $ne: toonId }, type: mediaType === 'movie' ? 'movie' : 'tv' },
-              { projection: { id: 1, title: 1, poster: 1, type: 1 }, limit: 10 }
-            ).toArray();
-            const seen = new Set(relatedAnime.map(a => a.id));
-            for (const item of fallback) {
-              if (!seen.has(item.id)) relatedAnime.push(item);
-              if (relatedAnime.length >= 10) break;
-            }
-          }
-          if (relatedAnime.length > 0) {
-            const relatedType = mediaType === 'movie' ? 'movie' : 'tv';
-            const relatedLinks = relatedAnime.map(a => {
-              const aTitle = (a.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-              const aHref = `https://cinestream.watch/media/${relatedType}/${a.id}`;
-              const aImg = a.poster ? `<img src="${a.poster}" alt="Watch ${aTitle} Hindi Dubbed" width="120" height="180" loading="lazy" style="border-radius:6px;object-fit:cover;width:120px;height:180px;">` : '';
-              return `<li style="display:inline-block;margin:0 0.5rem 0.5rem 0;vertical-align:top;text-align:center;"><a href="${aHref}" title="Watch ${aTitle} Hindi Dubbed Online Free" style="text-decoration:none;color:inherit;display:block;max-width:120px;">${aImg}<span style="display:block;font-size:0.75rem;margin-top:0.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">${aTitle}</span></a></li>`;
-            }).join('');
-            let relatedSection = `<section aria-label="Related Anime" style="padding:1rem 0;max-width:1200px;margin:0 auto;"><h2 style="font-size:1.2rem;font-weight:700;margin-bottom:0.75rem;">Related ${mediaType === 'movie' ? 'Anime Movies' : 'Anime Series'} Hindi Dubbed</h2><ul style="list-style:none;padding:0;margin:0;">${relatedLinks}</ul>`;
-            if (prevNextBodyHtml) {
-              relatedSection += `<div style="margin-top:1.5rem;display:flex;align-items:center;justify-content:center;">${prevNextBodyHtml}</div>`;
-            }
-            relatedSection += `</section>`;
-            injected = injected.replace('<noscript id="seo-related-section"></noscript>', relatedSection);
-          }
-        } catch (_) { /* related anime inject failure is non-critical */ }
+
 
         const buf = Buffer.from(injected, 'utf8');
         res.writeHead(200, {

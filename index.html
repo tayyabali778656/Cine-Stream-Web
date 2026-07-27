@@ -106,7 +106,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 
   <!-- ══════ Preload Critical Resources ══════ -->
-  <link rel="preload" href="/style.css?v=3.1.0" as="style">
+  <link rel="preload" href="/style.css?v=3.2.0" as="style">
   <!-- Note: JS is deferred, no preload needed -->
 
   <link
@@ -115,7 +115,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="/style.css?v=3.1.0">
+  <link rel="stylesheet" href="/style.css?v=3.2.0">
 
   <style>
     /* Inline cache-busting loader styles to guarantee display on reload/cache updates */
@@ -392,7 +392,8 @@
 <body>
 
   <!-- PWA Gatekeeper Overlay (Keeps site black until Service Worker registers) -->
-  <div id="sw-loading-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f0f0f; z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Outfit', sans-serif;">
+  <div id="sw-loading-overlay"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f0f0f; z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Outfit', sans-serif;">
   </div>
 
   <!-- Skip to main content link (WCAG 2.1 Level A) -->
@@ -430,15 +431,16 @@
   <main id="main-content" class="container" role="main">
 
     <!-- Ad Block 3: 468x60 Banner (Top) -->
-    <div class="ad-leaderboard-wrapper" style="display: flex; justify-content: center; margin: 1rem auto; overflow: hidden; max-width: 100%; width: 100%;">
+    <div class="ad-leaderboard-wrapper"
+      style="display: flex; justify-content: center; margin: 1rem auto; overflow: hidden; max-width: 100%; width: 100%;">
       <div style="width: 468px; max-width: 100%; display: flex; justify-content: center;">
         <script>
           atOptions = {
-            'key' : '00d800c1907dc1ae43d5b43735343ee6',
-            'format' : 'iframe',
-            'height' : 60,
-            'width' : 468,
-            'params' : {}
+            'key': '00d800c1907dc1ae43d5b43735343ee6',
+            'format': 'iframe',
+            'height': 60,
+            'width': 468,
+            'params': {}
           };
         </script>
         <script src="https://www.highperformanceformat.com/00d800c1907dc1ae43d5b43735343ee6/invoke.js"></script>
@@ -568,9 +570,12 @@
     </section>
 
     <!-- Ad Block 1: Native Banner (Bottom) -->
-    <div class="ad-native-wrapper" style="display: flex; justify-content: center; margin: 2rem auto; padding: 0 1rem; overflow: hidden; max-width: 100%;">
-      <script async="async" data-cfasync="false" src="https://pl30550860.effectivecpmnetwork.com/9eabd5370394a4bf238074ed4cc60368/invoke.js"></script>
-      <div id="container-9eabd5370394a4bf238074ed4cc60368" style="width: 100%; max-width: 1200px; min-height: 250px;"></div>
+    <div class="ad-native-wrapper"
+      style="display: flex; justify-content: center; margin: 2rem auto; padding: 0 1rem; overflow: hidden; max-width: 100%;">
+      <script async="async" data-cfasync="false"
+        src="https://pl30550860.effectivecpmnetwork.com/9eabd5370394a4bf238074ed4cc60368/invoke.js"></script>
+      <div id="container-9eabd5370394a4bf238074ed4cc60368" style="width: 100%; max-width: 1200px; min-height: 250px;">
+      </div>
     </div>
 
   </main>
@@ -589,36 +594,27 @@
           <!-- Player injected here -->
         </div>
         <!-- Player Ad Overlay -->
-        <div id="player-ad-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10; justify-content: center; align-items: center; flex-direction: column;">
-          <div style="position: relative; padding: 15px; background: #111; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center;">
-            <button onclick="document.getElementById('player-ad-overlay').style.display='none'" style="position: absolute; top: 8px; right: 8px; background: rgba(229, 9, 20, 0.9); color: white; border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.background='#ff0f22'" onmouseout="this.style.background='rgba(229, 9, 20, 0.9)'">Skip Ad</button>
-            <div style="font-size: 11px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Outfit', sans-serif; margin-top: 15px;">Advertisement</div>
+        <div id="player-ad-overlay"
+          style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10; justify-content: center; align-items: center; flex-direction: column;">
+          <div class="player-ad-card"
+            style="position: relative; padding: 15px; background: #111; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center;height:50vh;">
+            <button onclick="document.getElementById('player-ad-overlay').style.display='none'"
+              style="position: absolute; top: 8px; right: 8px; background: rgba(229, 9, 20, 0.9); color: white; border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: bold; transition: all 0.2s;"
+              onmouseover="this.style.background='#ff0f22'"
+              onmouseout="this.style.background='rgba(229, 9, 20, 0.9)'">Skip Ad</button>
+            <div
+              style="font-size: 11px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Outfit', sans-serif; margin-top: 15px;">
+              Advertisement</div>
             <script>
               atOptions = {
-                'key' : '8d2d71d511245419b703c77e7805e213',
-                'format' : 'iframe',
-                'height' : 250,
-                'width' : 300,
-                'params' : {}
+                'key': '8d2d71d511245419b703c77e7805e213',
+                'format': 'iframe',
+                'height': 250,
+                'width': 300,
+                'params': {}
               };
             </script>
             <script src="https://www.highperformanceformat.com/8d2d71d511245419b703c77e7805e213/invoke.js"></script>
-          </div>
-        </div>
-        <div id="no-trailer"
-          style="display: none; width: 100%; height: 115px; flex-direction: column; justify-content: center; align-items: center; background: #111; position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); z-index: 1; overflow: hidden; box-sizing: border-box; padding: 5px;"
-          aria-live="polite">
-          <div style="width: 728px; max-width: 100%; height: 90px; overflow: hidden; display: flex; justify-content: center;">
-            <script>
-              atOptions = {
-                'key' : 'e4a05adf80ab2cb129adfd7080b699c2',
-                'format' : 'iframe',
-                'height' : 90,
-                'width' : 728,
-                'params' : {}
-              };
-            </script>
-            <script src="https://www.highperformanceformat.com/e4a05adf80ab2cb129adfd7080b699c2/invoke.js"></script>
           </div>
         </div>
         <div class="modal-hero-overlay" aria-hidden="true"></div>
@@ -628,6 +624,25 @@
         <button id="sound-toggle" class="modal-sound-toggle" aria-label="Toggle sound: currently muted">
           <i class="fas fa-volume-mute" aria-hidden="true"></i> <span>Muted</span>
         </button>
+      </div>
+
+      <!-- Ad Banner (between hero and content) -->
+      <div id="no-trailer"
+        style="display: none; width: 100%; flex-direction: column; justify-content: center; align-items: center; background: #111; flex-shrink: 0; padding: 12px 0; overflow: visible; box-sizing: border-box;"
+        aria-live="polite">
+        <div
+          style="width: 728px; max-width: 100%; height: 90px; overflow: visible; display: flex; justify-content: center;">
+          <script>
+            atOptions = {
+              'key': 'e4a05adf80ab2cb129adfd7080b699c2',
+              'format': 'iframe',
+              'height': 90,
+              'width': 728,
+              'params': {}
+            };
+          </script>
+          <script src="https://www.highperformanceformat.com/e4a05adf80ab2cb129adfd7080b699c2/invoke.js"></script>
+        </div>
       </div>
 
       <!-- Player Control Bar -->
@@ -661,7 +676,6 @@
                 class="sr-only">Rating:</span> 8.5</span>
             <span id="modal-year" role="listitem"><i class="far fa-calendar-alt" aria-hidden="true"></i> <span
                 class="sr-only">Year:</span> 2024</span>
-            <span id="modal-genres" role="listitem">Action, Adventure</span>
             <span id="modal-language" style="color: var(--primary);" role="listitem">
               <i class="fas fa-language" aria-hidden="true"></i> <span class="sr-only">Language:</span> Hindi Dubbed
             </span>
@@ -672,9 +686,17 @@
               style="outline: none; border: 1px solid var(--glass-border); padding: 4px 8px; border-radius: 20px; color: white; background: #222; cursor: pointer; font-size: 0.8rem; font-family: 'Outfit', sans-serif;">
             </select>
           </div>
+          <h3
+            style="font-size: 1.1rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--primary);">
+            Story Details</h3>
           <p id="modal-description" class="modal-description">
             This is a placeholder for the movie description.
           </p>
+          <div style="margin-top: -1.5rem; margin-bottom: 0.5rem;">
+            <span id="modal-desc-toggle"
+              style="color: var(--primary); cursor: pointer; font-weight: 600; font-size: 0.9rem; display: none;">View
+              More</span>
+          </div>
           <div style="display: flex; gap: 1rem; margin-top: 2rem;">
             <button id="modal-wishlist-btn" class="btn-secondary" aria-label="Add to Wishlist">
               <i class="far fa-heart" aria-hidden="true"></i> Add to Wishlist
@@ -687,7 +709,8 @@
       </div>
 
       <!-- Modal SEO & FAQ Area -->
-      <div id="modal-seo-content" style="padding: 1.5rem 2rem; border-top: 1px solid var(--glass-border); display: none;"></div>
+      <div id="modal-seo-content"
+        style="padding: 1.5rem 2rem; border-top: 1px solid var(--glass-border); display: none;"></div>
     </div>
   </div>
 
@@ -768,14 +791,14 @@
   <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
 
   <!-- Scripts -->
-  <script src="/env.js?v=3.1.0" defer></script>
-  <script src="/api.js?v=3.1.0" defer></script>
+  <script src="/env.js?v=3.2.0" defer></script>
+  <script src="/api.js?v=3.2.0" defer></script>
   <!-- Fuse.js for fast fuzzy search -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js" crossorigin="anonymous" defer></script>
   <!-- StreamPlayer: production streaming manager with failover -->
-  <script src="/public/player/StreamPlayer.js?v=3.1.0" defer></script>
-  <script src="/app.js?v=3.1.0" defer></script>
-  <script src="/admin.js?v=3.1.0" defer></script>
+  <script src="/public/player/StreamPlayer.js?v=3.2.0" defer></script>
+  <script src="/app.js?v=3.2.0" defer></script>
+  <script src="/admin.js?v=3.2.0" defer></script>
 
   <!-- PWA Service Worker Registration & Vercel Analytics (Deferred to execute only after page load) -->
   <script>
@@ -817,9 +840,7 @@
   <script defer src="/_vercel/insights/script.js"></script>
   <script defer src="/_vercel/speed-insights/script.js"></script>
 
-  <!-- ══════ SEO: Related Anime — Server-side injected internal links ══════ -->
-  <!-- This section is populated by serve.js SSR for Googlebot. JS users see the app's own related section. -->
-  <noscript id="seo-related-section"></noscript>
+
 
 </body>
 
