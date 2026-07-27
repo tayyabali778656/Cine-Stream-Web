@@ -1619,7 +1619,7 @@ const requestHandler = async (req, res) => {
         html = html.replace(/<script[^>]*src="[^"]*(adsterra|exoclick|onclick|ad|pop|redirect|propeller|juicyads|onclickads|yandex|adnxs|doubleclick|taboola|outbrain|google-analytics|traffic|optadig360|syndication|exdynsrv|popads|popcash|admaven|propellerads)[^"]*"[^>]*><\/script>/gi, '');
         html = html.replace(/<script[^>]*>([\s\S]*?(adsterra|exoclick|onclick|popunder|redirect|propeller|juicyads|onclickads|adnxs|optadig360|syndication|popads|popcash|admaven|propellerads)[\s\S]*?)<\/script>/gi, '');
 
-        // Inject popup blocker at start of head
+// Inject popup blocker at start of head
         html = html.replace(/<head>/i, '<head>' + adBlockScript);
 
         // Rewrite relative URLs to absolute URLs
@@ -1660,9 +1660,6 @@ const requestHandler = async (req, res) => {
     }
 
     // ── SEO: Server-side meta injection for ToonStream anime watch/details pages ──────
-    // When Googlebot visits /watch/tv/toon_solo-leveling, we inject the correct
-    // <title>, <meta> and JSON-LD so Google indexes "Solo Leveling Hindi Dubbed"
-    // without needing JavaScript. Normal users still get the full SPA experience.
     const toonWatchMatch = pathname.match(/^\/(watch|media)\/(tv|movie)\/(toon_[^/?#]+)/);
     const urlObjForSeo = new URL(req.url || '', 'https://cinestream.watch');
     const seoQ = (urlObjForSeo.searchParams.get('q') || '').trim();
@@ -1685,154 +1682,163 @@ const requestHandler = async (req, res) => {
           .join(' ');
         let animeDesc = '';
         let animePoster = '';
+        let animeGenres = [];
+        let animeRating = '';
+        let animeYear = '';
+        let animeSeasons = null;
         let details = null;
 
-        // Try to fetch real title from ToonStream (fast, cached by node process)
+        // 1. Try MongoDB first (fast, no network delay)
         try {
-          const liveSvcLocal = require('./services/toonstreamLive');
-          details = await liveSvcLocal.getLiveAnimeDetails(toonId, slug);
-          if (details && details.title) {
-            animeTitle = details.title;
-            animeDesc = (details.description || '').replace(/"/g, '&quot;').slice(0, 155);
-            animePoster = details.poster || '';
+          const animeCollection = getCollection('anime');
+          details = await animeCollection.findOne({
+            $or: [{ id: toonId }, { id: `toon_${slug}` }, { slug }]
+          });
+        } catch (_) {}
+
+        // 2. Fallback to live scraping if not in DB
+        if (!details || !details.title) {
+          try {
+            const liveSvcLocal = require('./services/toonstreamLive');
+            details = await liveSvcLocal.getLiveAnimeDetails(toonId, slug);
+          } catch (_) {}
+        }
+
+        if (details && details.title) {
+          animeTitle = details.title;
+          animeDesc = (details.description || details.overview || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
+          animePoster = details.poster || details.poster_path || '';
+          animeGenres = Array.isArray(details.genres) ? details.genres.map(g => typeof g === 'string' ? g : (g.name || '')).filter(Boolean) : [];
+          animeRating = details.rating || details.vote_average || '';
+          animeYear = details.release_date || details.first_air_date || details.year || '';
+          if (animeYear && String(animeYear).length > 4) animeYear = String(animeYear).slice(0, 4);
+          animeSeasons = details.number_of_seasons || details.seasons || null;
+        }
+
+        // Build a rich 160-char description
+        const buildDesc = (title, type, genres, year, rating) => {
+          const genrePart = genres.length > 0 ? ` (${genres.slice(0, 3).join(', ')})` : '';
+          const yearPart = year ? ` ${year}` : '';
+          const ratingPart = rating ? ` ⭐${rating}` : '';
+          if (type === 'movie') {
+            return `Watch ${title}${genrePart}${yearPart}${ratingPart} Full Movie in Hindi Dubbed online free on CineStream. Stream in HD 1080p/720p with dual audio. Best anime streaming site.`;
           }
-        } catch (_) { /* fallback to slug-derived title */ }
+          return `Watch ${title}${genrePart}${yearPart}${ratingPart} all episodes in Hindi Dubbed free on CineStream. Stream every season in HD 1080p. Best anime in Hindi site.`;
+        };
 
         let seoTitle = '';
         let seoDesc = '';
         if (mediaType === 'movie') {
           seoTitle = `Watch ${animeTitle} Full Movie Hindi Dubbed Online Free HD | CineStream`;
-          seoDesc = animeDesc || `Stream ${animeTitle} movie in Hindi Dubbed online for free. Enjoy dual audio, high quality 1080p/720p playback, release year details, cast and recommendations on CineStream.`;
+          seoDesc = animeDesc.slice(0, 155) || buildDesc(animeTitle, 'movie', animeGenres, animeYear, animeRating);
         } else if (isWatch && season && episode) {
-          seoTitle = `Watch ${animeTitle} Season ${season} Episode ${episode} Hindi Dubbed Online (S${season} EP${episode}) HD | CineStream`;
-          seoDesc = `Stream ${animeTitle} Season ${season} Episode ${episode} (S${season}E${episode}) in Hindi Dubbed online free in 1080p HD. Watch latest episodes, season details, and recommendations on CineStream.`;
+          seoTitle = `Watch ${animeTitle} Season ${season} Episode ${episode} Hindi Dubbed (S${season}E${episode}) HD | CineStream`;
+          seoDesc = `Stream ${animeTitle} S${season}E${episode} Hindi Dubbed online free in 1080p HD on CineStream. Watch all episodes of ${animeTitle} in Hindi — fast, free, no login required.`;
         } else {
-          seoTitle = `Watch ${animeTitle} Hindi Dubbed All Episodes Online Free HD | CineStream`;
-          seoDesc = animeDesc || `Watch all seasons and episodes of ${animeTitle} in Hindi Dubbed online in high quality 1080p HD. Stream trending anime in Hindi, English, and dual audio free on CineStream.`;
+          seoTitle = `Watch ${animeTitle} Hindi Dubbed All Episodes Free HD | CineStream`;
+          seoDesc = animeDesc.slice(0, 155) || buildDesc(animeTitle, 'tv', animeGenres, animeYear, animeRating);
         }
 
-        const seoKeywords = `${animeTitle} in hindi, ${animeTitle} hindi dubbed, watch ${animeTitle} in hindi, ${animeTitle} hindi dubbed free, ${animeTitle} online hindi, ${animeTitle.toLowerCase()} hindi, ${animeTitle.toLowerCase()} season 1, ${animeTitle.toLowerCase()} episode 1, anime in hindi, CineStream`;
+        // Ensure description is ≤ 160 chars
+        if (seoDesc.length > 160) seoDesc = seoDesc.slice(0, 157) + '...';
+
+        const genreKeywords = animeGenres.map(g => `${g} anime in hindi`).join(', ');
+        const seoKeywords = `${animeTitle} in hindi, ${animeTitle} hindi dubbed, watch ${animeTitle} online free, ${animeTitle} hindi dubbed episodes, ${animeTitle} ${animeYear || ''}, ${genreKeywords}, anime in hindi, CineStream, cinestream.watch`.replace(/,\s*,/g, ',');
 
         let canonical = `https://cinestream.watch/${action}/${mediaType}/${toonId}`;
         if (isWatch && season && episode && mediaType === 'tv') {
           canonical += `?s=${season}&e=${episode}`;
         }
 
-        const posterUrl = animePoster || 'https://cinestream.watch/images/fav-icon.png';
+        const posterUrl = animePoster || 'https://cinestream.watch/images/og-banner.png';
+        const dateModified = details && details.updatedAt ? new Date(details.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+        const datePublished = animeYear ? `${animeYear}-01-01` : dateModified;
 
-        // Prepare schemas
+        // ── Schema.org JSON-LD ──────────────────────────────────────────────────
         const schemas = [];
 
-        // 1. Breadcrumb Schema
-        const breadcrumbElements = [
+        // 1. BreadcrumbList
+        const breadcrumbItems = [
           { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://cinestream.watch/' },
-          { '@type': 'ListItem', 'position': 2, 'name': mediaType === 'movie' ? 'Anime Movies' : 'Anime Series', 'item': `https://cinestream.watch/#${mediaType}` }
+          { '@type': 'ListItem', 'position': 2, 'name': mediaType === 'movie' ? 'Anime Movies' : 'Anime Series', 'item': `https://cinestream.watch/#${mediaType}` },
         ];
         if (isWatch && season && episode && mediaType === 'tv') {
-          breadcrumbElements.push({ '@type': 'ListItem', 'position': 3, 'name': animeTitle, 'item': `https://cinestream.watch/media/tv/${toonId}` });
-          breadcrumbElements.push({ '@type': 'ListItem', 'position': 4, 'name': `Season ${season}`, 'item': `https://cinestream.watch/media/tv/${toonId}` });
-          breadcrumbElements.push({ '@type': 'ListItem', 'position': 5, 'name': `Episode ${episode}`, 'item': canonical });
+          breadcrumbItems.push({ '@type': 'ListItem', 'position': 3, 'name': animeTitle, 'item': `https://cinestream.watch/media/tv/${toonId}` });
+          breadcrumbItems.push({ '@type': 'ListItem', 'position': 4, 'name': `Season ${season} Episode ${episode}`, 'item': canonical });
         } else {
-          breadcrumbElements.push({ '@type': 'ListItem', 'position': 3, 'name': animeTitle, 'item': canonical });
+          breadcrumbItems.push({ '@type': 'ListItem', 'position': 3, 'name': animeTitle, 'item': canonical });
         }
-        schemas.push({
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          'itemListElement': breadcrumbElements
-        });
+        schemas.push({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': breadcrumbItems });
 
-        // 2. Main Media Schema
+        // 2. Main media schema
+        const commonMediaFields = {
+          'name': `${animeTitle} Hindi Dubbed`,
+          'alternateName': [`${animeTitle} in Hindi`, `${animeTitle} Hindi`, `Watch ${animeTitle} Online`],
+          'url': canonical,
+          'image': { '@type': 'ImageObject', 'url': posterUrl, 'width': 500, 'height': 750 },
+          'description': seoDesc,
+          'inLanguage': ['hi', 'en'],
+          'isAccessibleForFree': true,
+          'datePublished': datePublished,
+          'dateModified': dateModified,
+          'countryOfOrigin': { '@type': 'Country', 'name': 'Japan' },
+          'audience': { '@type': 'Audience', 'audienceType': 'Anime Fans', 'geographicArea': { '@type': 'Country', 'name': 'India' } },
+          'potentialAction': { '@type': 'WatchAction', 'target': { '@type': 'EntryPoint', 'urlTemplate': canonical } },
+        };
+        if (animeGenres.length > 0) commonMediaFields['genre'] = animeGenres;
+        if (animeRating) commonMediaFields['aggregateRating'] = { '@type': 'AggregateRating', 'ratingValue': animeRating, 'bestRating': '10', 'ratingCount': 1000 };
+
         if (mediaType === 'movie') {
-          schemas.push({
-            '@context': 'https://schema.org',
-            '@type': 'Movie',
-            'name': `${animeTitle} Hindi Dubbed`,
-            'alternateName': [`${animeTitle} in Hindi`, `${animeTitle} Hindi`],
-            'url': canonical,
-            'image': posterUrl,
-            'description': seoDesc,
-            'inLanguage': ['hi', 'en'],
-            'countryOfOrigin': { '@type': 'Country', 'name': 'Japan' },
-            'audience': { '@type': 'Audience', 'geographicArea': { '@type': 'Country', 'name': 'India' } },
-            'potentialAction': { '@type': 'WatchAction', 'target': canonical }
-          });
+          schemas.push({ '@context': 'https://schema.org', '@type': 'Movie', ...commonMediaFields });
         } else if (isWatch && season && episode) {
-          // Episode Schema
           schemas.push({
-            '@context': 'https://schema.org',
-            '@type': 'Episode',
+            '@context': 'https://schema.org', '@type': 'Episode',
             'name': `${animeTitle} Season ${season} Episode ${episode} Hindi Dubbed`,
             'episodeNumber': episode,
-            'partOfSeason': {
-              '@type': 'CreativeWorkSeason',
-              'seasonNumber': season
-            },
-            'partOfSeries': {
-              '@type': 'TVSeries',
-              'name': animeTitle,
-              'url': `https://cinestream.watch/media/tv/${toonId}`
-            },
+            'partOfSeason': { '@type': 'CreativeWorkSeason', 'seasonNumber': season, 'name': `Season ${season}` },
+            'partOfSeries': { '@type': 'TVSeries', 'name': `${animeTitle} Hindi Dubbed`, 'url': `https://cinestream.watch/media/tv/${toonId}` },
             'url': canonical,
-            'image': posterUrl,
-            'description': seoDesc,
-            'inLanguage': ['hi', 'en']
-          });
-
-          // VideoObject Schema for Rich Snippets eligibility
-          schemas.push({
-            '@context': 'https://schema.org',
-            '@type': 'VideoObject',
-            'name': `Watch ${animeTitle} Season ${season} Episode ${episode} Hindi Dubbed Online`,
-            'description': seoDesc,
-            'thumbnailUrl': posterUrl,
-            'uploadDate': new Date().toISOString(),
-            'embedUrl': canonical,
-            'interactionStatistic': {
-              '@type': 'InteractionCounter',
-              'interactionType': { '@type': 'WatchAction' },
-              'userInteractionCount': 120530
-            }
-          });
-        } else {
-          // TVSeries Schema
-          schemas.push({
-            '@context': 'https://schema.org',
-            '@type': 'TVSeries',
-            'name': `${animeTitle} Hindi Dubbed`,
-            'alternateName': [`${animeTitle} in Hindi`, `${animeTitle} Hindi`],
-            'url': canonical,
-            'image': posterUrl,
+            'image': { '@type': 'ImageObject', 'url': posterUrl, 'width': 500, 'height': 750 },
             'description': seoDesc,
             'inLanguage': ['hi', 'en'],
-            'countryOfOrigin': { '@type': 'Country', 'name': 'Japan' },
-            'audience': { '@type': 'Audience', 'geographicArea': { '@type': 'Country', 'name': 'India' } },
-            'potentialAction': { '@type': 'WatchAction', 'target': canonical }
+            'isAccessibleForFree': true,
+            'datePublished': datePublished,
+            'dateModified': dateModified,
           });
+          // VideoObject for rich results eligibility
+          schemas.push({
+            '@context': 'https://schema.org', '@type': 'VideoObject',
+            'name': `Watch ${animeTitle} S${season}E${episode} Hindi Dubbed Online Free`,
+            'description': seoDesc,
+            'thumbnailUrl': posterUrl,
+            'uploadDate': datePublished,
+            'embedUrl': canonical,
+            'interactionStatistic': { '@type': 'InteractionCounter', 'interactionType': { '@type': 'WatchAction' }, 'userInteractionCount': 50000 }
+          });
+        } else {
+          const tvSchema = {
+            '@context': 'https://schema.org', '@type': 'TVSeries',
+            ...commonMediaFields,
+          };
+          if (animeSeasons) tvSchema['numberOfSeasons'] = animeSeasons;
+          schemas.push(tvSchema);
         }
+
+        // 3. WebPage schema
+        schemas.push({
+          '@context': 'https://schema.org', '@type': 'WebPage',
+          'name': seoTitle,
+          'url': canonical,
+          'description': seoDesc,
+          'isAccessibleForFree': true,
+          'inLanguage': 'hi',
+          'dateModified': dateModified,
+          'primaryImageOfPage': { '@type': 'ImageObject', 'url': posterUrl, 'width': 500, 'height': 750 },
+          'breadcrumb': { '@type': 'BreadcrumbList', 'itemListElement': breadcrumbItems }
+        });
 
         const jsonLd = JSON.stringify(schemas);
 
-        // Inject into the raw HTML (replace placeholder tags)
-        const injected = htmlRaw
-          .replace(
-            new RegExp('<h1 id="seo-h1"[^>]*>[^<]*</h1>'),
-            `<h1 id="seo-h1" style="font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; color: var(--text); margin: 0 0 0.5rem; line-height: 1.2;">Watch ${animeTitle}${isWatch && season && episode ? ` Season ${season} Episode ${episode} (S${season} EP${episode})` : ''} Hindi Dubbed Online Free HD</h1>`
-          )
-          .replace(
-            new RegExp('<title id="seo-title">[^<]*</title>'),
-            `<title id="seo-title">${seoTitle}</title>`
-          )
-          .replace(
-            new RegExp('<meta id="seo-desc"[^>]*>'),
-            `<meta id="seo-desc" name="description" content="${seoDesc}">`
-          )
-          .replace(
-            new RegExp('<meta name="keywords"[^>]*>'),
-            `<meta name="keywords" content="${seoKeywords}">`
-          )
-          .replace(
-            new RegExp('<link id="seo-canonical"[^>]*>'),
-            `<link id="seo-canonical" rel="canonical" href="${canonical}">`
           )
           .replace(
             new RegExp('<meta id="og-title"[^>]*>'),
