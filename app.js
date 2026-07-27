@@ -1229,6 +1229,47 @@ const App = {
         this.openModal(movieId, type, true, false, isNetMirror);
       };
     }
+
+    // Populate Modal SEO & FAQ Area
+    const modalSeo = document.getElementById('modal-seo-content');
+    if (modalSeo) {
+      const animeTitle = movie.title || movie.name || '';
+      const animeDesc = movie.overview || movie.description || '';
+      const faqList = [
+        {
+          name: `Where to watch ${animeTitle} in Hindi dubbed?`,
+          text: `You can stream ${animeTitle} in Hindi dubbed online free on CineStream. Enjoy dual audio options with high quality 1080p HD video. No subscription or registration required.`
+        },
+        {
+          name: `Is ${animeTitle} available in Hindi on CineStream?`,
+          text: `Yes! ${animeTitle} is available with Hindi dubbed audio track on CineStream. You can watch all seasons and full episodes free.`
+        },
+        {
+          name: `What is the story of ${animeTitle}?`,
+          text: animeDesc || `Stream ${animeTitle} dubbed in Hindi online. Explore the full story, characters, and episodes on CineStream.`
+        }
+      ];
+
+      const visibleSeoContent = `
+        <div class="ssr-seo-modal-inner" style="color:var(--text);font-family:system-ui,-apple-system,sans-serif;">
+          <h3 style="font-size:1.2rem;font-weight:700;margin:0 0 0.5rem;color:var(--primary);">Synopsis and Story Details</h3>
+          <p style="line-height:1.6;color:var(--text-muted);font-size:0.9rem;margin-bottom:1.5rem;">${animeDesc}</p>
+
+          <h3 style="font-size:1.2rem;font-weight:700;margin:0 0 0.5rem;color:var(--primary);">Frequently Asked Questions (FAQs)</h3>
+          <div style="line-height:1.6;font-size:0.9rem;">
+            ${faqList.map(faq => `
+              <div style="margin-bottom:1rem;">
+                <strong style="color:var(--text);display:block;margin-bottom:0.2rem;">Q: ${faq.name}</strong>
+                <span style="color:var(--text-muted);display:block;padding-left:1rem;border-left:2px solid var(--primary);">${faq.text}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      modalSeo.innerHTML = visibleSeoContent;
+      modalSeo.style.display = 'block';
+    }
   },
 
   /**
