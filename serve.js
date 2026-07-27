@@ -1805,7 +1805,6 @@ const requestHandler = async (req, res) => {
             'datePublished': datePublished,
             'dateModified': dateModified,
           });
-          // VideoObject for rich results eligibility
           schemas.push({
             '@context': 'https://schema.org', '@type': 'VideoObject',
             'name': `Watch ${animeTitle} S${season}E${episode} Hindi Dubbed Online Free`,
@@ -1816,10 +1815,7 @@ const requestHandler = async (req, res) => {
             'interactionStatistic': { '@type': 'InteractionCounter', 'interactionType': { '@type': 'WatchAction' }, 'userInteractionCount': 50000 }
           });
         } else {
-          const tvSchema = {
-            '@context': 'https://schema.org', '@type': 'TVSeries',
-            ...commonMediaFields,
-          };
+          const tvSchema = { '@context': 'https://schema.org', '@type': 'TVSeries', ...commonMediaFields };
           if (animeSeasons) tvSchema['numberOfSeasons'] = animeSeasons;
           schemas.push(tvSchema);
         }
@@ -1839,43 +1835,32 @@ const requestHandler = async (req, res) => {
 
         const jsonLd = JSON.stringify(schemas);
 
-          )
-          .replace(
-            new RegExp('<meta id="og-title"[^>]*>'),
-            `<meta id="og-title" property="og:title" content="${seoTitle}">`
-          )
-          .replace(
-            new RegExp('<meta id="og-desc"[^>]*>'),
-            `<meta id="og-desc" property="og:description" content="${seoDesc}">`
-          )
-          .replace(
-            new RegExp('<meta id="og-url"[^>]*>'),
-            `<meta id="og-url" property="og:url" content="${canonical}">`
-          )
-          .replace(
-            new RegExp('<meta id="og-image"[^>]*>'),
-            `<meta id="og-image" property="og:image" content="${posterUrl}">`
-          )
-          .replace(
-            new RegExp('<meta id="tw-title"[^>]*>'),
-            `<meta id="tw-title" name="twitter:title" content="${seoTitle}">`
-          )
-          .replace(
-            new RegExp('<meta id="tw-desc"[^>]*>'),
-            `<meta id="tw-desc" name="twitter:description" content="${seoDesc}">`
-          )
-          .replace(
-            new RegExp('<meta id="tw-image"[^>]*>'),
-            `<meta id="tw-image" name="twitter:image" content="${posterUrl}">`
-          )
-          .replace(
-            new RegExp('<meta id="tw-image-alt"[^>]*>'),
-            `<meta id="tw-image-alt" name="twitter:image:alt" content="Watch ${animeTitle} on CineStream">`
-          )
-          .replace(
-            '<script id="ld-dynamic" type="application/ld+json"></script>',
-            `<script id="ld-dynamic" type="application/ld+json">${jsonLd}</script>`
-          );
+        // ── Inject into HTML ────────────────────────────────────────────────────
+        let injected = htmlRaw;
+        injected = injected.replace(/<html lang="en"/, '<html lang="hi"');
+        injected = injected.replace(
+          new RegExp('<h1 id="seo-h1"[^>]*>[^<]*</h1>'),
+          `<h1 id="seo-h1" style="font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; color: var(--text); margin: 0 0 0.5rem; line-height: 1.2;">Watch ${animeTitle}${isWatch && season && episode ? ` Season ${season} Episode ${episode} (S${season} EP${episode})` : ''} Hindi Dubbed Online Free HD</h1>`
+        );
+        injected = injected
+          .replace(new RegExp('<title id="seo-title">[^<]*</title>'), `<title id="seo-title">${seoTitle}</title>`)
+          .replace(new RegExp('<meta id="seo-desc"[^>]*>'), `<meta id="seo-desc" name="description" content="${seoDesc}">`)
+          .replace(new RegExp('<meta name="keywords"[^>]*>'), `<meta name="keywords" content="${seoKeywords}">`)
+          .replace(new RegExp('<link id="seo-canonical"[^>]*>'), `<link id="seo-canonical" rel="canonical" href="${canonical}">`)
+          .replace(new RegExp('<meta name="robots"[^>]*>'), `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">`)
+          .replace(new RegExp('<meta id="og-title"[^>]*>'), `<meta id="og-title" property="og:title" content="${seoTitle}">`)
+          .replace(new RegExp('<meta id="og-desc"[^>]*>'), `<meta id="og-desc" property="og:description" content="${seoDesc}">`)
+          .replace(new RegExp('<meta id="og-url"[^>]*>'), `<meta id="og-url" property="og:url" content="${canonical}">`)
+          .replace(new RegExp('<meta id="og-image"[^>]*>'), `<meta id="og-image" property="og:image" content="${posterUrl}">`)
+          .replace(new RegExp('<meta property="og:image:width"[^>]*>'), `<meta property="og:image:width" content="500">`)
+          .replace(new RegExp('<meta property="og:image:height"[^>]*>'), `<meta property="og:image:height" content="750">`)
+          .replace(new RegExp('<meta property="og:image:alt"[^>]*>'), `<meta property="og:image:alt" content="Watch ${animeTitle} Hindi Dubbed on CineStream">`)
+          .replace(new RegExp('<meta property="og:type"[^>]*>'), `<meta property="og:type" content="${mediaType === 'movie' ? 'video.movie' : 'video.tv_show'}">`)
+          .replace(new RegExp('<meta id="tw-title"[^>]*>'), `<meta id="tw-title" name="twitter:title" content="${seoTitle}">`)
+          .replace(new RegExp('<meta id="tw-desc"[^>]*>'), `<meta id="tw-desc" name="twitter:description" content="${seoDesc}">`)
+          .replace(new RegExp('<meta id="tw-image"[^>]*>'), `<meta id="tw-image" name="twitter:image" content="${posterUrl}">`)
+          .replace(new RegExp('<meta id="tw-image-alt"[^>]*>'), `<meta id="tw-image-alt" name="twitter:image:alt" content="Watch ${animeTitle} Hindi Dubbed Free on CineStream">`)
+          .replace('<script id="ld-dynamic" type="application/ld+json"></script>', `<script id="ld-dynamic" type="application/ld+json">${jsonLd}</script>`);
 
         const buf = Buffer.from(injected, 'utf8');
         res.writeHead(200, {
