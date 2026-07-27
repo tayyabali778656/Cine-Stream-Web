@@ -1554,6 +1554,14 @@ const App = {
             if (isNaN(s)) s = 1;
             if (isNaN(e)) e = 1;
 
+            console.log("[DEBUG] playWithFailover movie:", movie);
+            console.log("[DEBUG] playWithFailover checks:", {
+              _isToonStream: movie?._isToonStream,
+              toonstreamId: movie?.toonstreamId,
+              id: movie?.id,
+              startsWithToon: movie?.id && String(movie.id).startsWith('toon_')
+            });
+
             // Show player ad overlay on episode/source change
             const playerAd = document.getElementById('player-ad-overlay');
             if (playerAd) {
