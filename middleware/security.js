@@ -84,10 +84,14 @@ function applyCors(req, res) {
   if (!origin) return true; // same-origin or server-to-server request
 
   // Always allow same-origin requests — origin matches the server's own host.
-  // This ensures the admin panel (on the same Vercel domain) can always reach
-  // /api/v1/auth/login regardless of the ALLOWED_ORIGINS env variable.
+  // On Vercel, req.headers.host may be the internal deployment URL, not cinestream.watch,
+  // so we also explicitly whitelist the production domain here.
   const host = req.headers.host || '';
-  if (origin === `https://${host}` || origin === `http://${host}`) {
+  const isSameOrigin = origin === `https://${host}` ||
+                       origin === `http://${host}` ||
+                       origin === 'https://cinestream.watch' ||
+                       origin === 'http://cinestream.watch';
+  if (isSameOrigin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
