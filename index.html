@@ -767,8 +767,28 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
-          .catch(err => console.error('Service Worker registration failed:', err));
+          .then(reg => {
+            console.log('Service Worker registered successfully:', reg.scope);
+            sessionStorage.removeItem('sw_reloaded'); // Reset reload tracker on success
+          })
+          .catch(err => {
+            console.error('Service Worker registration failed:', err);
+            const reloaded = sessionStorage.getItem('sw_reloaded');
+            if (!reloaded) {
+              sessionStorage.setItem('sw_reloaded', 'true');
+              window.location.reload();
+            } else {
+              // If registration still fails after reload, replace entire body with just the 'Enter CineStream' button
+              sessionStorage.removeItem('sw_reloaded');
+              document.body.innerHTML = `
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; background: #0f0f0f; color: #fff; font-family: 'Outfit', sans-serif; text-align: center; box-sizing: border-box; padding: 20px;">
+                  <h1 style="color: #e50914; font-size: clamp(2.2rem, 6vw, 3.5rem); font-weight: 800; margin-bottom: 20px; letter-spacing: -1px; font-family: 'Outfit', sans-serif;">Cine<span style="color: #fff;">Stream</span></h1>
+                  <p style="color: #b3b3b3; font-size: 1rem; margin-bottom: 30px; max-width: 400px; line-height: 1.5;">Please click below to access the streaming site.</p>
+                  <button onclick="window.location.reload()" style="background: #e50914; color: #fff; border: none; padding: 14px 36px; font-size: 1.05rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);" onmouseover="this.style.background='#ff0f22'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#e50914'; this.style.transform='translateY(0)'">Enter CineStream</button>
+                </div>
+              `;
+            }
+          });
       });
     }
   </script>
