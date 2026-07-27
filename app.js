@@ -1548,7 +1548,12 @@ const App = {
           };
 
 
-          const playWithFailover = async (s = 1, e = 1) => {
+          const playWithFailover = async (sVal = 1, eVal = 1) => {
+            let s = parseInt(sVal, 10);
+            let e = parseInt(eVal, 10);
+            if (isNaN(s)) s = 1;
+            if (isNaN(e)) e = 1;
+
             // Show player ad overlay on episode/source change
             const playerAd = document.getElementById('player-ad-overlay');
             if (playerAd) {
@@ -1604,7 +1609,7 @@ const App = {
                 // Always fetch with the exact season+episode so the server scrapes the right sources
                 const epsRes = await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(movieId)}&season=${s}&episode=${e}`).then(r => r.json());
                 const allEps = Array.isArray(epsRes) ? epsRes : [];
-                const ep = allEps.find(ep => ep.season === s && ep.episode === e);
+                const ep = allEps.find(ep => Number(ep.season) === s && Number(ep.episode) === e);
                 if (ep && ep.sources && ep.sources.length > 0) {
                   const noAdsSources = [];
                   const adsSources = [];
