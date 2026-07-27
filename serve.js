@@ -287,13 +287,22 @@ async function buildSitemap() {
 
   try {
     if (isConnected()) {
-      const animeItems = await getCollection('anime').find({}).toArray();
+      const animeItems = await getCollection('anime').find({}, {
+        projection: { id: 1, type: 1, title: 1, poster: 1, description: 1, updatedAt: 1 }
+      }).toArray();
       for (const item of animeItems) {
+        // Use real updatedAt if available, otherwise today
+        const lastmod = item.updatedAt
+          ? new Date(item.updatedAt).toISOString().split('T')[0]
+          : today;
+        // TV series get higher priority than movies for crawl budget allocation
+        const priority = item.type === 'tv' ? '0.9' : '0.8';
+        const changefreq = item.type === 'tv' ? 'daily' : 'weekly';
         dynamicPages.push({
           loc: `${baseUrl}/media/${item.type === 'movie' ? 'movie' : 'tv'}/${item.id}`,
-          priority: '0.8',
-          changefreq: 'weekly',
-          lastmod: today,
+          priority,
+          changefreq,
+          lastmod,
           image: item.poster,
           imageTitle: item.title,
           imageCaption: (item.description || '').slice(0, 200),
