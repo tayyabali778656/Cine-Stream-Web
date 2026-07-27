@@ -42,6 +42,21 @@ const App = {
     if (!this.hiddenCache) this.hiddenCache = new Set();
   },
 
+  showToast(message) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<i class="fas fa-info-circle"></i> <span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+      toast.style.transition = 'all 0.5s ease';
+      setTimeout(() => toast.remove(), 500);
+    }, 4000);
+  },
+
   async syncDatabaseCache(force = false) {
     const now = Date.now();
     if (!force && this._lastDbSync && (now - this._lastDbSync) < 30_000) return;
@@ -126,14 +141,66 @@ const App = {
   /**
    * Initialize the application
    */
+  _loadLocalCacheSync() {
+    try {
+      const getLocal = (key) => {
+        const cached = localStorage.getItem(key);
+        if (cached) {
+          try { return JSON.parse(cached).data; } catch (e) { }
+        }
+        return [];
+      };
+
+      const adminData = getLocal('db_cache__api_v1_admin-store');
+      const hiddenData = getLocal('db_cache__api_v1_hidden-items');
+      const hindiData = getLocal('db_cache__api_v1_hindi-dubbed');
+
+      this.adminCache = {};
+      if (Array.isArray(adminData)) {
+        const settings = adminData.find(item => item.id === 'global_settings');
+        if (settings) {
+          if (settings.requires_ads_servers) {
+            localStorage.setItem('moviebox_requires_ads_servers', JSON.stringify(settings.requires_ads_servers));
+          }
+          if (settings.default_play_server) {
+            localStorage.setItem('moviebox_default_play_server', settings.default_play_server);
+          }
+        }
+        adminData.forEach(item => {
+          if (item.id !== 'global_settings') {
+            this.adminCache[item.id] = item;
+          }
+        });
+      }
+
+      this.hiddenCache = new Set();
+      if (Array.isArray(hiddenData)) {
+        hiddenData.forEach(item => {
+          this.hiddenCache.add(String(item.id));
+        });
+      }
+
+      this.hindiCache = {};
+      if (Array.isArray(hindiData)) {
+        hindiData.forEach(item => {
+          this.hindiCache[item.id] = item;
+        });
+      }
+    } catch (e) { }
+  },
+
   async init() {
+    // Load existing cache from localStorage instantly to avoid any network delay
+    this._loadLocalCacheSync();
+
     // Show skeletons instantly so the user sees a loading state immediately
     if (this.grid) {
       this.grid.innerHTML = '';
       this.showSkeletons();
     }
 
-    const cachePromise = this.syncDatabaseCache();
+    // Sync database cache in background (non-blocking)
+    this.syncDatabaseCache().catch(() => {});
 
     // Clear stale single-episode anime selector caches so they get rebuilt properly
     try {
@@ -181,7 +248,6 @@ const App = {
       await window.API.initCatalog();
     }
 
-    await cachePromise;
     await this.resetAndFetch();
     this.renderRecentlyViewed();
     this.setupNavScroll();
@@ -1199,8 +1265,8 @@ const App = {
       const soundToggle = document.getElementById('sound-toggle');
       const backBtn = document.getElementById('back-to-details');
 
-      // Sync admin cache in background (non-blocking, fire-and-forget)
-      this.syncDatabaseCache(true).catch(() => { });
+      // Sync admin cache in background (respects throttle and uses local storage cache if available)
+      this.syncDatabaseCache(false).catch(() => { });
 
       const adminStore = this.adminCache || {};
       const getLocalMovie = () => {
@@ -1349,7 +1415,13 @@ const App = {
           }
         } catch (err) {
           console.error("Failed loading movie details:", err);
-          if (!localMovie) throw err;
+          const loadingScreen = document.getElementById('modal-loading-screen');
+          if (loadingScreen) {
+            loadingScreen.classList.remove('active');
+          }
+          this.closeModal(true);
+          this.showToast("Failed to load movie details. Please try again later.");
+          if (!localMovie) return;
         }
       }
 
@@ -1477,6 +1549,12 @@ const App = {
 
 
           const playWithFailover = async (s = 1, e = 1) => {
+            // Show player ad overlay on episode/source change
+            const playerAd = document.getElementById('player-ad-overlay');
+            if (playerAd) {
+              playerAd.style.display = 'flex';
+            }
+
             if (isWatching) {
               const url = new URL(window.location.href);
               url.searchParams.set('s', s);

@@ -351,22 +351,47 @@ async function handleApiV1(req, res, pathname) {
     const id = url.searchParams.get('id') || '';
     const slug = url.searchParams.get('slug') || '';
     const cleanSlug = slug || (id ? id.replace('toon_', '') : '');
-    const cacheKey = `details_${id}_${cleanSlug}`;
-
-    const cachedData = cache.get(cacheKey);
-    if (cachedData) {
-      sendJson(res, 200, cachedData);
-      return;
-    }
 
     try {
-      const anime = await liveSvc.getLiveAnimeDetails(id, cleanSlug);
-      if (!anime) {
+      let anime = null;
+      try {
+        const animeCollection = getCollection('anime');
+        anime = await animeCollection.findOne({
+          $or: [
+            { id: id },
+            { id: `toon_${cleanSlug}` },
+            { slug: cleanSlug }
+          ]
+        });
+      } catch (dbErr) {
+        logger.warn('Failed to query anime details from MongoDB:', dbErr.message);
+      }
+
+      if (anime) {
+        const responseData = { ...anime, related: [], recommendations: [] };
+        sendJson(res, 200, responseData);
+        return;
+      }
+
+      const freshAnime = await liveSvc.getLiveAnimeDetails(id, cleanSlug);
+      if (!freshAnime) {
         sendJson(res, 404, { error: 'Anime not found' });
         return;
       }
-      const responseData = { ...anime, related: [], recommendations: [] };
-      cache.set(cacheKey, responseData, 12 * 60 * 60 * 1000);
+
+      // Save to MongoDB for future requests
+      try {
+        const animeCollection = getCollection('anime');
+        await animeCollection.updateOne(
+          { id: freshAnime.id },
+          { $set: { ...freshAnime, updatedAt: new Date() } },
+          { upsert: true }
+        );
+      } catch (dbErr) {
+        logger.warn('Failed to save fresh anime details to MongoDB:', dbErr.message);
+      }
+
+      const responseData = { ...freshAnime, related: [], recommendations: [] };
       sendJson(res, 200, responseData);
     } catch (err) {
       sendJson(res, 500, { error: err.message });
@@ -382,18 +407,9 @@ async function handleApiV1(req, res, pathname) {
     const episode = parseInt(url.searchParams.get('episode') || '1', 10);
     const slug = animeSlug || (animeId ? animeId.replace('toon_', '') : '');
 
-    // Per-episode cache — getLiveEpisodes only scrapes sources for the specific S+E requested.
-    // Using a slug-level cache would store empty sources for all other episodes.
-    const cacheKey = `eps_${slug}_${season}_${episode}`;
-    const cachedData = cache.get(cacheKey);
-    if (cachedData) {
-      sendJson(res, 200, cachedData);
-      return;
-    }
-
     try {
-      // Parallelize admin lookup + details — both are independent, no reason to be sequential
-      const [adminEntry, details] = await Promise.all([
+      // Parallelize admin lookup + details + DB episodes lookup
+      const [adminEntry, details, dbEpisodes] = await Promise.all([
         (async () => {
           try {
             const adminCollection = getCollection('admin_store');
@@ -412,13 +428,45 @@ async function handleApiV1(req, res, pathname) {
           }
         })(),
         (async () => {
-          const detailsCacheKey = `details_${animeId}_${slug}`;
-          let det = cache.get(detailsCacheKey);
-          if (!det) {
-            det = await liveSvc.getLiveAnimeDetails(animeId, slug);
-            if (det) cache.set(detailsCacheKey, det, 30 * 60 * 1000);
+          try {
+            const animeCollection = getCollection('anime');
+            let det = await animeCollection.findOne({
+              $or: [
+                { id: animeId },
+                { id: `toon_${slug}` },
+                { slug: slug }
+              ]
+            });
+            if (!det) {
+              det = await liveSvc.getLiveAnimeDetails(animeId, slug);
+              if (det) {
+                await animeCollection.updateOne(
+                  { id: det.id },
+                  { $set: { ...det, updatedAt: new Date() } },
+                  { upsert: true }
+                );
+              }
+            }
+            return det;
+          } catch (dbErr) {
+            logger.warn('Failed to query anime details in episodes API:', dbErr.message);
+            return await liveSvc.getLiveAnimeDetails(animeId, slug);
           }
-          return det;
+        })(),
+        (async () => {
+          try {
+            const episodesCol = getCollection('episodes');
+            return await episodesCol.find({
+              $or: [
+                { animeId: animeId },
+                { animeId: `toon_${slug}` },
+                { animeSlug: slug }
+              ]
+            }).toArray();
+          } catch (dbErr) {
+            logger.warn('Failed to query episodes from MongoDB:', dbErr.message);
+            return [];
+          }
         })()
       ]);
 
@@ -432,19 +480,42 @@ async function handleApiV1(req, res, pathname) {
           title: details.title,
           sources: details.movieSources || []
         }];
-        cache.set(cacheKey, movieEpisodes, 12 * 60 * 60 * 1000);
         sendJson(res, 200, movieEpisodes);
         return;
       }
 
       let episodes = [];
-      try {
-        episodes = await liveSvc.getLiveEpisodes(slug, season, episode);
-      } catch (epErr) {
-        logger.warn(`getLiveEpisodes failed for ${slug}:`, epErr.message);
-      }
+      const targetEp = dbEpisodes.find(ep => ep.season === season && ep.episode === episode);
+      if (dbEpisodes.length > 0 && targetEp && targetEp.sources && targetEp.sources.length > 0) {
+        // Serve from DB directly
+        episodes = dbEpisodes.map(ep => ({ ...ep }));
+      } else {
+        // Scrape live
+        try {
+          episodes = await liveSvc.getLiveEpisodes(slug, season, episode);
+        } catch (epErr) {
+          logger.warn(`getLiveEpisodes failed for ${slug}:`, epErr.message);
+        }
 
-      if (!Array.isArray(episodes)) episodes = [];
+        if (!Array.isArray(episodes)) episodes = [];
+
+        // Save scraped episodes to MongoDB
+        if (episodes.length > 0) {
+          try {
+            const episodesCol = getCollection('episodes');
+            const bulkOps = episodes.map(ep => ({
+              updateOne: {
+                filter: { id: ep.id },
+                update: { $set: ep },
+                upsert: true
+              }
+            }));
+            await episodesCol.bulkWrite(bulkOps);
+          } catch (dbErr) {
+            logger.warn('Failed to save episodes to MongoDB:', dbErr.message);
+          }
+        }
+      }
 
       // Merge custom episode links from admin store
       if (adminEntry && adminEntry.customLinks) {
@@ -473,7 +544,6 @@ async function handleApiV1(req, res, pathname) {
         episodes.sort((a, b) => a.season !== b.season ? a.season - b.season : a.episode - b.episode);
       }
 
-      cache.set(cacheKey, episodes, 12 * 60 * 60 * 1000);
       sendJson(res, 200, episodes);
     } catch (err) {
       sendJson(res, 500, { error: err.message });

@@ -1597,6 +1597,49 @@ nav.scrolled {
   flex-shrink: 0;
 }
 
+/* ── Native Ads: 2 in a Row on Mobile Devices ── */
+@media (max-width: 768px) {
+  /* Enforce flex-row wrap on the wrapper to keep two separate ad divs side-by-side */
+  .ad-native-wrapper {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 0 4px !important;
+  }
+
+  .ad-native-wrapper > div {
+    flex: 1 1 calc(50% - 8px) !important;
+    max-width: calc(50% - 8px) !important;
+    width: calc(50% - 8px) !important;
+    min-height: 100px !important;
+  }
+
+  /* Ensure the ad container itself spans full width (not restricted to 50%) */
+  .ad-native-wrapper > div[id^="container-"] {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Force internal layout of a single native ad widget to show as a 2-column grid */
+  .ad-native-wrapper [id^="container-"] > div {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .ad-native-wrapper [id^="container-"] > div > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
 
 
 
