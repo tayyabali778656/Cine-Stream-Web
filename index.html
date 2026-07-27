@@ -421,19 +421,19 @@
   <!-- Main Content -->
   <main id="main-content" class="container" role="main">
 
-    <!-- Ad Block 3: 728x90 Leaderboard (Top) -->
+    <!-- Ad Block 3: 468x60 Banner (Top) -->
     <div class="ad-leaderboard-wrapper" style="display: flex; justify-content: center; margin: 1rem auto; overflow: hidden; max-width: 100%; width: 100%;">
-      <div style="width: 728px; max-width: 100%; display: flex; justify-content: center;">
+      <div style="width: 468px; max-width: 100%; display: flex; justify-content: center;">
         <script>
           atOptions = {
-            'key' : 'e4a05adf80ab2cb129adfd7080b699c2',
+            'key' : '00d800c1907dc1ae43d5b43735343ee6',
             'format' : 'iframe',
-            'height' : 90,
-            'width' : 728,
+            'height' : 60,
+            'width' : 468,
             'params' : {}
           };
         </script>
-        <script src="https://www.highperformanceformat.com/e4a05adf80ab2cb129adfd7080b699c2/invoke.js"></script>
+        <script src="https://www.highperformanceformat.com/00d800c1907dc1ae43d5b43735343ee6/invoke.js"></script>
       </div>
     </div>
 
@@ -594,9 +594,20 @@
           </div>
         </div>
         <div id="no-trailer"
-          style="display: none; width: 100%; height: 100%; justify-content: center; align-items: center; background: #111; color: #444; font-size: 2rem; font-weight: 800; position: absolute; top: 0; left: 0; z-index: 1;"
+          style="display: none; width: 100%; height: 115px; flex-direction: column; justify-content: center; align-items: center; background: #111; position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); z-index: 1; overflow: hidden; box-sizing: border-box; padding: 5px;"
           aria-live="polite">
-          TRAILER NOT AVAILABLE
+          <div style="width: 728px; max-width: 100%; height: 90px; overflow: hidden; display: flex; justify-content: center;">
+            <script>
+              atOptions = {
+                'key' : 'e4a05adf80ab2cb129adfd7080b699c2',
+                'format' : 'iframe',
+                'height' : 90,
+                'width' : 728,
+                'params' : {}
+              };
+            </script>
+            <script src="https://www.highperformanceformat.com/e4a05adf80ab2cb129adfd7080b699c2/invoke.js"></script>
+          </div>
         </div>
         <div class="modal-hero-overlay" aria-hidden="true"></div>
         <button id="back-to-details" class="modal-back-btn" style="display: none;" aria-label="Back to movie details">
@@ -632,15 +643,7 @@
         </div>
         <div class="modal-details">
           <h2 id="modal-title">Movie Title</h2>
-          <!-- Breadcrumb inside modal for SEO context -->
-          <nav id="modal-breadcrumb" aria-label="You are here"
-            style="margin-bottom:0.75rem; font-size:0.8rem; color: var(--text-muted);">
-            <a href="/" style="color:var(--text-muted); text-decoration:none;">Home</a>
-            <span aria-hidden="true"> › </span>
-            <span id="modal-breadcrumb-type" style="color:var(--text-muted);"></span>
-            <span aria-hidden="true"> › </span>
-            <span id="modal-breadcrumb-title" style="color:var(--primary);"></span>
-          </nav>
+
           <div class="modal-meta" role="list">
             <span id="modal-rating" role="listitem"><i class="fas fa-star rating-star" aria-hidden="true"></i> <span
                 class="sr-only">Rating:</span> 8.5</span>

@@ -1808,7 +1808,8 @@ const App = {
           }
         } else {
           if (noTrailer) {
-            noTrailer.textContent = 'STREAM NOT AVAILABLE';
+            const msgEl = noTrailer.querySelector('.no-trailer-text');
+            if (msgEl) msgEl.textContent = 'STREAM NOT AVAILABLE';
             noTrailer.style.display = 'flex';
           }
         }
@@ -1827,7 +1828,8 @@ const App = {
             noTrailer.style.display = 'none';
           } else {
             trailerContainer.innerHTML = '';
-            noTrailer.textContent = 'TRAILER NOT AVAILABLE';
+            const msgEl = noTrailer.querySelector('.no-trailer-text');
+            if (msgEl) msgEl.textContent = 'TRAILER NOT AVAILABLE';
             noTrailer.style.display = 'flex';
             if (soundToggle) soundToggle.style.display = 'none';
           }

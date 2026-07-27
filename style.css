@@ -829,7 +829,7 @@ nav.scrolled {
 .modal-body {
   padding: 2rem;
   display: flex;
-  gap: 3rem;
+  gap: 2rem;
   position: relative;
   z-index: 10;
   margin-top: -120px;
@@ -1011,8 +1011,8 @@ nav.scrolled {
   /* ── Hero trailer: 200px on mobile details, full height when watching ── */
   .modal-hero {
     display: block !important;
-    height: 200px !important;
-    min-height: 200px;
+    height: 160px !important;
+    min-height: 130px;
     flex-shrink: 0 !important;
     width: 100% !important;
     overflow: hidden;
@@ -1596,4 +1596,7 @@ nav.scrolled {
   vertical-align: middle;
   flex-shrink: 0;
 }
+
+
+
 
