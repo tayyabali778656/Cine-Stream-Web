@@ -239,7 +239,7 @@
   </script>
 
   <!-- WebPage schema with India and Hindi targeting -->
-  <script type="application/ld+json">
+  <script id="ld-webpage" type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -270,8 +270,11 @@
   }
   </script>
 
-  <!-- Dynamic JSON-LD slot (Movie/TVSeries/BreadcrumbList injected by app.js) -->
+  <!-- Dynamic JSON-LD slots -->
   <script id="ld-dynamic" type="application/ld+json"></script>
+  <script id="ld-faq-dynamic" type="application/ld+json"></script>
+  <script id="ld-collection-dynamic" type="application/ld+json"></script>
+
 
   <!-- ══════ FAQ Schema — Targets Hindi anime featured snippet positions ══════ -->
   <script type="application/ld+json">
@@ -455,6 +458,10 @@
         Enjoy <strong>Hindi Dubbed</strong> anime — 100% free, no registration required.
       </p>
     </section>
+
+    <!-- Dynamic SSR SEO Content area -->
+    <div id="seo-content-area"></div>
+
 
 
 

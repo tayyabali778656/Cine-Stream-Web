@@ -1,5 +1,5 @@
 # CineStream robots.txt — https://cinestream.watch
-# Last updated: 2026-07-21
+# Last updated: 2026-07-28
 
 # ── Allow all legitimate crawlers ─────────────────────────────────────────────
 User-agent: *
@@ -13,6 +13,8 @@ Allow: /public/
 Allow: /sitemap.xml
 Allow: /sitemap-index.xml
 Allow: /manifest.json
+Allow: /genre/
+
 
 # Block admin, API, proxy, and internal areas
 Disallow: /tayyab/

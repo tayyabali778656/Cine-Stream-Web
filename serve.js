@@ -1659,6 +1659,100 @@ const requestHandler = async (req, res) => {
       filePath = path.join(PUBLIC_DIR, 'index.html');
     }
 
+    // ── SEO: Server-side Genre Collection Pages ──────────────────────────────
+    const genreMatch = pathname.match(/^\/genre\/([^/?#]+)/);
+    if (genreMatch) {
+      const rawGenre = genreMatch[1];
+      const genreName = rawGenre.charAt(0).toUpperCase() + rawGenre.slice(1).toLowerCase();
+      try {
+        const htmlRaw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+        const animeCol = getCollection('anime');
+        
+        // Fetch up to 40 items in this genre
+        const genreItems = await animeCol.find({
+          genres: { $regex: new RegExp(`^${genreName}$`, 'i') }
+        }, {
+          projection: { id: 1, title: 1, poster: 1, type: 1 },
+          limit: 40
+        }).toArray();
+
+        const seoTitle = `Watch Best ${genreName} Anime Hindi Dubbed Online Free | CineStream`;
+        const seoDesc = `Stream the best ${genreName} anime series and movies with Hindi dubbed dual audio free in HD. Check our full list of ${genreName} anime now!`;
+        const seoKeywords = `${genreName} anime, ${genreName} anime in hindi, watch ${genreName} dubbed, hindi dubbed ${genreName} anime list, CineStream`;
+        const canonical = `https://cinestream.watch/genre/${rawGenre}`;
+
+        const gridHtml = genreItems.map(item => {
+          const itemTitle = (item.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+          const itemType = item.type === 'movie' ? 'movie' : 'tv';
+          return `
+            <div style="flex:0 0 150px;text-align:center;margin-bottom:1rem;">
+              <a href="https://cinestream.watch/media/${itemType}/${item.id}" style="text-decoration:none;color:inherit;display:block;">
+                ${item.poster ? `<img src="${item.poster}" alt="Watch ${itemTitle}" width="150" height="225" loading="lazy" style="border-radius:8px;object-fit:cover;width:150px;height:225px;">` : ''}
+                <span style="display:block;font-size:0.8rem;margin-top:0.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;">${itemTitle}</span>
+              </a>
+            </div>
+          `;
+        }).join('');
+
+        const collectionContent = `
+          <div class="ssr-seo-details" style="padding:1.5rem;background:rgba(20,20,20,0.6);border-radius:12px;margin:1.5rem auto;max-width:1200px;border:1px solid rgba(255,255,255,0.05);color:var(--text);font-family:system-ui,-apple-system,sans-serif;">
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem;">Best ${genreName} Anime in Hindi Dubbed</h1>
+            <p style="font-size:1rem;line-height:1.6;color:var(--text-muted);margin-bottom:1.5rem;">
+              Welcome to the premium list of <strong>${genreName} Anime in Hindi Dubbed</strong>. Stream full episodes and movies with high quality mirrors and dual audio options on CineStream.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:center;margin-bottom:1.5rem;">
+              ${gridHtml || '<p style="color:var(--text-muted);">No anime found in this genre catalog yet.</p>'}
+            </div>
+          </div>
+        `;
+
+        const collectionSchema = {
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          'name': seoTitle,
+          'url': canonical,
+          'description': seoDesc,
+          'inLanguage': ['hi', 'en'],
+          'isAccessibleForFree': true,
+          'mainEntity': {
+            '@type': 'ItemList',
+            'itemListOrder': 'https://schema.org/ItemListOrderDescending',
+            'numberOfItems': genreItems.length,
+            'itemListElement': genreItems.map((item, idx) => ({
+              '@type': 'ListItem',
+              'position': idx + 1,
+              'name': item.title,
+              'url': `https://cinestream.watch/media/${item.type === 'movie' ? 'movie' : 'tv'}/${item.id}`
+            }))
+          }
+        };
+
+        let injected = htmlRaw;
+        injected = injected.replace(/<html lang="en"/, '<html lang="hi"');
+        injected = injected
+          .replace(new RegExp('<h1 id="seo-h1"[^>]*>[^<]*</h1>'), `<h1 id="seo-h1" style="display:none;">${seoTitle}</h1>`)
+          .replace(new RegExp('<title id="seo-title">[^<]*</title>'), `<title id="seo-title">${seoTitle}</title>`)
+          .replace(new RegExp('<meta id="seo-desc"[^>]*>'), `<meta id="seo-desc" name="description" content="${seoDesc}">`)
+          .replace(new RegExp('<meta name="keywords"[^>]*>'), `<meta name="keywords" content="${seoKeywords}">`)
+          .replace(new RegExp('<link id="seo-canonical"[^>]*>'), `<link id="seo-canonical" rel="canonical" href="${canonical}">`)
+          .replace(new RegExp('<meta name="robots"[^>]*>'), `<meta name="robots" content="index, follow">`)
+          .replace('<div id="seo-content-area"></div>', `<div id="seo-content-area">${collectionContent}</div>`)
+          .replace('<script id="ld-collection-dynamic" type="application/ld+json"></script>', `<script id="ld-collection-dynamic" type="application/ld+json">${JSON.stringify(collectionSchema)}</script>`);
+
+        const buf = Buffer.from(injected, 'utf8');
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        });
+        res.end(buf);
+        logger.request(req, 200, Date.now() - startMs);
+        return;
+      } catch (err) {
+        logger.warn('genre_seo_error', { message: err.message });
+      }
+    }
+
+
     // ── SEO: Server-side meta injection for ToonStream anime watch/details pages ──────
     const toonWatchMatch = pathname.match(/^\/(watch|media)\/(tv|movie)\/(toon_[^/?#]+)/);
     const urlObjForSeo = new URL(req.url || '', 'https://cinestream.watch');
@@ -1745,7 +1839,9 @@ const requestHandler = async (req, res) => {
         if (seoDesc.length > 160) seoDesc = seoDesc.slice(0, 157) + '...';
 
         const genreKeywords = animeGenres.map(g => `${g} anime in hindi`).join(', ');
-        const seoKeywords = `${animeTitle} in hindi, ${animeTitle} hindi dubbed, watch ${animeTitle} online free, ${animeTitle} hindi dubbed episodes, ${animeTitle} ${animeYear || ''}, ${genreKeywords}, anime in hindi, CineStream, cinestream.watch`.replace(/,\s*,/g, ',');
+        // Target Hinglish & intent search strings: where to watch, kahan dekhen, ep 1, reviews, release date
+        const intentKeywords = `${animeTitle} ep 1 hindi dubbed, ${animeTitle} season 1, where to watch ${animeTitle} in hindi, ${animeTitle} hindi dubbed kahan dekhen, is ${animeTitle} available in hindi, ${animeTitle} hindi dubbed reviews, ${animeTitle} episode guide`;
+        const seoKeywords = `${animeTitle} in hindi, ${animeTitle} hindi dubbed, watch ${animeTitle} online free, ${animeTitle} hindi dubbed episodes, ${animeTitle} ${animeYear || ''}, ${genreKeywords}, ${intentKeywords}, anime in hindi, CineStream, cinestream.watch`.replace(/,\s*,/g, ',');
 
         let canonical = `https://cinestream.watch/${action}/${mediaType}/${toonId}`;
         if (isWatch && season && episode && mediaType === 'tv') {
@@ -1841,6 +1937,106 @@ const requestHandler = async (req, res) => {
           'breadcrumb': { '@type': 'BreadcrumbList', 'itemListElement': breadcrumbItems }
         });
 
+        // ── Programmatic FAQ Generation ─────────────────────────────────────────
+        const faqList = [
+          {
+            '@type': 'Question',
+            'name': `Where to watch ${animeTitle} in Hindi dubbed?`,
+            'acceptedAnswer': {
+              '@type': 'Answer',
+              'text': `You can stream ${animeTitle} in Hindi dubbed online free on CineStream. Enjoy dual audio options with high quality 1080p HD video. No subscription or registration required.`
+            }
+          },
+          {
+            '@type': 'Question',
+            'name': `Is ${animeTitle} available in Hindi on CineStream?`,
+            'acceptedAnswer': {
+              '@type': 'Answer',
+              'text': `Yes! ${animeTitle} is available with Hindi dubbed audio track on CineStream. You can watch all seasons and full episodes free.`
+            }
+          }
+        ];
+        if (animeYear) {
+          faqList.push({
+            '@type': 'Question',
+            'name': `When was ${animeTitle} released?`,
+            'acceptedAnswer': {
+              '@type': 'Answer',
+              'text': `${animeTitle} was originally released in ${animeYear}. Check out all release dates and episode guide details on CineStream.`
+            }
+          });
+        }
+        if (animeDesc) {
+          faqList.push({
+            '@type': 'Question',
+            'name': `What is the story of ${animeTitle}?`,
+            'acceptedAnswer': {
+              '@type': 'Answer',
+              'text': animeDesc.length > 250 ? animeDesc.slice(0, 247) + '...' : animeDesc
+            }
+          });
+        }
+        const faqJsonLd = JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          'mainEntity': faqList
+        });
+
+        // ── Programmatic Visible Content Injection (On-page SEO) ────────────────
+        const genreBadges = animeGenres.map(g => `<span style="background:rgba(255,255,255,0.08);padding:0.2rem 0.6rem;border-radius:4px;font-size:0.8rem;margin-right:0.4rem;display:inline-block;margin-top:0.4rem;">${g}</span>`).join('');
+        const visibleSeoContent = `
+          <div class="ssr-seo-details" style="padding:1.5rem;background:rgba(20,20,20,0.6);border-radius:12px;margin:1.5rem auto;max-width:1200px;border:1px solid rgba(255,255,255,0.05);color:var(--text);font-family:system-ui,-apple-system,sans-serif;">
+            <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1.5rem;">
+              ${animePoster ? `<div style="flex:0 0 150px;"><img src="${posterUrl}" alt="${animeTitle} Poster" width="150" height="225" style="border-radius:8px;object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,0.5);max-width:100%;height:auto;"></div>` : ''}
+              <div style="flex:1;min-width:280px;">
+                <p style="font-size:1rem;line-height:1.6;color:var(--text-muted);margin:0 0 1rem 0;">
+                  Looking for <strong>${animeTitle} Hindi Dubbed</strong> episodes? CineStream provides high-quality streaming links to watch the entire series online for free. Read full reviews, synopsis, story release updates, and casting insights below.
+                </p>
+                <div style="margin-bottom:1rem;">
+                  <strong>Release Year:</strong> ${animeYear || 'N/A'} | 
+                  <strong>Rating:</strong> ⭐${animeRating || 'N/A'} / 10
+                  ${animeSeasons ? ` | <strong>Seasons:</strong> ${animeSeasons}` : ''}
+                </div>
+                <div style="margin-bottom:1rem;">
+                  <strong>Genres:</strong> ${genreBadges || 'Anime'}
+                </div>
+              </div>
+            </div>
+            
+            <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Synopsis and Story Details</h2>
+            <p style="line-height:1.6;color:var(--text-muted);">${animeDesc || `Stream ${animeTitle} dubbed in Hindi. Discover the full characters, storyline, release dates, and reviews on CineStream's clean player interface.`}</p>
+
+            <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Where to Watch ${animeTitle} in Hindi</h2>
+            <p style="line-height:1.6;color:var(--text-muted);">
+              Watch ${animeTitle} Hindi Dubbed full episodes online. You can select between various dynamic servers to stream without buffering. If you face download error screen issues, you can toggle between alternative player mirrors instantly.
+            </p>
+
+            <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Frequently Asked Questions (FAQs)</h2>
+            <div style="line-height:1.6;">
+              ${faqList.map(faq => `
+                <div style="margin-bottom:1rem;">
+                  <strong style="color:var(--text);display:block;margin-bottom:0.2rem;">Q: ${faq.name}</strong>
+                  <span style="color:var(--text-muted);display:block;padding-left:1rem;border-left:2px solid var(--primary);">${faq.acceptedAnswer.text}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
+        // ── Programmatic Header Navigation Links (prev/next link elements) ──────
+        let prevNextHeaderTags = '';
+        let prevNextBodyHtml = '';
+        if (isWatch && season && episode && mediaType === 'tv') {
+          if (episode > 1) {
+            const prevUrl = `https://cinestream.watch/watch/tv/${toonId}?s=${season}&e=${episode - 1}`;
+            prevNextHeaderTags += `<link rel="prev" href="${prevUrl}">`;
+            prevNextBodyHtml += `<a href="${prevUrl}" style="background:var(--primary);color:#fff;padding:0.5rem 1rem;border-radius:4px;text-decoration:none;margin-right:1rem;font-size:0.9rem;font-weight:600;">&larr; Prev Episode (${episode - 1})</a>`;
+          }
+          const nextUrl = `https://cinestream.watch/watch/watch/tv/${toonId}?s=${season}&e=${episode + 1}`;
+          prevNextHeaderTags += `<link rel="next" href="${nextUrl}">`;
+          prevNextBodyHtml += `<a href="${nextUrl}" style="background:var(--primary);color:#fff;padding:0.5rem 1rem;border-radius:4px;text-decoration:none;font-size:0.9rem;font-weight:600;">Next Episode (${episode + 1}) &rarr;</a>`;
+        }
+
         const jsonLd = JSON.stringify(schemas);
 
         // ── Inject into HTML ────────────────────────────────────────────────────
@@ -1868,7 +2064,20 @@ const requestHandler = async (req, res) => {
           .replace(new RegExp('<meta id="tw-desc"[^>]*>'), `<meta id="tw-desc" name="twitter:description" content="${seoDesc}">`)
           .replace(new RegExp('<meta id="tw-image"[^>]*>'), `<meta id="tw-image" name="twitter:image" content="${posterUrl}">`)
           .replace(new RegExp('<meta id="tw-image-alt"[^>]*>'), `<meta id="tw-image-alt" name="twitter:image:alt" content="Watch ${animeTitle} Hindi Dubbed Free on CineStream">`)
-          .replace('<script id="ld-dynamic" type="application/ld+json"></script>', `<script id="ld-dynamic" type="application/ld+json">${jsonLd}</script>`);
+          .replace('<script id="ld-dynamic" type="application/ld+json"></script>', `<script id="ld-dynamic" type="application/ld+json">${jsonLd}</script>`)
+          .replace('<script id="ld-faq-dynamic" type="application/ld+json"></script>', `<script id="ld-faq-dynamic" type="application/ld+json">${faqJsonLd}</script>`)
+          .replace('<div id="seo-content-area"></div>', `<div id="seo-content-area">${visibleSeoContent}</div>`);
+
+        // Inject prev/next tags in head if generated
+        if (prevNextHeaderTags) {
+          injected = injected.replace('</head>', `${prevNextHeaderTags}</head>`);
+        }
+
+        // Dynamically update default webpage dateModified
+        const webpageSearch = injected.match(/"@type":\s*"WebPage"[\s\S]*?"dateModified":\s*"([^"]+)"/);
+        if (webpageSearch) {
+          injected = injected.replace(webpageSearch[0], webpageSearch[0].replace(webpageSearch[1], dateModified));
+        }
 
         // ── Internal Linking: inject related anime section for Googlebot ────────
         try {
@@ -1902,7 +2111,11 @@ const requestHandler = async (req, res) => {
               const aImg = a.poster ? `<img src="${a.poster}" alt="Watch ${aTitle} Hindi Dubbed" width="120" height="180" loading="lazy" style="border-radius:6px;object-fit:cover;width:120px;height:180px;">` : '';
               return `<li style="display:inline-block;margin:0 0.5rem 0.5rem 0;vertical-align:top;text-align:center;"><a href="${aHref}" title="Watch ${aTitle} Hindi Dubbed Online Free" style="text-decoration:none;color:inherit;display:block;max-width:120px;">${aImg}<span style="display:block;font-size:0.75rem;margin-top:0.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">${aTitle}</span></a></li>`;
             }).join('');
-            const relatedSection = `<section aria-label="Related Anime" style="padding:1rem 0;max-width:1200px;margin:0 auto;"><h2 style="font-size:1.2rem;font-weight:700;margin-bottom:0.75rem;">Related ${mediaType === 'movie' ? 'Anime Movies' : 'Anime Series'} Hindi Dubbed</h2><ul style="list-style:none;padding:0;margin:0;">${relatedLinks}</ul></section>`;
+            let relatedSection = `<section aria-label="Related Anime" style="padding:1rem 0;max-width:1200px;margin:0 auto;"><h2 style="font-size:1.2rem;font-weight:700;margin-bottom:0.75rem;">Related ${mediaType === 'movie' ? 'Anime Movies' : 'Anime Series'} Hindi Dubbed</h2><ul style="list-style:none;padding:0;margin:0;">${relatedLinks}</ul>`;
+            if (prevNextBodyHtml) {
+              relatedSection += `<div style="margin-top:1.5rem;display:flex;align-items:center;justify-content:center;">${prevNextBodyHtml}</div>`;
+            }
+            relatedSection += `</section>`;
             injected = injected.replace('<noscript id="seo-related-section"></noscript>', relatedSection);
           }
         } catch (_) { /* related anime inject failure is non-critical */ }
