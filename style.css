@@ -1640,6 +1640,51 @@ nav.scrolled {
   }
 }
 
+/* ── Close Modal and Back Button Video Player Positioning ── */
+
+/* In laptop view, hide the close-modal button when watching the video */
+@media (min-width: 769px) {
+  .modal-overlay.watching #close-modal {
+    display: none !important;
+  }
+}
+
+/* In mobile view, place close-modal and back-to-details outside the video player at the top */
+@media (max-width: 768px) {
+  .modal-overlay.watching .modal-hero {
+    margin-top: 50px !important;
+    height: calc(100% - 50px) !important;
+  }
+
+  .modal-overlay.watching .modal-back-btn {
+    position: absolute !important;
+    top: -42px !important;
+    left: 10px !important;
+    background: #1a1a1a !important;
+    border-radius: 20px !important;
+    z-index: 10010 !important;
+    height: 34px !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 12px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .modal-overlay.watching .modal-close {
+    position: absolute !important;
+    top: 8px !important;
+    right: 10px !important;
+    background: #1a1a1a !important;
+    border-radius: 50% !important;
+    z-index: 10010 !important;
+    width: 34px !important;
+    height: 34px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
 
 
 
