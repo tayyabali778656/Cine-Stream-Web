@@ -387,6 +387,10 @@
 
 <body>
 
+  <!-- PWA Gatekeeper Overlay (Keeps site black until Service Worker registers) -->
+  <div id="sw-loading-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f0f0f; z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Outfit', sans-serif;">
+  </div>
+
   <!-- Skip to main content link (WCAG 2.1 Level A) -->
   <a class="skip-to-main" href="#main-content">Skip to main content</a>
 
@@ -770,6 +774,8 @@
           .then(reg => {
             console.log('Service Worker registered successfully:', reg.scope);
             sessionStorage.removeItem('sw_reloaded'); // Reset reload tracker on success
+            const overlay = document.getElementById('sw-loading-overlay');
+            if (overlay) overlay.style.display = 'none'; // Reveal site
           })
           .catch(err => {
             console.error('Service Worker registration failed:', err);
@@ -778,18 +784,23 @@
               sessionStorage.setItem('sw_reloaded', 'true');
               window.location.reload();
             } else {
-              // If registration still fails after reload, replace entire body with just the 'Enter CineStream' button
+              // If registration still fails, show ONLY the "Enter CineStream" button inside the black overlay
               sessionStorage.removeItem('sw_reloaded');
-              document.body.innerHTML = `
-                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; background: #0f0f0f; color: #fff; font-family: 'Outfit', sans-serif; text-align: center; box-sizing: border-box; padding: 20px;">
+              const overlay = document.getElementById('sw-loading-overlay');
+              if (overlay) {
+                overlay.innerHTML = `
                   <h1 style="color: #e50914; font-size: clamp(2.2rem, 6vw, 3.5rem); font-weight: 800; margin-bottom: 20px; letter-spacing: -1px; font-family: 'Outfit', sans-serif;">Cine<span style="color: #fff;">Stream</span></h1>
-                  <p style="color: #b3b3b3; font-size: 1rem; margin-bottom: 30px; max-width: 400px; line-height: 1.5;">Please click below to access the streaming site.</p>
+                  <p style="color: #b3b3b3; font-size: 1rem; margin-bottom: 30px; max-width: 400px; line-height: 1.5; text-align: center; padding: 0 20px;">Please click below to access the streaming site.</p>
                   <button onclick="window.location.reload()" style="background: #e50914; color: #fff; border: none; padding: 14px 36px; font-size: 1.05rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);" onmouseover="this.style.background='#ff0f22'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#e50914'; this.style.transform='translateY(0)'">Enter CineStream</button>
-                </div>
-              `;
+                `;
+              }
             }
           });
       });
+    } else {
+      // Browser doesn't support Service Workers - reveal site instantly
+      const overlay = document.getElementById('sw-loading-overlay');
+      if (overlay) overlay.style.display = 'none';
     }
   </script>
   <script defer src="/_vercel/insights/script.js"></script>
