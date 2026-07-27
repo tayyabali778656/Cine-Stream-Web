@@ -1686,6 +1686,7 @@ const requestHandler = async (req, res) => {
         let animeRating = '';
         let animeYear = '';
         let animeSeasons = null;
+        let animeCreatedAt = '';
         let details = null;
 
         // 1. Try MongoDB first (fast, no network delay)
@@ -1713,6 +1714,7 @@ const requestHandler = async (req, res) => {
           animeYear = details.release_date || details.first_air_date || details.year || '';
           if (animeYear && String(animeYear).length > 4) animeYear = String(animeYear).slice(0, 4);
           animeSeasons = details.number_of_seasons || details.seasons || null;
+          animeCreatedAt = details.createdAt || details.updatedAt || '';
         }
 
         // Build a rich 160-char description
@@ -1752,7 +1754,13 @@ const requestHandler = async (req, res) => {
 
         const posterUrl = animePoster || 'https://cinestream.watch/images/og-banner.png';
         const dateModified = details && details.updatedAt ? new Date(details.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-        const datePublished = animeYear ? `${animeYear}-01-01` : dateModified;
+        // Use real createdAt date if available, then release year, then fallback to dateModified
+        let datePublished = dateModified;
+        if (animeCreatedAt) {
+          datePublished = new Date(animeCreatedAt).toISOString().split('T')[0];
+        } else if (animeYear) {
+          datePublished = `${animeYear}-01-01`;
+        }
 
         // ── Schema.org JSON-LD ──────────────────────────────────────────────────
         const schemas = [];
@@ -1861,6 +1869,43 @@ const requestHandler = async (req, res) => {
           .replace(new RegExp('<meta id="tw-image"[^>]*>'), `<meta id="tw-image" name="twitter:image" content="${posterUrl}">`)
           .replace(new RegExp('<meta id="tw-image-alt"[^>]*>'), `<meta id="tw-image-alt" name="twitter:image:alt" content="Watch ${animeTitle} Hindi Dubbed Free on CineStream">`)
           .replace('<script id="ld-dynamic" type="application/ld+json"></script>', `<script id="ld-dynamic" type="application/ld+json">${jsonLd}</script>`);
+
+        // ── Internal Linking: inject related anime section for Googlebot ────────
+        try {
+          const animeCol = getCollection('anime');
+          // Find up to 10 related anime: same type, same genre if possible, exclude current
+          let relatedQuery = { id: { $ne: toonId }, type: mediaType === 'movie' ? 'movie' : 'tv' };
+          if (animeGenres.length > 0) {
+            relatedQuery.genres = { $elemMatch: { $in: animeGenres } };
+          }
+          let relatedAnime = await animeCol.find(relatedQuery, {
+            projection: { id: 1, title: 1, poster: 1, type: 1 },
+            limit: 10
+          }).toArray();
+          // If same-genre results < 6, also fetch popular ones without genre filter
+          if (relatedAnime.length < 6) {
+            const fallback = await animeCol.find(
+              { id: { $ne: toonId }, type: mediaType === 'movie' ? 'movie' : 'tv' },
+              { projection: { id: 1, title: 1, poster: 1, type: 1 }, limit: 10 }
+            ).toArray();
+            const seen = new Set(relatedAnime.map(a => a.id));
+            for (const item of fallback) {
+              if (!seen.has(item.id)) relatedAnime.push(item);
+              if (relatedAnime.length >= 10) break;
+            }
+          }
+          if (relatedAnime.length > 0) {
+            const relatedType = mediaType === 'movie' ? 'movie' : 'tv';
+            const relatedLinks = relatedAnime.map(a => {
+              const aTitle = (a.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+              const aHref = `https://cinestream.watch/media/${relatedType}/${a.id}`;
+              const aImg = a.poster ? `<img src="${a.poster}" alt="Watch ${aTitle} Hindi Dubbed" width="120" height="180" loading="lazy" style="border-radius:6px;object-fit:cover;width:120px;height:180px;">` : '';
+              return `<li style="display:inline-block;margin:0 0.5rem 0.5rem 0;vertical-align:top;text-align:center;"><a href="${aHref}" title="Watch ${aTitle} Hindi Dubbed Online Free" style="text-decoration:none;color:inherit;display:block;max-width:120px;">${aImg}<span style="display:block;font-size:0.75rem;margin-top:0.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">${aTitle}</span></a></li>`;
+            }).join('');
+            const relatedSection = `<section aria-label="Related Anime" style="padding:1rem 0;max-width:1200px;margin:0 auto;"><h2 style="font-size:1.2rem;font-weight:700;margin-bottom:0.75rem;">Related ${mediaType === 'movie' ? 'Anime Movies' : 'Anime Series'} Hindi Dubbed</h2><ul style="list-style:none;padding:0;margin:0;">${relatedLinks}</ul></section>`;
+            injected = injected.replace('<noscript id="seo-related-section"></noscript>', relatedSection);
+          }
+        } catch (_) { /* related anime inject failure is non-critical */ }
 
         const buf = Buffer.from(injected, 'utf8');
         res.writeHead(200, {
