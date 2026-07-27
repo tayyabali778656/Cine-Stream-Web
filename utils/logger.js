@@ -66,9 +66,16 @@ const logger = {
     if (durationMs > 500) metrics.slowRequests++;
     if (statusCode >= 500) metrics.errorsTotal++;
 
+    const pathname = (req.url || '').split('?')[0];
+    // Skip logging for static assets in development to keep console logs clean
+    const isStaticAsset = /\.(png|jpg|jpeg|gif|svg|ico|webp|woff2?|ttf|css|js|webmanifest|json)$/i.test(pathname);
+    if (!config.isProduction && isStaticAsset) {
+      return;
+    }
+
     write('info', 'http', {
       method: req.method,
-      path: (req.url || '').split('?')[0],
+      path: pathname,
       status: statusCode,
       duration_ms: durationMs,
       ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown',
