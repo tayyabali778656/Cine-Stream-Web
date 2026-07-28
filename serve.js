@@ -198,6 +198,32 @@ function compressAndSend(req, res, body, contentType, extraHeaders = {}) {
   }
 }
 
+// ── Helper: decode HTML entities ──────────────────────────────────────────────
+function decodeHtmlEntities(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&amp;(#?\w+;)/g, '&$1')
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, '"')
+    .replace(/&ldquo;/g, '"')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&amp;amp;/g, '&')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#\d+;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // ── Proxy: whitelist enforcement (SSRF-safe, streaming-open) ─────────────────
 // Blocks all private/loopback addresses to prevent SSRF attacks.
 // Allows any public internet domain so streaming CDN redirects always resolve.
@@ -1826,8 +1852,9 @@ const requestHandler = async (req, res) => {
         }
 
         if (details && details.title) {
-          animeTitle = details.title;
-          animeDesc = (details.description || details.overview || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
+          animeTitle = decodeHtmlEntities(details.title);
+          const rawDesc = decodeHtmlEntities(details.description || details.overview || '');
+          animeDesc = rawDesc.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
           animePoster = details.poster || details.poster_path || '';
           animeGenres = Array.isArray(details.genres) ? details.genres.map(g => typeof g === 'string' ? g : (g.name || '')).filter(Boolean) : [];
           animeRating = details.rating || details.vote_average || '';
