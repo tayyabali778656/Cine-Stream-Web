@@ -2145,7 +2145,19 @@ const requestHandler = async (req, res) => {
         return;
       } catch (seoErr) {
         logger.warn('seo_inject_error', { message: seoErr.message });
-        // Fall through to normal static serving if injection fails
+        try {
+          // Minimal dynamic canonical fallback injection so Google doesn't index it as duplicate homepage
+          const htmlRaw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+          const fallbackInjected = htmlRaw
+            .replace(new RegExp('<link id="seo-canonical"[^>]*>'), `<link id="seo-canonical" rel="canonical" href="${canonical}">`)
+            .replace(new RegExp('<meta id="og-url"[^>]*>'), `<meta id="og-url" property="og:url" content="${canonical}">`);
+          
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(Buffer.from(fallbackInjected, 'utf8'));
+          return;
+        } catch (readErr) {
+          // Fall through if even reading index.html fails
+        }
       }
     } else if (pathname === '/' && seoQ) {
       // ── SEO: Server-side search results page meta injection ──────────────────
