@@ -14,6 +14,8 @@ Allow: /sitemap.xml
 Allow: /sitemap-index.xml
 Allow: /manifest.json
 Allow: /genre/
+Allow: /api/v1/anime/
+Allow: /api/v1/search/
 
 
 # Block admin, API, proxy, and internal areas
@@ -26,6 +28,8 @@ Disallow: /iframe-proxy
 # ── Googlebot — full access, no delay ─────────────────────────────────────────
 User-agent: Googlebot
 Allow: /
+Allow: /api/v1/anime/
+Allow: /api/v1/search/
 Disallow: /tayyab/
 Disallow: /api/
 Disallow: /proxy
@@ -40,6 +44,8 @@ Allow: /public/
 # ── Bingbot — mild crawl delay ────────────────────────────────────────────────
 User-agent: Bingbot
 Allow: /
+Allow: /api/v1/anime/
+Allow: /api/v1/search/
 Disallow: /tayyab/
 Disallow: /api/
 Crawl-delay: 5
