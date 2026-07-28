@@ -73,14 +73,64 @@ function buildTmdbEndpoints(maxPages = 15) {
 
 // ─── Utility helpers ──────────────────────────────────────────────────────────
 
-function escapeXml(str) {
+/**
+ * Strip HTML entities and then safely escape for XML.
+ * Data from ToonStream/DB often comes pre-escaped with HTML entities
+ * (e.g., &amp;rsquo; &amp;mdash; &amp;#39;), causing double-encoding in XML.
+ * We decode those first before re-encoding for clean XML output.
+ */
+function decodeHtmlEntities(str) {
   if (!str) return '';
   return String(str)
+    .replace(/&amp;(#?\w+;)/g, '&$1')   // un-double-encode e.g. &amp;rsquo; → &rsquo;
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, '"')
+    .replace(/&ldquo;/g, '"')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#\d+;/g, ' ')   // strip remaining numeric entities
+    .replace(/\s+/g, ' ')      // collapse whitespace
+    .trim();
+}
+
+function escapeXml(str) {
+  if (!str) return '';
+  // First decode any HTML entities, then properly XML-escape
+  const decoded = decodeHtmlEntities(String(str));
+  return decoded
     .replace(/&/g,  '&amp;')
     .replace(/</g,  '&lt;')
     .replace(/>/g,  '&gt;')
     .replace(/"/g,  '&quot;')
     .replace(/'/g,  '&apos;');
+}
+
+/**
+ * Returns true if the URL path segment looks like a valid content ID.
+ * Filters out internal config keys like 'global_settings' that accidentally
+ * end up in the DB.
+ */
+function isValidContentId(id) {
+  if (!id) return false;
+  // Block known internal/garbage IDs
+  const BLOCKED_IDS = new Set([
+    'global_settings', 'settings', 'config', 'admin', 'test',
+    'undefined', 'null', 'none', 'placeholder'
+  ]);
+  if (BLOCKED_IDS.has(String(id).toLowerCase())) return false;
+  // Must be at least 2 chars
+  if (String(id).length < 2) return false;
+  return true;
 }
 
 function sleep(ms) {
@@ -197,7 +247,12 @@ async function run() {
       const animeItems = await db.collection('anime').find({}).toArray();
       await client.close();
 
+      let adminAdded = 0;
       for (const item of adminItems) {
+        if (!isValidContentId(item.id)) {
+          console.log(`      ⚠ Skipping invalid admin_store ID: "${item.id}"`);
+          continue;
+        }
         const type = item.type === 'movie' ? 'movie' : 'tv';
         addEntry({
           loc:          `${BASE_URL}/media/${type}/${item.id}`,
@@ -208,9 +263,15 @@ async function run() {
           imageTitle:   item.title || item.name || '',
           imageCaption: (item.overview || '').slice(0, 200),
         });
+        adminAdded++;
       }
 
+      let animeAdded = 0;
       for (const item of animeItems) {
+        if (!isValidContentId(item.id)) {
+          console.log(`      ⚠ Skipping invalid anime ID: "${item.id}"`);
+          continue;
+        }
         const type = item.type === 'movie' ? 'movie' : 'tv';
         addEntry({
           loc:          `${BASE_URL}/media/${type}/${item.id}`,
@@ -221,8 +282,9 @@ async function run() {
           imageTitle:   item.title || '',
           imageCaption: (item.description || '').slice(0, 200),
         });
+        animeAdded++;
       }
-      console.log(`      → ${adminItems.length} admin items & ${animeItems.length} anime items added from DB`);
+      console.log(`      → ${adminAdded}/${adminItems.length} admin items & ${animeAdded}/${animeItems.length} anime items added from DB`);
   } catch (err) {
     console.warn(`      ⚠ MongoDB unavailable: ${err.message}`);
   }
@@ -264,15 +326,19 @@ async function run() {
         }
         
         for (const item of data.results) {
+          // Skip invalid/garbage content IDs
+          if (!isValidContentId(item.id)) continue;
           const mediaType = item.type === 'movie' ? 'movie' : 'tv';
+          // Use clean title for caption (no HTML entities)
+          const cleanTitle = decodeHtmlEntities(item.title || '');
           addEntry({
             loc:          `${BASE_URL}/media/${mediaType}/${item.id}`,
             priority:     '0.8',
             changefreq:   'weekly',
             lastmod:      TODAY,
             image:        item.poster ? item.poster : null,
-            imageTitle:   item.title || '',
-            imageCaption: `${item.title} - Watch free online on CineStream`,
+            imageTitle:   cleanTitle,
+            imageCaption: cleanTitle ? `Watch ${cleanTitle} free online in Hindi Dubbed on CineStream` : '',
           });
         }
         await sleep(150);
