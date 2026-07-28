@@ -2038,21 +2038,41 @@ const requestHandler = async (req, res) => {
             </div>
             
             <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Synopsis and Story Details</h2>
-            <p style="line-height:1.6;color:var(--text-muted);">${animeDesc || `Stream ${animeTitle} dubbed in Hindi. Discover the full characters, storyline, release dates, and reviews on CineStream's clean player interface.`}</p>
+            <p style="line-height:1.8;color:var(--text-muted);font-size:1rem;">${animeDesc || `Watch ${animeTitle} Hindi Dubbed full series online free on CineStream. Enjoy all episodes in high quality HD with multi-audio options. CineStream offers the best anime streaming experience in India with Hindi, English and Japanese audio tracks.`}</p>
 
-            <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Where to Watch ${animeTitle} in Hindi</h2>
-            <p style="line-height:1.6;color:var(--text-muted);">
-              Watch ${animeTitle} Hindi Dubbed full episodes online. You can select between various dynamic servers to stream without buffering. If you face download error screen issues, you can toggle between alternative player mirrors instantly.
+            <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">About ${animeTitle}</h2>
+            <p style="line-height:1.8;color:var(--text-muted);font-size:1rem;">
+              <strong>${animeTitle}</strong>${animeYear ? ` (${animeYear})` : ''} is ${mediaType === 'movie' ? 'an anime movie' : 'an anime series'}${animeGenres.length > 0 ? ` in the ${animeGenres.slice(0, 3).join(', ')} genre` : ''}${animeRating ? ` with a rating of ${animeRating}/10` : ''}.
+              Available on CineStream with Hindi Dubbed audio, English subtitles, and original Japanese track.
+              Stream all ${mediaType === 'movie' ? 'parts' : 'seasons and episodes'} of ${animeTitle} for free — no subscription, no login required.
             </p>
 
-            <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Frequently Asked Questions (FAQs)</h2>
+            <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Where to Watch ${animeTitle} in Hindi on CineStream</h2>
+            <p style="line-height:1.8;color:var(--text-muted);font-size:1rem;">
+              You can watch <strong>${animeTitle} Hindi Dubbed</strong> online free at <a href="https://cinestream.watch/media/${mediaType}/${toonId}" style="color:var(--primary);text-decoration:underline;">cinestream.watch</a>.
+              CineStream provides multiple streaming servers so you can always find a working mirror. Select your preferred audio: Hindi Dubbed, English Subtitles, or Japanese Original.
+              Video quality options include 1080p FHD, 720p HD, and 480p SD. No ads overlay the video player. No popups or redirects.
+            </p>
+
+            <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Frequently Asked Questions about ${animeTitle}</h2>
             <div style="line-height:1.6;">
               ${faqList.map(faq => `
-                <div style="margin-bottom:1rem;">
-                  <strong style="color:var(--text);display:block;margin-bottom:0.2rem;">Q: ${faq.name}</strong>
-                  <span style="color:var(--text-muted);display:block;padding-left:1rem;border-left:2px solid var(--primary);">${faq.acceptedAnswer.text}</span>
+                <div style="margin-bottom:1.2rem;padding:1rem;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--primary);">
+                  <strong style="color:var(--text);display:block;margin-bottom:0.4rem;font-size:1rem;">Q: ${faq.name}</strong>
+                  <span style="color:var(--text-muted);display:block;font-size:0.95rem;">${faq.acceptedAnswer.text}</span>
                 </div>
               `).join('')}
+            </div>
+
+            <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.07);">
+              <p style="color:var(--text-muted);font-size:0.9rem;">
+                🎬 Explore more on CineStream:
+                <a href="https://cinestream.watch/" style="color:var(--primary);margin:0 0.5rem;">Home</a> |
+                <a href="https://cinestream.watch/genre/action" style="color:var(--primary);margin:0 0.5rem;">Action Anime</a> |
+                <a href="https://cinestream.watch/genre/romance" style="color:var(--primary);margin:0 0.5rem;">Romance Anime</a> |
+                <a href="https://cinestream.watch/genre/isekai" style="color:var(--primary);margin:0 0.5rem;">Isekai Anime</a> |
+                <a href="https://cinestream.watch/genre/shounen" style="color:var(--primary);margin:0 0.5rem;">Shounen Anime</a>
+              </p>
             </div>
           </div>
         `;
@@ -2066,7 +2086,7 @@ const requestHandler = async (req, res) => {
             prevNextHeaderTags += `<link rel="prev" href="${prevUrl}">`;
             prevNextBodyHtml += `<a href="${prevUrl}" style="background:var(--primary);color:#fff;padding:0.5rem 1rem;border-radius:4px;text-decoration:none;margin-right:1rem;font-size:0.9rem;font-weight:600;">&larr; Prev Episode (${episode - 1})</a>`;
           }
-          const nextUrl = `https://cinestream.watch/watch/watch/tv/${toonId}?s=${season}&e=${episode + 1}`;
+          const nextUrl = `https://cinestream.watch/watch/tv/${toonId}?s=${season}&e=${episode + 1}`;
           prevNextHeaderTags += `<link rel="next" href="${nextUrl}">`;
           prevNextBodyHtml += `<a href="${nextUrl}" style="background:var(--primary);color:#fff;padding:0.5rem 1rem;border-radius:4px;text-decoration:none;font-size:0.9rem;font-weight:600;">Next Episode (${episode + 1}) &rarr;</a>`;
         }
@@ -2118,7 +2138,7 @@ const requestHandler = async (req, res) => {
         const buf = Buffer.from(injected, 'utf8');
         res.writeHead(200, {
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600',
+          'Cache-Control': 'public, max-age=1800, stale-while-revalidate=3600',
         });
         res.end(buf);
         logger.request(req, 200, Date.now() - startMs);
