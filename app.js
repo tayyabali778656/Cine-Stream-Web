@@ -2463,7 +2463,7 @@ const App = {
   updateMetaTags(m, type) {
     const SITE = 'https://cinestream.watch';
     const IMG_BASE = 'https://image.tmdb.org/t/p/w780';
-    const title = m.title || m.name || 'CineStream';
+    const title = this.decodeHtmlEntities(m.title || m.name || 'CineStream');
     const year = (m.release_date || m.first_air_date || '').split('-')[0] || '';
     const overview = m.overview || '';
     const genres = m.genres ? m.genres.map(g => g.name).join(', ') : (m.genres_str || '');
