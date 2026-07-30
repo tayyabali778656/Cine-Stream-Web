@@ -2,8 +2,7 @@
 <html lang="en" prefix="og: https://ogp.me/ns# fb: https://ogp.me/ns/fb# article: https://ogp.me/ns/article#">
 
 <head>
-  <script src="https://5gvci.com/act/files/tag.min.js?z=11462739" data-cfasync="false" async></script>
-  <script src="https://5gvci.com/act/files/tag.min.js?z=11462890" data-cfasync="false" async></script>
+
   <script>
     // Global catch-all to prevent third-party scripts (like Google Ads/AdSense)
     // from polluting the console with uncaught promise rejections.
@@ -783,8 +782,49 @@
   </script>
   <script defer src="/_vercel/insights/script.js"></script>
   <script defer src="/_vercel/speed-insights/script.js"></script>
-  <script>(function(s){s.dataset.zone='11462747',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  <script>(function(s){s.dataset.zone='11462755',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+  <script>
+    (function() {
+      let adsLoaded = false;
+      function loadPushAds() {
+        if (adsLoaded) return;
+        adsLoaded = true;
+
+        // Load 5gvci tags
+        const s1 = document.createElement('script');
+        s1.src = 'https://5gvci.com/act/files/tag.min.js?z=11462739';
+        s1.async = true;
+        s1.setAttribute('data-cfasync', 'false');
+        document.head.appendChild(s1);
+
+        const s2 = document.createElement('script');
+        s2.src = 'https://5gvci.com/act/files/tag.min.js?z=11462890';
+        s2.async = true;
+        s2.setAttribute('data-cfasync', 'false');
+        document.head.appendChild(s2);
+
+        // Load vignette ad
+        const s3 = document.createElement('script');
+        s3.dataset.zone = '11462747';
+        s3.src = 'https://n6wxm.com/vignette.min.js';
+        document.body.appendChild(s3);
+
+        // Load tag ad
+        const s4 = document.createElement('script');
+        s4.dataset.zone = '11462755';
+        s4.src = 'https://nap5k.com/tag.min.js';
+        document.body.appendChild(s4);
+
+        // Remove event listeners
+        window.removeEventListener('scroll', loadPushAds);
+        window.removeEventListener('click', loadPushAds);
+        window.removeEventListener('touchstart', loadPushAds);
+      }
+      // Listen to first user interaction
+      window.addEventListener('scroll', loadPushAds, { passive: true });
+      window.addEventListener('click', loadPushAds, { passive: true });
+      window.addEventListener('touchstart', loadPushAds, { passive: true });
+    })();
+  </script>
 </body>
 
 </html>
