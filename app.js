@@ -1114,6 +1114,9 @@ const App = {
 
       if (finalResults.length === 0) {
         resultsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 5rem; color: #666; font-size:1.5rem;">No results found.</div>';
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         return;
       }
 
@@ -1163,6 +1166,10 @@ const App = {
 
       // Auto-scan visible search results for 404 links in background
       this.scanFeedForBrokenVideos(finalResults);
+
+      if (resultsSection) {
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
 
     } catch (e) {
       console.error(e);
