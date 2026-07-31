@@ -878,7 +878,8 @@ const App = {
             ? ''
             : `srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"`;
 
-          const fallbackPoster = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750"><rect width="500" height="750" fill="%23181524"/><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="%23e0e0e0" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="700" font-size="28">No Poster</text><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23e50914" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="800" font-size="34">CineStream</text></svg>`;
+          const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750"><rect width="500" height="750" fill="#181524"/><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#e0e0e0" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="700" font-size="28">No Poster</text><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#e50914" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="800" font-size="34">CineStream</text></svg>`;
+          const fallbackPoster = `data:image/svg+xml;base64,${btoa(fallbackSvg)}`;
 
           return `
             <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${typeVal}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle} (${year}) - ${contentType}">

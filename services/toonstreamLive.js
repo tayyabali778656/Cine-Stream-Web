@@ -419,7 +419,8 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
     for (const item of scheduleList) {
       const dbEntry = dbMap.get(item.title.toLowerCase()) || dbMap.get(item.slug.toLowerCase()) || null;
       const cleanTitleForSvg = item.title.replace(/"/g, '&quot;').replace(/'/g, '&apos;');
-      const placeholderPoster = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750"><rect width="500" height="750" fill="%23181524"/><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="%23e0e0e0" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="700" font-size="28">${encodeURIComponent(cleanTitleForSvg.substring(0, 26))}</text><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23e50914" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="800" font-size="34">CineStream</text></svg>`;
+      const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750"><rect width="500" height="750" fill="#181524"/><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#e0e0e0" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="700" font-size="28">${cleanTitleForSvg.substring(0, 26)}</text><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#e50914" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="800" font-size="34">CineStream</text></svg>`;
+      const placeholderPoster = `data:image/svg+xml;base64,${Buffer.from(svgString).toString('base64')}`;
 
       if (dbEntry) {
         enrichedResults.push({
