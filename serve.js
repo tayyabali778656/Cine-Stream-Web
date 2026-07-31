@@ -393,6 +393,7 @@ async function handleApiV1(req, res, pathname) {
     const id = url.searchParams.get('id') || '';
     const slug = url.searchParams.get('slug') || '';
     let cleanSlug = slug || (id ? id.replace('toon_', '') : '');
+    cleanSlug = decodeURIComponent(cleanSlug).replace(/:/g, '').replace(/%3A/gi, '');
 
     const SLUG_ALIASES = {
       'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade'
@@ -1846,7 +1847,8 @@ const requestHandler = async (req, res) => {
       const action = toonWatchMatch[1]; // 'watch' or 'media'
       const mediaType = toonWatchMatch[2]; // 'tv' or 'movie'
       let toonId = toonWatchMatch[3]; // e.g. "toon_solo-leveling"
-      let slug = toonId.replace(/^toon_/, ''); // e.g. "solo-leveling"
+      let slug = decodeURIComponent(toonId.replace(/^toon_/, '')).replace(/:/g, '').replace(/%3A/gi, '');
+      toonId = `toon_${slug}`;
 
       const SLUG_ALIASES = {
         'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade'

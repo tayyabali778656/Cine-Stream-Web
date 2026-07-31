@@ -284,6 +284,7 @@ function parseCardsFromHtml(html, isCartoon = false) {
     } else {
       slug = decodeHtmlEntities(lastPart);
     }
+    slug = slug.replace(/:/g, '').replace(/%3A/gi, '');
 
     const id = `toon_${slug}`;
     if (title.includes('${') || slug.includes('${') || poster.includes('${')) continue;
