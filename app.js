@@ -713,10 +713,9 @@ const App = {
     const fMap = { 'trending': 'Trending', 'popular': 'Popular', 'top_rated': 'Top Rated', 'upcoming': 'Upcoming' };
     const filterTxt = fMap[this.currentFilter] || 'Trending';
 
-    // 1. Single Category View Mode (30 cards per load, no sub-headings, bottom View More button)
     if (this.singleCategoryMode) {
       const type = this.singleCategoryMode;
-      const targetSize = 30;
+      const targetSize = type === 'upcoming' ? 100 : 30;
 
       const skeletons = [];
       for (let i = 0; i < 12; i++) {
@@ -921,7 +920,7 @@ const App = {
 
         const loadMoreContainer = document.getElementById('load-more-container');
         if (loadMoreContainer) {
-          loadMoreContainer.style.display = 'block';
+          loadMoreContainer.style.display = type === 'upcoming' ? 'none' : 'block';
           const btn = document.getElementById('load-more-btn');
           if (btn) btn.textContent = 'View More';
         }
@@ -1610,7 +1609,13 @@ const App = {
         const local = (this.movies && this.movies.find(m => String(m.id) === String(movieId))) ||
           (this.moviePool && this.moviePool.find(m => String(m.id) === String(movieId))) ||
           (this.tvPool && this.tvPool.find(m => String(m.id) === String(movieId))) ||
-          (this.animePool && this.animePool.find(m => String(m.id) === String(movieId)));
+          (this.animePool && this.animePool.find(m => String(m.id) === String(movieId))) ||
+          (this.freshDropPool && this.freshDropPool.find(m => String(m.id) === String(movieId))) ||
+          (this.upcomingPool && this.upcomingPool.find(m => String(m.id) === String(movieId))) ||
+          (this.animeSeriesPool && this.animeSeriesPool.find(m => String(m.id) === String(movieId))) ||
+          (this.animeMoviesPool && this.animeMoviesPool.find(m => String(m.id) === String(movieId))) ||
+          (this.cartoonSeriesPool && this.cartoonSeriesPool.find(m => String(m.id) === String(movieId))) ||
+          (this.cartoonMoviesPool && this.cartoonMoviesPool.find(m => String(m.id) === String(movieId)));
         if (local) {
           return {
             id: local.id,
