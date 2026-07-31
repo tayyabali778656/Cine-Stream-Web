@@ -870,8 +870,11 @@ const App = {
             ? `fetchpriority="high" decoding="async"`
             : `loading="lazy" decoding="async"`;
 
-          const scheduleBadge = m.schedule_time
-            ? `<span class="schedule-badge" aria-hidden="true" style="position: absolute; bottom: 10px; left: 10px; background: var(--primary); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">${m.schedule_time}</span>`
+          const badgeText = m.schedule_time
+            ? (m.schedule_note ? `${m.schedule_time} • ${m.schedule_note}` : m.schedule_time)
+            : '';
+          const scheduleBadge = badgeText
+            ? `<span class="schedule-badge" aria-hidden="true" style="position: absolute; bottom: 10px; left: 10px; background: var(--primary); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">${badgeText}</span>`
             : '';
 
           const srcsetAttr = poster.startsWith('data:')
