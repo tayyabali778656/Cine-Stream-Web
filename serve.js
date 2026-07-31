@@ -392,7 +392,15 @@ async function handleApiV1(req, res, pathname) {
     const url = new URL(req.url, `http://localhost:${PORT}`);
     const id = url.searchParams.get('id') || '';
     const slug = url.searchParams.get('slug') || '';
-    const cleanSlug = slug || (id ? id.replace('toon_', '') : '');
+    let cleanSlug = slug || (id ? id.replace('toon_', '') : '');
+
+    const SLUG_ALIASES = {
+      'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade'
+    };
+    if (SLUG_ALIASES[cleanSlug]) {
+      cleanSlug = SLUG_ALIASES[cleanSlug];
+    }
+    const cleanId = `toon_${cleanSlug}`;
 
     try {
       let anime = null;
@@ -400,7 +408,7 @@ async function handleApiV1(req, res, pathname) {
         const animeCollection = getCollection('anime');
         anime = await animeCollection.findOne({
           $or: [
-            { id: id },
+            { id: cleanId },
             { id: `toon_${cleanSlug}` },
             { slug: cleanSlug }
           ]
@@ -415,7 +423,7 @@ async function handleApiV1(req, res, pathname) {
         return;
       }
 
-      const freshAnime = await liveSvc.getLiveAnimeDetails(id, cleanSlug);
+      const freshAnime = await liveSvc.getLiveAnimeDetails(cleanId, cleanSlug);
       if (!freshAnime) {
         sendJson(res, 404, { error: 'Anime not found' });
         return;
@@ -1837,8 +1845,16 @@ const requestHandler = async (req, res) => {
     if (toonWatchMatch) {
       const action = toonWatchMatch[1]; // 'watch' or 'media'
       const mediaType = toonWatchMatch[2]; // 'tv' or 'movie'
-      const toonId = toonWatchMatch[3]; // e.g. "toon_solo-leveling"
-      const slug = toonId.replace(/^toon_/, ''); // e.g. "solo-leveling"
+      let toonId = toonWatchMatch[3]; // e.g. "toon_solo-leveling"
+      let slug = toonId.replace(/^toon_/, ''); // e.g. "solo-leveling"
+
+      const SLUG_ALIASES = {
+        'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade'
+      };
+      if (SLUG_ALIASES[slug]) {
+        slug = SLUG_ALIASES[slug];
+        toonId = `toon_${slug}`;
+      }
 
       const isWatch = action === 'watch';
       const season = isWatch ? parseInt(urlObjForSeo.searchParams.get('s') || '1', 10) : null;
