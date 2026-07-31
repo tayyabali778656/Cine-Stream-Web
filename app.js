@@ -19,17 +19,31 @@ const App = {
   episodeSourcesCache: {},
   animeDetailsCache: {},
 
-  moviePool: [],
-  tvPool: [],
-  animePool: [],
-  moviePage: 1,
-  tvPage: 1,
-  animePage: 1,
+  freshDropPool: [],
+  freshDropPage: 1,
+  freshDropPagesLoaded: 1,
+
+  animeSeriesPool: [],
+  animeSeriesPage: 1,
+  animeSeriesPagesLoaded: 1,
+
+  animeMoviesPool: [],
+  animeMoviesPage: 1,
+  animeMoviesPagesLoaded: 1,
+
+  cartoonSeriesPool: [],
+  cartoonSeriesPage: 1,
+  cartoonSeriesPagesLoaded: 1,
+
+  cartoonMoviesPool: [],
+  cartoonMoviesPage: 1,
+  cartoonMoviesPagesLoaded: 1,
+
   renderedCount: 0,
 
-  singleCategoryMode: 'anime', // 'movie', 'tv', 'anime'
+  singleCategoryMode: 'fresh-drop', // 'fresh-drop', 'anime-series', 'anime-movies', 'cartoon-series', 'cartoon-movies'
   singleCategoryPage: 1,
-  animeSubFilter: 'anime', // 'anime' only (cartoons removed)
+  animeSubFilter: 'anime',
 
   filterHidden(items) {
     if (!items || !Array.isArray(items)) return [];
@@ -282,7 +296,20 @@ const App = {
       await window.API.initCatalog();
     }
 
-    await this.resetAndFetch();
+    await this.resetAndFetch(true);
+
+    const activeType = this.singleCategoryMode;
+    
+    document.querySelectorAll('.category-filter-btn').forEach(btn => {
+      if (btn.dataset.filterType === activeType) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    });
+
     this.renderRecentlyViewed();
     this.setupNavScroll();
   },
@@ -291,6 +318,10 @@ const App = {
    * Event Listeners setup
    */
   setupEventListeners() {
+    window.addEventListener('beforeunload', () => {
+      sessionStorage.setItem('s_scrollTop', window.scrollY);
+    });
+
     // Search with debounce
     let debounceTimer;
     this.searchBar.addEventListener('input', (e) => {
@@ -319,20 +350,53 @@ const App = {
       });
     }
 
-    // Anime vs Cartoon Sub-Filter Dropdown Selector
-    const typeSelect = document.getElementById('media-type-filter-select');
-    if (typeSelect) {
-      typeSelect.addEventListener('change', () => {
-        this.animeSubFilter = typeSelect.value;
-        this.animePool = [];
-        this.animePage = 1;
-        this.renderedCount = 0;
+    // Category Filter Buttons (Fresh Drop, Anime Series, Anime Movies, Cartoon Series, Cartoon Movies)
+    const categoryBtns = document.querySelectorAll('.category-filter-btn');
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryBtns.forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+
+        const filterType = btn.dataset.filterType;
+        
+        // Reset state
+        this.freshDropPool = [];
+        this.animeSeriesPool = [];
+        this.animeMoviesPool = [];
+        this.cartoonSeriesPool = [];
+        this.cartoonMoviesPool = [];
+
+        this.freshDropPage = 1;
+        this.animeSeriesPage = 1;
+        this.animeMoviesPage = 1;
+        this.cartoonSeriesPage = 1;
+        this.cartoonMoviesPage = 1;
+
+        this.freshDropPagesLoaded = 1;
+        this.animeSeriesPagesLoaded = 1;
+        this.animeMoviesPagesLoaded = 1;
+        this.cartoonSeriesPagesLoaded = 1;
+        this.cartoonMoviesPagesLoaded = 1;
+
+        sessionStorage.setItem('s_freshDropPagesLoaded', '1');
+        sessionStorage.setItem('s_animeSeriesPagesLoaded', '1');
+        sessionStorage.setItem('s_animeMoviesPagesLoaded', '1');
+        sessionStorage.setItem('s_cartoonSeriesPagesLoaded', '1');
+        sessionStorage.setItem('s_cartoonMoviesPagesLoaded', '1');
+        
         this.grid.innerHTML = '';
         this.renderedIds.clear();
         this.showSkeletons();
+
+        this.singleCategoryMode = filterType;
+
         this.fetchAndRenderBatch();
       });
-    }
+    });
 
     // Filter Chips (Trending, Popular, etc.)
     this.filterChips.forEach(chip => {
@@ -351,12 +415,15 @@ const App = {
           if (category === 'movie') {
             this.moviePool = [];
             this.moviePage = 1;
+            sessionStorage.setItem('s_moviePage', '1');
           } else if (category === 'tv') {
             this.tvPool = [];
             this.tvPage = 1;
+            sessionStorage.setItem('s_tvPage', '1');
           } else if (category === 'anime') {
             this.animePool = [];
             this.animePage = 1;
+            sessionStorage.setItem('s_animePage', '1');
           }
           this.grid.innerHTML = '';
           this.renderedIds.clear();
@@ -417,6 +484,7 @@ const App = {
         // Reset pool & pagination for anime, and re-fetch
         this.animePool = [];
         this.animePage = 1;
+        sessionStorage.setItem('s_animePage', '1');
         this.grid.innerHTML = '';
         this.renderedIds.clear();
         this.showSkeletons();
@@ -495,16 +563,46 @@ const App = {
   /**
    * Reset feed variables and fetch first batch
    */
-  async resetAndFetch() {
-    this.singleCategoryMode = 'anime';
+  async resetAndFetch(isInitial = false) {
+    this.singleCategoryMode = 'fresh-drop';
     this.singleCategoryPage = 1;
     this.currentPage = 1;
-    this.moviePage = 1;
-    this.tvPage = 1;
-    this.animePage = 1;
-    this.moviePool = [];
-    this.tvPool = [];
-    this.animePool = [];
+    if (isInitial) {
+      this.freshDropPagesLoaded = parseInt(sessionStorage.getItem('s_freshDropPagesLoaded') || '1', 10);
+      this.animeSeriesPagesLoaded = parseInt(sessionStorage.getItem('s_animeSeriesPagesLoaded') || '1', 10);
+      this.animeMoviesPagesLoaded = parseInt(sessionStorage.getItem('s_animeMoviesPagesLoaded') || '1', 10);
+      this.cartoonSeriesPagesLoaded = parseInt(sessionStorage.getItem('s_cartoonSeriesPagesLoaded') || '1', 10);
+      this.cartoonMoviesPagesLoaded = parseInt(sessionStorage.getItem('s_cartoonMoviesPagesLoaded') || '1', 10);
+
+      this.freshDropPage = this.freshDropPagesLoaded + 1;
+      this.animeSeriesPage = this.animeSeriesPagesLoaded + 1;
+      this.animeMoviesPage = this.animeMoviesPagesLoaded + 1;
+      this.cartoonSeriesPage = this.cartoonSeriesPagesLoaded + 1;
+      this.cartoonMoviesPage = this.cartoonMoviesPagesLoaded + 1;
+    } else {
+      this.freshDropPagesLoaded = 1;
+      this.animeSeriesPagesLoaded = 1;
+      this.animeMoviesPagesLoaded = 1;
+      this.cartoonSeriesPagesLoaded = 1;
+      this.cartoonMoviesPagesLoaded = 1;
+
+      this.freshDropPage = 2;
+      this.animeSeriesPage = 2;
+      this.animeMoviesPage = 2;
+      this.cartoonSeriesPage = 2;
+      this.cartoonMoviesPage = 2;
+
+      sessionStorage.setItem('s_freshDropPagesLoaded', '1');
+      sessionStorage.setItem('s_animeSeriesPagesLoaded', '1');
+      sessionStorage.setItem('s_animeMoviesPagesLoaded', '1');
+      sessionStorage.setItem('s_cartoonSeriesPagesLoaded', '1');
+      sessionStorage.setItem('s_cartoonMoviesPagesLoaded', '1');
+    }
+    this.freshDropPool = [];
+    this.animeSeriesPool = [];
+    this.animeMoviesPool = [];
+    this.cartoonSeriesPool = [];
+    this.cartoonMoviesPool = [];
     this.renderedCount = 0;
     this.grid.innerHTML = '';
     this.renderedIds.clear();
@@ -615,14 +713,65 @@ const App = {
       }
 
       try {
-        const pool = type === 'movie' ? this.moviePool : type === 'tv' ? this.tvPool : this.animePool;
-        let pagePointer = type === 'movie' ? this.moviePage : type === 'tv' ? this.tvPage : this.animePage;
+        const pool = type === 'fresh-drop' ? this.freshDropPool
+                   : type === 'anime-series' ? this.animeSeriesPool
+                   : type === 'anime-movies' ? this.animeMoviesPool
+                   : type === 'cartoon-series' ? this.cartoonSeriesPool
+                   : type === 'cartoon-movies' ? this.cartoonMoviesPool
+                   : this.animePool;
 
+        const isFirstLoad = this.grid.querySelectorAll('.movie-card:not(.skeleton)').length === 0;
+
+        let pagesToFetch = 1;
+        let startPage = type === 'fresh-drop' ? this.freshDropPage
+                      : type === 'anime-series' ? this.animeSeriesPage
+                      : type === 'anime-movies' ? this.animeMoviesPage
+                      : type === 'cartoon-series' ? this.cartoonSeriesPage
+                      : type === 'cartoon-movies' ? this.cartoonMoviesPage
+                      : this.animePage;
+
+        let currentTargetSize = targetSize;
+        if (isFirstLoad) {
+          startPage = 1;
+          pagesToFetch = type === 'fresh-drop' ? this.freshDropPagesLoaded
+                       : type === 'anime-series' ? this.animeSeriesPagesLoaded
+                       : type === 'anime-movies' ? this.animeMoviesPagesLoaded
+                       : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
+                       : type === 'cartoon-movies' ? this.cartoonMoviesPagesLoaded
+                       : this.animePagesLoaded;
+          currentTargetSize = targetSize * pagesToFetch;
+        } else {
+          pagesToFetch = 1;
+          if (type === 'fresh-drop') {
+            this.freshDropPagesLoaded++;
+            sessionStorage.setItem('s_freshDropPagesLoaded', this.freshDropPagesLoaded);
+          } else if (type === 'anime-series') {
+            this.animeSeriesPagesLoaded++;
+            sessionStorage.setItem('s_animeSeriesPagesLoaded', this.animeSeriesPagesLoaded);
+          } else if (type === 'anime-movies') {
+            this.animeMoviesPagesLoaded++;
+            sessionStorage.setItem('s_animeMoviesPagesLoaded', this.animeMoviesPagesLoaded);
+          } else if (type === 'cartoon-series') {
+            this.cartoonSeriesPagesLoaded++;
+            sessionStorage.setItem('s_cartoonSeriesPagesLoaded', this.cartoonSeriesPagesLoaded);
+          } else if (type === 'cartoon-movies') {
+            this.cartoonMoviesPagesLoaded++;
+            sessionStorage.setItem('s_cartoonMoviesPagesLoaded', this.cartoonMoviesPagesLoaded);
+          }
+          const loadedVal = type === 'fresh-drop' ? this.freshDropPagesLoaded
+                          : type === 'anime-series' ? this.animeSeriesPagesLoaded
+                          : type === 'anime-movies' ? this.animeMoviesPagesLoaded
+                          : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
+                          : type === 'cartoon-movies' ? this.cartoonMoviesPagesLoaded
+                          : this.animePagesLoaded;
+          currentTargetSize = targetSize * loadedVal;
+        }
+
+        let currentPagePointer = startPage;
         let attempts = 0;
-        while (pool.length < targetSize && attempts < 8) {
+        while (pool.length < currentTargetSize && attempts < 15) {
           attempts++;
-          const requestType = (type === 'anime' && this.animeSubFilter === 'cartoon') ? 'cartoon' : type;
-          const data = await API.getMovies(requestType, this.currentFilter, pagePointer, '', '');
+          const data = await API.getMovies(type, this.currentFilter, currentPagePointer, '', '');
           if (data && data.results && data.results.length > 0) {
             let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
             const existingIds = new Set(pool.map(pItem => String(pItem.id)));
@@ -641,27 +790,22 @@ const App = {
                 return rd && rd > nowUTC;
               });
             }
-            if (type === 'anime') {
-              results = results.filter(item => {
-                const isItemAnime = this.isAnime(item);
-                return this.animeSubFilter === 'anime' ? isItemAnime : !isItemAnime;
-              });
-            }
             pool.push(...results);
-            pagePointer++;
-          } else {
-            break;
           }
+          currentPagePointer++;
         }
 
-        if (type === 'movie') { this.moviePage = pagePointer; }
-        else if (type === 'tv') { this.tvPage = pagePointer; }
-        else { this.animePage = pagePointer; }
+        if (type === 'fresh-drop') { this.freshDropPage = currentPagePointer; }
+        else if (type === 'anime-series') { this.animeSeriesPage = currentPagePointer; }
+        else if (type === 'anime-movies') { this.animeMoviesPage = currentPagePointer; }
+        else if (type === 'cartoon-series') { this.cartoonSeriesPage = currentPagePointer; }
+        else if (type === 'cartoon-movies') { this.cartoonMoviesPage = currentPagePointer; }
+        else { this.animePage = currentPagePointer; }
 
         // Remove ALL skeleton cards (original 12 from showSkeletons + our 12 just appended)
         this.grid.querySelectorAll('.movie-card.skeleton').forEach(s => s.remove());
 
-        const itemsToRender = pool.splice(0, targetSize);
+        const itemsToRender = isFirstLoad ? pool.splice(0, currentTargetSize) : pool.splice(0, targetSize);
         if (itemsToRender.length === 0) {
           // Only show Not Found if grid is truly empty (first load with no data)
           // If cards already exist (View More at end), just hide button gracefully
@@ -735,6 +879,15 @@ const App = {
         batchContainer.style.display = 'contents';
         batchContainer.innerHTML = cardsHtml;
         this.grid.appendChild(batchContainer);
+
+        // Restore scroll position if saved on page reload
+        const savedScroll = parseInt(sessionStorage.getItem('s_scrollTop') || '0', 10);
+        if (savedScroll > 0) {
+          setTimeout(() => {
+            window.scrollTo({ top: savedScroll, behavior: 'instant' });
+            sessionStorage.removeItem('s_scrollTop');
+          }, 100);
+        }
 
         // Auto-scan visible category items for 404 links in background
         this.scanFeedForBrokenVideos(itemsToRender);

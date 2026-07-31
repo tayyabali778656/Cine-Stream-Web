@@ -557,8 +557,6 @@ nav.scrolled {
   background: var(--bg-card);
   aspect-ratio: 2/3;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  content-visibility: auto;
-  contain-intrinsic-size: auto 300px;
   will-change: transform, box-shadow;
 }
 
@@ -665,21 +663,67 @@ nav.scrolled {
 .filters-section {
   padding: 0.5rem 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  flex-wrap: nowrap;
+  gap: 0.6rem;
   align-items: center;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  margin-bottom: 1.5rem;
+  scrollbar-width: none; /* Firefox */
+  justify-content: flex-start;
+}
+
+.filters-section::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+@media (min-width: 769px) {
+  .filters-section {
+    justify-content: center;
+  }
+}
+
+.category-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(229, 9, 20, 0.15);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-decoration: none;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  transition: all var(--transition-smooth);
+  cursor: pointer;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.category-filter-btn:hover,
+.category-filter-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
 }
 
 .filter-chip,
 .filter-dropdown-select {
-  padding: 8px 20px;
+  padding: 6px 14px;
   border-radius: 50px;
   background: var(--glass);
   border: 1px solid var(--glass-border);
   cursor: pointer;
   transition: var(--transition-smooth);
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .filter-chip:hover,
@@ -1791,4 +1835,15 @@ nav.scrolled {
   .player-ad-card {
     transform: scale(0.55) !important;
   }
+}
+
+/* Core Web Vitals Optimization: Skip rendering offscreen elements until needed */
+.main-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 300px;
+}
+
+.ssr-seo-details {
+  content-visibility: auto;
+  contain-intrinsic-size: 500px;
 }

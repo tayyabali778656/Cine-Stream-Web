@@ -314,9 +314,16 @@ async function buildSitemap() {
   try {
     if (isConnected()) {
       const animeItems = await getCollection('anime').find({}, {
-        projection: { id: 1, type: 1, title: 1, poster: 1, description: 1, updatedAt: 1 }
+        projection: { id: 1, type: 1, title: 1, poster: 1, description: 1, rating: 1, vote_average: 1, release_year: 1, updatedAt: 1 }
       }).toArray();
-      for (const item of animeItems) {
+
+      const filteredItems = animeItems.filter(item => {
+        const ratingVal = parseFloat(item.rating || item.vote_average || 0);
+        const yearVal = parseInt(item.release_year || 0, 10);
+        return ratingVal >= 7.5 || yearVal >= 2025;
+      });
+
+      for (const item of filteredItems) {
         // Use real updatedAt if available, otherwise today
         const lastmod = item.updatedAt
           ? new Date(item.updatedAt).toISOString().split('T')[0]
@@ -422,6 +429,8 @@ async function handleApiV1(req, res, pathname) {
           { $set: { ...freshAnime, updatedAt: new Date() } },
           { upsert: true }
         );
+        // Invalidate sitemap cache so it gets rebuilt immediately on next request
+        cache.delete('sitemap_xml');
       } catch (dbErr) {
         logger.warn('Failed to save fresh anime details to MongoDB:', dbErr.message);
       }
@@ -783,8 +792,14 @@ async function handleApiV1(req, res, pathname) {
 
   if (req.method === 'GET') {
     try {
-      const data = await collection.find({}).toArray();
-      logger.db('find', collectionName, Date.now() - dbStart);
+      const cacheKey = `db_${collectionName}`;
+      let data = cache.get(cacheKey);
+      if (!data) {
+        data = await collection.find({}).toArray();
+        logger.db('find', collectionName, Date.now() - dbStart);
+        // Cache DB data for 5 minutes (invalidated automatically on POST/DELETE)
+        cache.set(cacheKey, data, 5 * 60 * 1000);
+      }
       sendJson(res, 200, data);
     } catch (err) {
       logger.db('find', collectionName, Date.now() - dbStart, err);
@@ -808,13 +823,19 @@ async function handleApiV1(req, res, pathname) {
         await collection.updateOne({ id }, { $set: doc }, { upsert: true });
         logger.db('upsert', collectionName, Date.now() - dbStart);
         // Trigger sitemap rebuild whenever media content changes
-        if (collectionName === 'admin-store') sitemapSvc.triggerRegen(`upsert_${collectionName}`);
+        if (collectionName === 'admin-store' || collectionName === 'anime') {
+          sitemapSvc.triggerRegen(`upsert_${collectionName}`);
+          cache.delete('sitemap_xml');
+        }
         sendJson(res, 200, { success: true });
       } else {
         const result = await collection.insertOne(doc);
         logger.db('insert', collectionName, Date.now() - dbStart);
         // Trigger sitemap rebuild for new media items
-        if (collectionName === 'admin-store') sitemapSvc.triggerRegen(`insert_${collectionName}`);
+        if (collectionName === 'admin-store' || collectionName === 'anime') {
+          sitemapSvc.triggerRegen(`insert_${collectionName}`);
+          cache.delete('sitemap_xml');
+        }
         sendJson(res, 201, { success: true, insertedId: result.insertedId });
       }
     } catch (err) {
@@ -838,7 +859,10 @@ async function handleApiV1(req, res, pathname) {
       const result = await collection.deleteOne({ id });
       logger.db('delete', collectionName, Date.now() - dbStart);
       // Trigger sitemap rebuild when media is removed
-      if (collectionName === 'admin-store') sitemapSvc.triggerRegen(`delete_${collectionName}`);
+      if (collectionName === 'admin-store' || collectionName === 'anime') {
+        sitemapSvc.triggerRegen(`delete_${collectionName}`);
+        cache.delete('sitemap_xml');
+      }
       sendJson(res, 200, { success: true, deletedCount: result.deletedCount });
     } catch (err) {
       logger.db('delete', collectionName, Date.now() - dbStart, err);
@@ -1921,7 +1945,7 @@ const requestHandler = async (req, res) => {
         // 1. BreadcrumbList
         const breadcrumbItems = [
           { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://cinestream.watch/' },
-          { '@type': 'ListItem', 'position': 2, 'name': mediaType === 'movie' ? 'Anime Movies' : 'Anime Series', 'item': `https://cinestream.watch/#${mediaType}` },
+          { '@type': 'ListItem', 'position': 2, 'name': mediaType === 'movie' ? 'Anime Movies' : 'Anime Series', 'item': `https://cinestream.watch/${mediaType === 'movie' ? 'movies' : 'series'}` },
         ];
         if (isWatch && season && episode && mediaType === 'tv') {
           breadcrumbItems.push({ '@type': 'ListItem', 'position': 3, 'name': animeTitle, 'item': `https://cinestream.watch/media/tv/${toonId}` });

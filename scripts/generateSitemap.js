@@ -247,8 +247,19 @@ async function run() {
       const animeItems = await db.collection('anime').find({}).toArray();
       await client.close();
 
+      const filterItems = (items) => {
+        return items.filter(item => {
+          const ratingVal = parseFloat(item.rating || item.vote_average || 0);
+          const yearVal = parseInt(item.release_year || 0, 10);
+          return ratingVal >= 7.5 || yearVal >= 2025;
+        });
+      };
+
+      const filteredAdmin = filterItems(adminItems);
+      const filteredAnime = filterItems(animeItems);
+
       let adminAdded = 0;
-      for (const item of adminItems) {
+      for (const item of filteredAdmin) {
         if (!isValidContentId(item.id)) {
           console.log(`      ⚠ Skipping invalid admin_store ID: "${item.id}"`);
           continue;
@@ -267,7 +278,7 @@ async function run() {
       }
 
       let animeAdded = 0;
-      for (const item of animeItems) {
+      for (const item of filteredAnime) {
         if (!isValidContentId(item.id)) {
           console.log(`      ⚠ Skipping invalid anime ID: "${item.id}"`);
           continue;
@@ -289,7 +300,8 @@ async function run() {
     console.warn(`      ⚠ MongoDB unavailable: ${err.message}`);
   }
 
-  // ── Step 2.4: Genre collection pages ──────────────────────────────────────
+  // ── Step 2.4: Genre collection pages (Removed to exclude genre landing pages from sitemap) ──
+  /*
   console.log('[2.4/4] Adding genre collection pages...');
   const genresList = [
     'action', 'adventure', 'comedy', 'drama', 'fantasy', 'sci-fi', 'romance',
@@ -305,108 +317,113 @@ async function run() {
       lastmod:      TODAY
     });
   }
+  */
 
-  // ── Step 2.5: Fetch live entries from ToonStream categories (Live Scraping) ──
-  console.log('[2.5/4] Fetching live entries from ToonStream...');
-  try {
-    const liveSvc = require('../services/toonstreamLive');
-    const categories = [
-      { type: 'anime', maxPages: 45 },
-      { type: 'cartoon', maxPages: 25 },
-      { type: 'movie', maxPages: 25 }
-    ];
+  // ── Step 2.5: Fetch live entries from ToonStream categories (Disabled for priority-only sitemap) ──
+  if (false) {
+    console.log('[2.5/4] Fetching live entries from ToonStream...');
+    try {
+      const liveSvc = require('../services/toonstreamLive');
+      const categories = [
+        { type: 'anime', maxPages: 45 },
+        { type: 'cartoon', maxPages: 25 },
+        { type: 'movie', maxPages: 25 }
+      ];
 
-    for (const cat of categories) {
-      console.log(`      Scraping category "${cat.type}"...`);
-      for (let page = 1; page <= cat.maxPages; page++) {
-        process.stdout.write(`         Page ${page} / ${cat.maxPages}  (${entries.length} URLs so far)\r`);
-        const data = await liveSvc.getLiveAnimeList('', page, cat.type);
-        if (!data || !data.results || data.results.length === 0) {
-          break;
+      for (const cat of categories) {
+        console.log(`      Scraping category "${cat.type}"...`);
+        for (let page = 1; page <= cat.maxPages; page++) {
+          process.stdout.write(`         Page ${page} / ${cat.maxPages}  (${entries.length} URLs so far)\r`);
+          const data = await liveSvc.getLiveAnimeList('', page, cat.type);
+          if (!data || !data.results || data.results.length === 0) {
+            break;
+          }
+          
+          for (const item of data.results) {
+            // Skip invalid/garbage content IDs
+            if (!isValidContentId(item.id)) continue;
+            const mediaType = item.type === 'movie' ? 'movie' : 'tv';
+            // Use clean title for caption (no HTML entities)
+            const cleanTitle = decodeHtmlEntities(item.title || '');
+            addEntry({
+              loc:          `${BASE_URL}/media/${mediaType}/${item.id}`,
+              priority:     '0.8',
+              changefreq:   'weekly',
+              lastmod:      TODAY,
+              image:        item.poster ? item.poster : null,
+              imageTitle:   cleanTitle,
+              imageCaption: cleanTitle ? `Watch ${cleanTitle} free online in Hindi Dubbed on CineStream` : '',
+            });
+          }
+          await sleep(150);
         }
-        
-        for (const item of data.results) {
-          // Skip invalid/garbage content IDs
-          if (!isValidContentId(item.id)) continue;
-          const mediaType = item.type === 'movie' ? 'movie' : 'tv';
-          // Use clean title for caption (no HTML entities)
-          const cleanTitle = decodeHtmlEntities(item.title || '');
-          addEntry({
-            loc:          `${BASE_URL}/media/${mediaType}/${item.id}`,
-            priority:     '0.8',
-            changefreq:   'weekly',
-            lastmod:      TODAY,
-            image:        item.poster ? item.poster : null,
-            imageTitle:   cleanTitle,
-            imageCaption: cleanTitle ? `Watch ${cleanTitle} free online in Hindi Dubbed on CineStream` : '',
-          });
-        }
-        await sleep(150);
+        console.log(`\n      Done category "${cat.type}".`);
       }
-      console.log(`\n      Done category "${cat.type}".`);
+    } catch (err) {
+      console.warn(`      ⚠ Live ToonStream scraping failed: ${err.message}`);
     }
-  } catch (err) {
-    console.warn(`      ⚠ Live ToonStream scraping failed: ${err.message}`);
   }
 
-  // ── Step 3: TMDB — Movies, TV Series, and Anime ───────────────────────────
-  console.log('[3/4] Fetching TMDB: Movies, TV Series, Anime...');
+  // ── Step 3: TMDB — Movies, TV Series, and Anime (Disabled for priority-only sitemap) ──
+  if (false) {
+    console.log('[3/4] Fetching TMDB: Movies, TV Series, Anime...');
 
-  if (!config.tmdbApiKey || config.tmdbApiKey === 'placeholder_tmdb_api_key') {
-    console.warn('      ⚠ TMDB_API_KEY not set. Skipping TMDB fetch.');
-  } else {
-    const endpoints   = buildTmdbEndpoints(15);
-    const totalBatches = Math.ceil(endpoints.length / FETCH_BATCH);
-    let fetched = 0;
-    let added   = 0;
+    if (!config.tmdbApiKey || config.tmdbApiKey === 'placeholder_tmdb_api_key') {
+      console.warn('      ⚠ TMDB_API_KEY not set. Skipping TMDB fetch.');
+    } else {
+      const endpoints   = buildTmdbEndpoints(15);
+      const totalBatches = Math.ceil(endpoints.length / FETCH_BATCH);
+      let fetched = 0;
+      let added   = 0;
 
-    for (let i = 0; i < endpoints.length; i += FETCH_BATCH) {
-      const batch    = endpoints.slice(i, i + FETCH_BATCH);
-      const batchNum = Math.floor(i / FETCH_BATCH) + 1;
-      process.stdout.write(`      Batch ${String(batchNum).padStart(3)} / ${totalBatches}  (${entries.length} URLs so far)\r`);
+      for (let i = 0; i < endpoints.length; i += FETCH_BATCH) {
+        const batch    = endpoints.slice(i, i + FETCH_BATCH);
+        const batchNum = Math.floor(i / FETCH_BATCH) + 1;
+        process.stdout.write(`      Batch ${String(batchNum).padStart(3)} / ${totalBatches}  (${entries.length} URLs so far)\r`);
 
-      const results = await Promise.allSettled(batch.map(ep => fetchTmdb(ep)));
+        const results = await Promise.allSettled(batch.map(ep => fetchTmdb(ep)));
 
-      for (const result of results) {
-        if (result.status !== 'fulfilled') continue;
-        const items = result.value.results || [];
-        fetched += items.length;
+        for (const result of results) {
+          if (result.status !== 'fulfilled') continue;
+          const items = result.value.results || [];
+          fetched += items.length;
 
-        for (const item of items) {
-          if (!item.id) continue;
-          // Determine media type: TMDB trending/discover returns media_type for trending,
-          // but discover endpoint results don't include it — infer from title vs name.
-          const mediaType = item.media_type === 'movie'
-            ? 'movie'
-            : item.media_type === 'tv'
-              ? 'tv'
-              : item.title !== undefined ? 'movie' : 'tv';
+          for (const item of items) {
+            if (!item.id) continue;
+            // Determine media type: TMDB trending/discover returns media_type for trending,
+            // but discover endpoint results don't include it — infer from title vs name.
+            const mediaType = item.media_type === 'movie'
+              ? 'movie'
+              : item.media_type === 'tv'
+                ? 'tv'
+                : item.title !== undefined ? 'movie' : 'tv';
 
-          // Only include items with a valid poster (guarantees a real TMDB entry)
-          if (!item.poster_path) continue;
+            // Only include items with a valid poster (guarantees a real TMDB entry)
+            if (!item.poster_path) continue;
 
-          const title   = item.title || item.name || '';
-          const relDate = item.release_date || item.first_air_date || '';
-          const lastmod = relDate ? relDate.substring(0, 10) : TODAY;
+            const title   = item.title || item.name || '';
+            const relDate = item.release_date || item.first_air_date || '';
+            const lastmod = relDate ? relDate.substring(0, 10) : TODAY;
 
-          const before = seenUrls.size;
-          addEntry({
-            loc:          `${BASE_URL}/media/${mediaType}/${item.id}`,
-            priority:     item.vote_average >= 7.5 ? '0.8' : '0.7',
-            changefreq:   'weekly',
-            lastmod,
-            image:        `${TMDB_IMG_URL}${item.poster_path}`,
-            imageTitle:   title,
-            imageCaption: (item.overview || '').slice(0, 200),
-          });
-          if (seenUrls.size > before) added++;
+            const before = seenUrls.size;
+            addEntry({
+              loc:          `${BASE_URL}/media/${mediaType}/${item.id}`,
+              priority:     item.vote_average >= 7.5 ? '0.8' : '0.7',
+              changefreq:   'weekly',
+              lastmod,
+              image:        `${TMDB_IMG_URL}${item.poster_path}`,
+              imageTitle:   title,
+              imageCaption: (item.overview || '').slice(0, 200),
+            });
+            if (seenUrls.size > before) added++;
+          }
         }
+
+        if (i + FETCH_BATCH < endpoints.length) await sleep(BATCH_DELAY);
       }
 
-      if (i + FETCH_BATCH < endpoints.length) await sleep(BATCH_DELAY);
+      console.log(`\n      → Fetched ${fetched} raw TMDB items, ${added} unique added`);
     }
-
-    console.log(`\n      → Fetched ${fetched} raw TMDB items, ${added} unique added`);
   }
 
   // ── Step 4: Write sitemap files ───────────────────────────────────────────

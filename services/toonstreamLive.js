@@ -318,20 +318,36 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
 
   if (query) {
     targetUrl = `/s?q=${encodeURIComponent(query)}`;
-  } else if (type === 'movie') {
-    targetUrl = `/category/movies/?page=${page}`;
-  } else if (type === 'cartoon') {
-    targetUrl = `/category/cartoon/?page=${page}`;
+  } else if (type === 'anime-movies') {
+    targetUrl = `/category/anime-movies/?page=${page}`;
+  } else if (type === 'cartoon-series') {
+    targetUrl = `/category/cartoon-series/?page=${page}`;
+  } else if (type === 'cartoon-movies') {
+    targetUrl = `/category/cartoon-movies/?page=${page}`;
+  } else if (type === 'fresh-drop') {
+    targetUrl = '/home';
   } else {
-    // Default to anime category to ensure only Japanese anime is returned
-    targetUrl = `/category/anime/?page=${page}`;
+    // Default to anime-series category
+    targetUrl = `/category/anime-series/?page=${page}`;
   }
 
   const { html, status } = await fetchPage(targetUrl);
   if (status === 404 || !html) return { results: [], page, total_pages: 1 };
 
-  const isCartoon = (type === 'cartoon');
+  const isCartoon = type.startsWith('cartoon');
   const results = parseCardsFromHtml(html, isCartoon);
+
+  if (type === 'fresh-drop') {
+    const pageSize = 30;
+    const startIndex = (page - 1) * pageSize;
+    const paginatedResults = results.slice(startIndex, startIndex + pageSize);
+    return {
+      results: paginatedResults,
+      page,
+      total_pages: Math.ceil(results.length / pageSize) || 1
+    };
+  }
+
   return {
     results,
     page,
