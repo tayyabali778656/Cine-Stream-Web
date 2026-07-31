@@ -395,12 +395,12 @@ const App = {
         sessionStorage.setItem('s_animeMoviesPagesLoaded', '1');
         sessionStorage.setItem('s_cartoonSeriesPagesLoaded', '1');
         sessionStorage.setItem('s_cartoonMoviesPagesLoaded', '1');
-        
         this.grid.innerHTML = '';
         this.renderedIds.clear();
         this.showSkeletons();
 
         this.singleCategoryMode = filterType;
+        localStorage.setItem('cinestream_active_filter', filterType);
 
         this.fetchAndRenderBatch();
       });
@@ -572,7 +572,12 @@ const App = {
    * Reset feed variables and fetch first batch
    */
   async resetAndFetch(isInitial = false) {
-    this.singleCategoryMode = 'fresh-drop';
+    if (isInitial) {
+      this.singleCategoryMode = localStorage.getItem('cinestream_active_filter') || 'fresh-drop';
+    } else {
+      this.singleCategoryMode = 'fresh-drop';
+      localStorage.setItem('cinestream_active_filter', 'fresh-drop');
+    }
     this.singleCategoryPage = 1;
     this.currentPage = 1;
     if (isInitial) {
@@ -874,7 +879,7 @@ const App = {
             ? (m.schedule_note ? `${m.schedule_time} • ${m.schedule_note}` : m.schedule_time)
             : '';
           const scheduleBadge = badgeText
-            ? `<span class="schedule-badge" aria-hidden="true" style="position: absolute; bottom: 10px; left: 10px; background: var(--primary); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">${badgeText}</span>`
+            ? `<span class="schedule-badge" aria-hidden="true">${badgeText}</span>`
             : '';
 
           const srcsetAttr = poster.startsWith('data:')
@@ -885,7 +890,7 @@ const App = {
           const fallbackPoster = `data:image/svg+xml;base64,${btoa(fallbackSvg)}`;
 
           const dayBadge = m.schedule_day
-            ? `<span class="day-badge" aria-hidden="true" style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.75); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; z-index: 2; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 2px 5px rgba(0,0,0,0.3);">${m.schedule_day.substring(0, 3)}</span>`
+            ? `<span class="day-badge" aria-hidden="true">${m.schedule_day.substring(0, 3)}</span>`
             : '';
 
           return `
