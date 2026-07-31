@@ -396,7 +396,12 @@ async function handleApiV1(req, res, pathname) {
     cleanSlug = decodeURIComponent(cleanSlug).replace(/:/g, '').replace(/%3A/gi, '');
 
     const SLUG_ALIASES = {
-      'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade'
+      'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade',
+      're-zero-starting-life-in-another-world': 'rezero-starting-life-in-another-world',
+      'daemons-of-the-shadow': 'daemons-of-the-shadow-realm',
+      'nippon-sangoku': 'nippon-sangoku-the-three-nations-of-the-crimson-sun',
+      'tamons-b-side': "tamon's-b-side",
+      'tamon-s-b-side': "tamon's-b-side"
     };
     if (SLUG_ALIASES[cleanSlug]) {
       cleanSlug = SLUG_ALIASES[cleanSlug];
@@ -1851,7 +1856,12 @@ const requestHandler = async (req, res) => {
       toonId = `toon_${slug}`;
 
       const SLUG_ALIASES = {
-        'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade'
+        'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade',
+        're-zero-starting-life-in-another-world': 'rezero-starting-life-in-another-world',
+        'daemons-of-the-shadow': 'daemons-of-the-shadow-realm',
+        'nippon-sangoku': 'nippon-sangoku-the-three-nations-of-the-crimson-sun',
+        'tamons-b-side': "tamon's-b-side",
+        'tamon-s-b-side': "tamon's-b-side"
       };
       if (SLUG_ALIASES[slug]) {
         slug = SLUG_ALIASES[slug];
