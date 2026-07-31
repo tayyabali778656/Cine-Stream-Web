@@ -23,6 +23,10 @@ const App = {
   freshDropPage: 1,
   freshDropPagesLoaded: 1,
 
+  upcomingPool: [],
+  upcomingPage: 1,
+  upcomingPagesLoaded: 1,
+
   animeSeriesPool: [],
   animeSeriesPage: 1,
   animeSeriesPagesLoaded: 1,
@@ -41,7 +45,7 @@ const App = {
 
   renderedCount: 0,
 
-  singleCategoryMode: 'fresh-drop', // 'fresh-drop', 'anime-series', 'anime-movies', 'cartoon-series', 'cartoon-movies'
+  singleCategoryMode: 'fresh-drop', // 'fresh-drop', 'upcoming', 'anime-series', 'anime-movies', 'cartoon-series', 'cartoon-movies'
   singleCategoryPage: 1,
   animeSubFilter: 'anime',
 
@@ -365,24 +369,28 @@ const App = {
         
         // Reset state
         this.freshDropPool = [];
+        this.upcomingPool = [];
         this.animeSeriesPool = [];
         this.animeMoviesPool = [];
         this.cartoonSeriesPool = [];
         this.cartoonMoviesPool = [];
 
         this.freshDropPage = 1;
+        this.upcomingPage = 1;
         this.animeSeriesPage = 1;
         this.animeMoviesPage = 1;
         this.cartoonSeriesPage = 1;
         this.cartoonMoviesPage = 1;
 
         this.freshDropPagesLoaded = 1;
+        this.upcomingPagesLoaded = 1;
         this.animeSeriesPagesLoaded = 1;
         this.animeMoviesPagesLoaded = 1;
         this.cartoonSeriesPagesLoaded = 1;
         this.cartoonMoviesPagesLoaded = 1;
 
         sessionStorage.setItem('s_freshDropPagesLoaded', '1');
+        sessionStorage.setItem('s_upcomingPagesLoaded', '1');
         sessionStorage.setItem('s_animeSeriesPagesLoaded', '1');
         sessionStorage.setItem('s_animeMoviesPagesLoaded', '1');
         sessionStorage.setItem('s_cartoonSeriesPagesLoaded', '1');
@@ -569,36 +577,42 @@ const App = {
     this.currentPage = 1;
     if (isInitial) {
       this.freshDropPagesLoaded = parseInt(sessionStorage.getItem('s_freshDropPagesLoaded') || '1', 10);
+      this.upcomingPagesLoaded = parseInt(sessionStorage.getItem('s_upcomingPagesLoaded') || '1', 10);
       this.animeSeriesPagesLoaded = parseInt(sessionStorage.getItem('s_animeSeriesPagesLoaded') || '1', 10);
       this.animeMoviesPagesLoaded = parseInt(sessionStorage.getItem('s_animeMoviesPagesLoaded') || '1', 10);
       this.cartoonSeriesPagesLoaded = parseInt(sessionStorage.getItem('s_cartoonSeriesPagesLoaded') || '1', 10);
       this.cartoonMoviesPagesLoaded = parseInt(sessionStorage.getItem('s_cartoonMoviesPagesLoaded') || '1', 10);
 
       this.freshDropPage = this.freshDropPagesLoaded + 1;
+      this.upcomingPage = this.upcomingPagesLoaded + 1;
       this.animeSeriesPage = this.animeSeriesPagesLoaded + 1;
       this.animeMoviesPage = this.animeMoviesPagesLoaded + 1;
       this.cartoonSeriesPage = this.cartoonSeriesPagesLoaded + 1;
       this.cartoonMoviesPage = this.cartoonMoviesPagesLoaded + 1;
     } else {
       this.freshDropPagesLoaded = 1;
+      this.upcomingPagesLoaded = 1;
       this.animeSeriesPagesLoaded = 1;
       this.animeMoviesPagesLoaded = 1;
       this.cartoonSeriesPagesLoaded = 1;
       this.cartoonMoviesPagesLoaded = 1;
 
       this.freshDropPage = 2;
+      this.upcomingPage = 2;
       this.animeSeriesPage = 2;
       this.animeMoviesPage = 2;
       this.cartoonSeriesPage = 2;
       this.cartoonMoviesPage = 2;
 
       sessionStorage.setItem('s_freshDropPagesLoaded', '1');
+      sessionStorage.setItem('s_upcomingPagesLoaded', '1');
       sessionStorage.setItem('s_animeSeriesPagesLoaded', '1');
       sessionStorage.setItem('s_animeMoviesPagesLoaded', '1');
       sessionStorage.setItem('s_cartoonSeriesPagesLoaded', '1');
       sessionStorage.setItem('s_cartoonMoviesPagesLoaded', '1');
     }
     this.freshDropPool = [];
+    this.upcomingPool = [];
     this.animeSeriesPool = [];
     this.animeMoviesPool = [];
     this.cartoonSeriesPool = [];
@@ -714,6 +728,7 @@ const App = {
 
       try {
         const pool = type === 'fresh-drop' ? this.freshDropPool
+                   : type === 'upcoming' ? this.upcomingPool
                    : type === 'anime-series' ? this.animeSeriesPool
                    : type === 'anime-movies' ? this.animeMoviesPool
                    : type === 'cartoon-series' ? this.cartoonSeriesPool
@@ -724,6 +739,7 @@ const App = {
 
         let pagesToFetch = 1;
         let startPage = type === 'fresh-drop' ? this.freshDropPage
+                      : type === 'upcoming' ? this.upcomingPage
                       : type === 'anime-series' ? this.animeSeriesPage
                       : type === 'anime-movies' ? this.animeMoviesPage
                       : type === 'cartoon-series' ? this.cartoonSeriesPage
@@ -734,6 +750,7 @@ const App = {
         if (isFirstLoad) {
           startPage = 1;
           pagesToFetch = type === 'fresh-drop' ? this.freshDropPagesLoaded
+                       : type === 'upcoming' ? this.upcomingPagesLoaded
                        : type === 'anime-series' ? this.animeSeriesPagesLoaded
                        : type === 'anime-movies' ? this.animeMoviesPagesLoaded
                        : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
@@ -745,6 +762,9 @@ const App = {
           if (type === 'fresh-drop') {
             this.freshDropPagesLoaded++;
             sessionStorage.setItem('s_freshDropPagesLoaded', this.freshDropPagesLoaded);
+          } else if (type === 'upcoming') {
+            this.upcomingPagesLoaded++;
+            sessionStorage.setItem('s_upcomingPagesLoaded', this.upcomingPagesLoaded);
           } else if (type === 'anime-series') {
             this.animeSeriesPagesLoaded++;
             sessionStorage.setItem('s_animeSeriesPagesLoaded', this.animeSeriesPagesLoaded);
@@ -759,6 +779,7 @@ const App = {
             sessionStorage.setItem('s_cartoonMoviesPagesLoaded', this.cartoonMoviesPagesLoaded);
           }
           const loadedVal = type === 'fresh-drop' ? this.freshDropPagesLoaded
+                          : type === 'upcoming' ? this.upcomingPagesLoaded
                           : type === 'anime-series' ? this.animeSeriesPagesLoaded
                           : type === 'anime-movies' ? this.animeMoviesPagesLoaded
                           : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
@@ -796,6 +817,7 @@ const App = {
         }
 
         if (type === 'fresh-drop') { this.freshDropPage = currentPagePointer; }
+        else if (type === 'upcoming') { this.upcomingPage = currentPagePointer; }
         else if (type === 'anime-series') { this.animeSeriesPage = currentPagePointer; }
         else if (type === 'anime-movies') { this.animeMoviesPage = currentPagePointer; }
         else if (type === 'cartoon-series') { this.cartoonSeriesPage = currentPagePointer; }

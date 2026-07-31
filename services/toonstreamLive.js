@@ -325,6 +325,8 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
     targetUrl = `/category/cartoon-series/?page=${page}`;
   } else if (type === 'cartoon-movies') {
     targetUrl = `/category/cartoon-movies/?page=${page}`;
+  } else if (type === 'upcoming') {
+    targetUrl = `/category/coming-soon/?page=${page}`;
   } else if (type === 'fresh-drop') {
     targetUrl = '/home';
   } else {
