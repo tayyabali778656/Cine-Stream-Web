@@ -5,6 +5,9 @@ const logger = require('../utils/logger');
 
 const BASE_URL = 'https://toon-stream.site';
 
+let upcomingCache = null;
+let upcomingCacheTime = 0;
+
 function slugify(text) {
   if (!text) return '';
   return text
@@ -328,6 +331,17 @@ function parseCardsFromHtml(html, isCartoon = false) {
 
 // Fetch lists live
 async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query = '') {
+  if (type === 'upcoming') {
+    const now = Date.now();
+    if (upcomingCache && (now - upcomingCacheTime < 1800000)) {
+      return {
+        results: upcomingCache,
+        page: 1,
+        total_pages: 1
+      };
+    }
+  }
+
   let targetUrl = '';
 
   if (query) {
@@ -437,6 +451,9 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
         });
       }
     }
+
+    upcomingCache = enrichedResults;
+    upcomingCacheTime = Date.now();
 
     return {
       results: enrichedResults,

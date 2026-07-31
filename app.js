@@ -874,20 +874,26 @@ const App = {
             ? `<span class="schedule-badge" aria-hidden="true" style="position: absolute; bottom: 10px; left: 10px; background: var(--primary); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">${m.schedule_time}</span>`
             : '';
 
+          const srcsetAttr = poster.startsWith('data:')
+            ? ''
+            : `srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"`;
+
+          const fallbackPoster = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750"><rect width="500" height="750" fill="%23181524"/><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="%23e0e0e0" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="700" font-size="28">No Poster</text><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23e50914" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="800" font-size="34">CineStream</text></svg>`;
+
           return `
             <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${typeVal}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle} (${year}) - ${contentType}">
               <span class="type-badge" aria-hidden="true">${contentType}</span>
               ${scheduleBadge}
               <img
                 src="${poster}"
-                srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"
+                ${srcsetAttr}
                 sizes="(max-width: 480px) 150px, (max-width: 768px) 185px, 240px"
                 alt="${safeTitle} poster"
                 ${imgAttrs}
                 width="500"
                 height="750"
                 onload="this.parentElement.classList.add('loaded')"
-                onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');"
+                onerror="this.removeAttribute('srcset'); this.src='${fallbackPoster}'; this.parentElement.classList.add('loaded');"
               >
               <div class="movie-card-info">
                 <h4 class="movie-title">${safeTitle}</h4>
