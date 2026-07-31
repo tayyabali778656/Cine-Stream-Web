@@ -376,26 +376,34 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
       }
     }
 
-    // Try to enrich from MongoDB
+    // Try to enrich from MongoDB in a single batch query
     let animeCollection = null;
+    let dbEntries = [];
     try {
       const { getCollection } = require('../db');
       animeCollection = getCollection('anime');
+      if (animeCollection) {
+        const titles = scheduleList.map(item => item.title);
+        const slugs = scheduleList.map(item => item.slug);
+        dbEntries = await animeCollection.find({
+          $or: [
+            { title: { $in: titles } },
+            { slug: { $in: slugs } }
+          ]
+        }).toArray();
+      }
     } catch (_) {}
+
+    // Map for O(1) memory lookup
+    const dbMap = new Map();
+    for (const entry of dbEntries) {
+      if (entry.title) dbMap.set(entry.title.toLowerCase(), entry);
+      if (entry.slug) dbMap.set(entry.slug.toLowerCase(), entry);
+    }
 
     const enrichedResults = [];
     for (const item of scheduleList) {
-      let dbEntry = null;
-      if (animeCollection) {
-        try {
-          dbEntry = await animeCollection.findOne({
-            $or: [
-              { title: item.title },
-              { slug: item.slug }
-            ]
-          });
-        } catch (_) {}
-      }
+      const dbEntry = dbMap.get(item.title.toLowerCase()) || dbMap.get(item.slug.toLowerCase()) || null;
 
       if (dbEntry) {
         enrichedResults.push({
