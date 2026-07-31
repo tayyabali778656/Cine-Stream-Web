@@ -871,9 +871,14 @@ const App = {
             ? `fetchpriority="high" decoding="async"`
             : `loading="lazy" decoding="async"`;
 
+          const scheduleBadge = m.schedule_time
+            ? `<span class="schedule-badge" aria-hidden="true" style="position: absolute; bottom: 10px; left: 10px; background: var(--primary); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">${m.schedule_time}</span>`
+            : '';
+
           return `
             <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${typeVal}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle} (${year}) - ${contentType}">
               <span class="type-badge" aria-hidden="true">${contentType}</span>
+              ${scheduleBadge}
               <img
                 src="${poster}"
                 srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"

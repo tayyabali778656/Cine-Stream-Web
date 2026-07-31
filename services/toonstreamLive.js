@@ -5,6 +5,19 @@ const logger = require('../utils/logger');
 
 const BASE_URL = 'https://toon-stream.site';
 
+function slugify(text) {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
 // Helper to fetch HTML content from ToonStream
 function fetchPage(url, retries = 2) {
   const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
@@ -325,9 +338,7 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
     targetUrl = `/category/cartoon-series/?page=${page}`;
   } else if (type === 'cartoon-movies') {
     targetUrl = `/category/cartoon-movies/?page=${page}`;
-  } else if (type === 'upcoming') {
-    targetUrl = `/category/coming-soon/?page=${page}`;
-  } else if (type === 'fresh-drop') {
+  } else if (type === 'upcoming' || type === 'fresh-drop') {
     targetUrl = '/home';
   } else {
     // Default to anime-series category
@@ -336,6 +347,97 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
 
   const { html, status } = await fetchPage(targetUrl);
   if (status === 404 || !html) return { results: [], page, total_pages: 1 };
+
+  if (type === 'upcoming') {
+    const match = html.match(/const\s+scheduleObj\s*=\s*(\{[\s\S]*?\});/);
+    if (!match) return { results: [], page, total_pages: 1 };
+
+    let scheduleObj = {};
+    try {
+      scheduleObj = JSON.parse(match[1]);
+    } catch (e) {
+      return { results: [], page, total_pages: 1 };
+    }
+
+    const uniqueTitles = new Set();
+    const scheduleList = [];
+
+    for (const day of Object.keys(scheduleObj)) {
+      for (const item of scheduleObj[day]) {
+        if (!uniqueTitles.has(item.title)) {
+          uniqueTitles.add(item.title);
+          scheduleList.push({
+            title: item.title,
+            time: item.time,
+            note: item.note,
+            slug: slugify(item.title)
+          });
+        }
+      }
+    }
+
+    // Try to enrich from MongoDB
+    let animeCollection = null;
+    try {
+      const { getCollection } = require('../db');
+      animeCollection = getCollection('anime');
+    } catch (_) {}
+
+    const enrichedResults = [];
+    for (const item of scheduleList) {
+      let dbEntry = null;
+      if (animeCollection) {
+        try {
+          dbEntry = await animeCollection.findOne({
+            $or: [
+              { title: item.title },
+              { slug: item.slug }
+            ]
+          });
+        } catch (_) {}
+      }
+
+      if (dbEntry) {
+        enrichedResults.push({
+          id: dbEntry.id || `toon_${item.slug}`,
+          title: dbEntry.title || item.title,
+          poster: dbEntry.poster || 'https://placehold.co/500x750?text=' + encodeURIComponent(item.title),
+          rating: dbEntry.rating || 7.5,
+          vote_average: dbEntry.vote_average || 7.5,
+          type: dbEntry.type || 'tv',
+          slug: dbEntry.slug || item.slug,
+          release_year: dbEntry.release_year || new Date().getFullYear(),
+          original_language: 'ja',
+          schedule_time: item.time,
+          schedule_note: item.note
+        });
+      } else {
+        enrichedResults.push({
+          id: `toon_${item.slug}`,
+          title: item.title,
+          poster: 'https://placehold.co/500x750?text=' + encodeURIComponent(item.title),
+          rating: 7.5,
+          vote_average: 7.5,
+          type: 'tv',
+          slug: item.slug,
+          release_year: new Date().getFullYear(),
+          original_language: 'ja',
+          schedule_time: item.time,
+          schedule_note: item.note
+        });
+      }
+    }
+
+    // Paginate in-memory
+    const pageSize = 30;
+    const startIndex = (page - 1) * pageSize;
+    const paginatedResults = enrichedResults.slice(startIndex, startIndex + pageSize);
+    return {
+      results: paginatedResults,
+      page,
+      total_pages: Math.ceil(enrichedResults.length / pageSize) || 1
+    };
+  }
 
   const isCartoon = type.startsWith('cartoon');
   const results = parseCardsFromHtml(html, isCartoon);
