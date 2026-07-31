@@ -793,31 +793,53 @@ const App = {
         }
 
         let currentPagePointer = startPage;
-        let attempts = 0;
-        while (pool.length < currentTargetSize && attempts < 15) {
-          attempts++;
-          const data = await API.getMovies(type, this.currentFilter, currentPagePointer, '', '');
-          if (data && data.results && data.results.length > 0) {
-            let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
-            const existingIds = new Set(pool.map(pItem => String(pItem.id)));
-            this.renderedIds.forEach(id => existingIds.add(id));
-            results = results.filter(item => {
-              const idStr = String(item.id);
-              if (existingIds.has(idStr)) return false;
-              existingIds.add(idStr);
-              return true;
-            });
-
-            if (this.currentFilter === 'upcoming') {
-              const nowUTC = new Date().toISOString().split('T')[0];
-              results = results.filter(item => {
-                const rd = item.release_date || item.first_air_date;
-                return rd && rd > nowUTC;
-              });
-            }
-            pool.push(...results);
+        if (isFirstLoad) {
+          const loadedVal = type === 'fresh-drop' ? this.freshDropPagesLoaded
+                          : type === 'upcoming' ? this.upcomingPagesLoaded
+                          : type === 'anime-series' ? this.animeSeriesPagesLoaded
+                          : type === 'anime-movies' ? this.animeMoviesPagesLoaded
+                          : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
+                          : type === 'cartoon-movies' ? this.cartoonMoviesPagesLoaded
+                          : this.animePagesLoaded;
+          const fetchPromises = [];
+          for (let p = 1; p <= loadedVal; p++) {
+            fetchPromises.push(API.getMovies(type, this.currentFilter, p, '', ''));
           }
-          currentPagePointer++;
+          const allData = await Promise.all(fetchPromises);
+          for (const data of allData) {
+            if (data && data.results && data.results.length > 0) {
+              let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
+              const existingIds = new Set(pool.map(pItem => String(pItem.id)));
+              this.renderedIds.forEach(id => existingIds.add(id));
+              results = results.filter(item => {
+                const idStr = String(item.id);
+                if (existingIds.has(idStr)) return false;
+                existingIds.add(idStr);
+                return true;
+              });
+              pool.push(...results);
+            }
+          }
+          currentPagePointer = loadedVal + 1;
+        } else {
+          let attempts = 0;
+          while (pool.length < currentTargetSize && attempts < 15) {
+            attempts++;
+            const data = await API.getMovies(type, this.currentFilter, currentPagePointer, '', '');
+            if (data && data.results && data.results.length > 0) {
+              let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
+              const existingIds = new Set(pool.map(pItem => String(pItem.id)));
+              this.renderedIds.forEach(id => existingIds.add(id));
+              results = results.filter(item => {
+                const idStr = String(item.id);
+                if (existingIds.has(idStr)) return false;
+                existingIds.add(idStr);
+                return true;
+              });
+              pool.push(...results);
+            }
+            currentPagePointer++;
+          }
         }
 
         if (type === 'fresh-drop') { this.freshDropPage = currentPagePointer; }
@@ -870,10 +892,7 @@ const App = {
           const typeVal = m.type || (m.title ? 'movie' : 'tv');
           const contentType = this.getContentType(m, typeVal);
 
-          const isAboveFold = idx < (isMobile ? 4 : 8);
-          const imgAttrs = isAboveFold
-            ? `fetchpriority="high" decoding="async"`
-            : `loading="lazy" decoding="async"`;
+          const imgAttrs = `decoding="async" loading="eager"`;
 
           const badgeText = m.schedule_time
             ? (m.schedule_note ? `${m.schedule_time} • ${m.schedule_note}` : m.schedule_time)
@@ -1081,10 +1100,7 @@ const App = {
 
           const contentType = this.getContentType(m, type);
 
-          const isAboveFold = idx < (isMobile ? 2 : 4);
-          const imgAttrs = isAboveFold
-            ? `fetchpriority="high" decoding="async"`
-            : `loading="lazy" decoding="async"`;
+          const imgAttrs = `decoding="async" loading="eager"`;
 
           return `
             <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${type}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle}">
