@@ -618,8 +618,17 @@ async function handleApiV1(req, res, pathname) {
     const genre = url.searchParams.get('genre') || '';
     const type = url.searchParams.get('type') || '';
 
+    const cacheKey = `list_${type}_${page}_${filter}_${genre}`;
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      sendJson(res, 200, cachedData);
+      return;
+    }
+
     try {
       const data = await liveSvc.getLiveAnimeList(filter, page, type, genre);
+      // Cache lists for 15 minutes to enable instant category switching
+      cache.set(cacheKey, data, 15 * 60 * 1000);
       sendJson(res, 200, data);
     } catch (err) {
       sendJson(res, 500, { error: err.message });
@@ -828,6 +837,7 @@ async function handleApiV1(req, res, pathname) {
       const doc = sanitizeDoc(JSON.parse(rawBody));
       const id = doc.id;
       cache.deleteByPrefix(`db_${collectionName}`); // invalidate cache
+      cache.deleteByPrefix('list_'); // invalidate listings cache
       if (collectionName === 'admin-store') {
         cache.deleteByPrefix('eps_');
         cache.deleteByPrefix('details_');
@@ -866,6 +876,7 @@ async function handleApiV1(req, res, pathname) {
     if (!id) { sendJson(res, 400, { error: 'Missing id parameter' }); return; }
     try {
       cache.deleteByPrefix(`db_${collectionName}`); // invalidate cache
+      cache.deleteByPrefix('list_'); // invalidate listings cache
       if (collectionName === 'admin-store') {
         cache.deleteByPrefix('eps_');
         cache.deleteByPrefix('details_');
