@@ -884,9 +884,14 @@ const App = {
           const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750"><rect width="500" height="750" fill="#181524"/><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#e0e0e0" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="700" font-size="28">No Poster</text><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#e50914" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-weight="800" font-size="34">CineStream</text></svg>`;
           const fallbackPoster = `data:image/svg+xml;base64,${btoa(fallbackSvg)}`;
 
+          const dayBadge = m.schedule_day
+            ? `<span class="day-badge" aria-hidden="true" style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.75); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; z-index: 2; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 2px 5px rgba(0,0,0,0.3);">${m.schedule_day.substring(0, 3)}</span>`
+            : '';
+
           return `
             <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${typeVal}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle} (${year}) - ${contentType}">
               <span class="type-badge" aria-hidden="true">${contentType}</span>
+              ${dayBadge}
               ${scheduleBadge}
               <img
                 src="${poster}"
