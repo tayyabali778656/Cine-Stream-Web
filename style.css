@@ -1901,7 +1901,13 @@ nav.scrolled {
 [id^="ipp-"],
 [id^="onetag-"],
 [class*="inpage-push"],
-[class*="onetag-"] {
+[class*="onetag-"],
+body > div[style*="position: fixed"][style*="right"],
+body > div[style*="position:fixed"][style*="right"],
+body > div[style*="right: 10px"],
+body > div[style*="right: 20px"],
+body > div[style*="right:10px"],
+body > div[style*="right:20px"] {
   left: 20px !important;
   right: auto !important;
 }
