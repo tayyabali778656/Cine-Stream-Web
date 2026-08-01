@@ -1894,3 +1894,14 @@ nav.scrolled {
     font-size: 0.52rem;
   }
 }
+
+/* Position Monetag In-Page Push notifications on the left instead of the right */
+[id^="__bell"],
+[id^="bell-"],
+[id^="ipp-"],
+[id^="onetag-"],
+[class*="inpage-push"],
+[class*="onetag-"] {
+  left: 20px !important;
+  right: auto !important;
+}
