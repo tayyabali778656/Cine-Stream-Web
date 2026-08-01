@@ -134,14 +134,19 @@ function readBody(req) {
 }
 
 // ── Helper: send JSON response ────────────────────────────────────────────────
-function sendJson(res, status, data) {
+function sendJson(res, status, data, cacheControl = null) {
   const body = JSON.stringify(data);
-  res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-    'Pragma': 'no-cache',
-    'Expires': '0'
-  });
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8'
+  };
+  if (cacheControl) {
+    headers['Cache-Control'] = cacheControl;
+  } else {
+    headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0';
+    headers['Pragma'] = 'no-cache';
+    headers['Expires'] = '0';
+  }
+  res.writeHead(status, headers);
   res.end(body);
 }
 
@@ -425,7 +430,7 @@ async function handleApiV1(req, res, pathname) {
 
       if (anime) {
         const responseData = { ...anime, related: [], recommendations: [] };
-        sendJson(res, 200, responseData);
+        sendJson(res, 200, responseData, 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
         return;
       }
 
@@ -450,7 +455,7 @@ async function handleApiV1(req, res, pathname) {
       }
 
       const responseData = { ...freshAnime, related: [], recommendations: [] };
-      sendJson(res, 200, responseData);
+      sendJson(res, 200, responseData, 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     } catch (err) {
       sendJson(res, 500, { error: err.message });
     }
@@ -538,7 +543,7 @@ async function handleApiV1(req, res, pathname) {
           title: details.title,
           sources: details.movieSources || []
         }];
-        sendJson(res, 200, movieEpisodes);
+        sendJson(res, 200, movieEpisodes, 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
         return;
       }
 
@@ -602,7 +607,7 @@ async function handleApiV1(req, res, pathname) {
         episodes.sort((a, b) => a.season !== b.season ? a.season - b.season : a.episode - b.episode);
       }
 
-      sendJson(res, 200, episodes);
+      sendJson(res, 200, episodes, 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     } catch (err) {
       sendJson(res, 500, { error: err.message });
     }
@@ -621,7 +626,7 @@ async function handleApiV1(req, res, pathname) {
     const cacheKey = `list_${type}_${page}_${filter}_${genre}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) {
-      sendJson(res, 200, cachedData);
+      sendJson(res, 200, cachedData, 'public, max-age=120, s-maxage=1800, stale-while-revalidate=3600');
       return;
     }
 
@@ -629,7 +634,7 @@ async function handleApiV1(req, res, pathname) {
       const data = await liveSvc.getLiveAnimeList(filter, page, type, genre);
       // Cache lists for 15 minutes to enable instant category switching
       cache.set(cacheKey, data, 15 * 60 * 1000);
-      sendJson(res, 200, data);
+      sendJson(res, 200, data, 'public, max-age=120, s-maxage=1800, stale-while-revalidate=3600');
     } catch (err) {
       sendJson(res, 500, { error: err.message });
     }
