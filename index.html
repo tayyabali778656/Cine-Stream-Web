@@ -397,7 +397,8 @@
 <body>
 
   <!-- PWA Gatekeeper Overlay (Keeps site black until Service Worker registers) -->
-  <div id="sw-loading-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0a0a0a; z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Outfit', sans-serif;">
+  <div id="sw-loading-overlay"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0a0a0a; z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Outfit', sans-serif;">
   </div>
 
   <!-- Skip to main content link (WCAG 2.1 Level A) -->
@@ -786,7 +787,7 @@
   <script defer src="/_vercel/insights/script.js"></script>
   <script defer src="/_vercel/speed-insights/script.js"></script>
   <script>
-    (function() {
+    (function () {
       let adsLoaded = false;
       function loadPushAds() {
         if (adsLoaded) return;
@@ -798,6 +799,12 @@
         s1.async = true;
         s1.setAttribute('data-cfasync', 'false');
         document.head.appendChild(s1);
+
+        const s2 = document.createElement('script');
+        s2.src = 'https://5gvci.com/act/files/tag.min.js?z=11462890';
+        s2.async = true;
+        s2.setAttribute('data-cfasync', 'false');
+        document.head.appendChild(s2);
 
         // Load vignette ad
         const s3 = document.createElement('script');
