@@ -376,17 +376,52 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
     const uniqueTitles = new Set();
     const scheduleList = [];
 
-    for (const day of Object.keys(scheduleObj)) {
-      for (const item of scheduleObj[day]) {
-        if (!uniqueTitles.has(item.title)) {
-          uniqueTitles.add(item.title);
-          scheduleList.push({
-            title: item.title,
-            time: item.time,
-            note: item.note,
-            slug: slugify(item.title),
-            day: day
-          });
+    // Sort days of week starting from today
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const todayIndex = new Date().getDay();
+    const orderedDays = [];
+    for (let i = 0; i < 7; i++) {
+      orderedDays.push(daysOfWeek[(todayIndex + i) % 7]);
+    }
+
+    const objKeys = Object.keys(scheduleObj);
+    const dayMap = {};
+    for (const key of objKeys) {
+      dayMap[key.toLowerCase()] = key;
+    }
+
+    for (const dayName of orderedDays) {
+      const actualKey = dayMap[dayName.toLowerCase()];
+      if (actualKey && scheduleObj[actualKey]) {
+        for (const item of scheduleObj[actualKey]) {
+          if (!uniqueTitles.has(item.title)) {
+            uniqueTitles.add(item.title);
+            scheduleList.push({
+              title: item.title,
+              time: item.time,
+              note: item.note,
+              slug: slugify(item.title),
+              day: actualKey
+            });
+          }
+        }
+      }
+    }
+
+    // Add any remaining keys in scheduleObj just in case
+    for (const key of objKeys) {
+      if (!orderedDays.map(d => d.toLowerCase()).includes(key.toLowerCase())) {
+        for (const item of scheduleObj[key]) {
+          if (!uniqueTitles.has(item.title)) {
+            uniqueTitles.add(item.title);
+            scheduleList.push({
+              title: item.title,
+              time: item.time,
+              note: item.note,
+              slug: slugify(item.title),
+              day: key
+            });
+          }
         }
       }
     }
