@@ -161,7 +161,7 @@ function entryToXml(p) {
     ? `\n    <image:image>\n      <image:loc>${escapeXml(p.image)}</image:loc>\n      <image:title>${escapeXml(p.imageTitle)}</image:title>${p.imageCaption ? `\n      <image:caption>${escapeXml(p.imageCaption)}</image:caption>` : ''}\n    </image:image>`
     : '';
   const videoTag = p.video
-    ? `\n    <video:video>\n      <video:thumbnail_loc>${escapeXml(p.video.thumbnail)}</video:thumbnail_loc>\n      <video:title>${escapeXml(p.video.title)}</video:title>\n      <video:description>${escapeXml(p.video.description)}</video:description>\n      <video:content_loc>${escapeXml(p.loc)}</video:content_loc>\n      <video:player_loc>${escapeXml(p.loc)}</video:player_loc>\n      <video:duration>${p.video.duration || 1440}</video:duration>\n      <video:family_friendly>yes</video:family_friendly>\n      <video:live>no</video:live>\n    </video:video>`
+    ? `\n    <video:video>\n      <video:thumbnail_loc>${escapeXml(p.video.thumbnail)}</video:thumbnail_loc>\n      <video:title>${escapeXml(p.video.title)}</video:title>\n      <video:description>${escapeXml(p.video.description)}</video:description>\n      <video:player_loc>${escapeXml(p.video.playerUrl)}</video:player_loc>\n      <video:duration>${p.video.duration || 1440}</video:duration>\n      <video:family_friendly>yes</video:family_friendly>\n      <video:live>no</video:live>\n    </video:video>`
     : '';
   return `  <url>\n    <loc>${p.loc}</loc>\n    <lastmod>${p.lastmod}</lastmod>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>${imageTag}${videoTag}\n  </url>`;
 }
@@ -315,6 +315,7 @@ async function run() {
             thumbnail:   posterUrl,
             title:       `Watch ${title} Hindi Dubbed Online Free`,
             description: desc || `Watch ${title} in Hindi Dubbed online free on CineStream. Stream all episodes in HD.`,
+            playerUrl:   `${BASE_URL}/iframe-proxy?id=${item.id}`,
             duration:    (item.runtime || item.duration) ? parseInt(item.runtime || item.duration, 10) * 60 : 1440,
           } : null,
         });
@@ -338,6 +339,7 @@ async function run() {
                   thumbnail:   posterUrl,
                   title:       `${title} Season ${s} Episode ${e} Hindi Dubbed`,
                   description: `Watch ${title} S${s}E${e} Hindi Dubbed online free in HD on CineStream.`,
+                  playerUrl:   `${BASE_URL}/iframe-proxy?id=${item.id}&s=${s}&e=${e}`,
                   duration:    1440,
                 } : null,
               });
