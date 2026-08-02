@@ -837,8 +837,10 @@ const App = {
                 return true;
               });
               pool.push(...results);
+              currentPagePointer++;
+            } else {
+              break;
             }
-            currentPagePointer++;
           }
         }
 
