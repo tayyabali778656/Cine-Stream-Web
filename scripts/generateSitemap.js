@@ -258,8 +258,8 @@ async function run() {
             || '0';
           const yearVal   = parseInt(rawYear, 10);
           const ratingVal = parseFloat(item.rating || item.vote_average || 0);
-          // Include if: new anime (2024, 2025, 2026+) OR popular anime (rating >= 7.5)
-          return yearVal >= 2024 || ratingVal >= 7.5;
+          // Include if: new anime (2024, 2025, 2026+) OR popular anime (rating >= 7.0)
+          return yearVal >= 2024 || ratingVal >= 7.0;
         });
       };
 
