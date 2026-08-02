@@ -1897,3 +1897,41 @@ nav.scrolled {
     font-size: 0.52rem;
   }
 }
+
+/* ── Recently Viewed: smaller on mobile ──────────────────────────────────── */
+@media (max-width: 768px) {
+  #recently-viewed-section {
+    margin-bottom: 1rem !important;
+  }
+
+  #recently-viewed-section .section-title {
+    font-size: 0.85rem;
+    margin-bottom: 0;
+  }
+
+  #recently-viewed-grid {
+    gap: 0.75rem !important;
+    margin-top: 0.75rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  /* Shrink each card in the row */
+  #recently-viewed-grid .movie-card {
+    width: 90px !important;
+    min-width: 90px !important;
+    flex: 0 0 90px !important;
+  }
+
+  #recently-viewed-grid .movie-card img {
+    width: 90px !important;
+    height: 135px !important;
+  }
+
+  #recently-viewed-grid .movie-title {
+    font-size: 0.65rem !important;
+  }
+
+  #recently-viewed-grid .movie-card-info {
+    padding: 0.25rem !important;
+  }
+}
