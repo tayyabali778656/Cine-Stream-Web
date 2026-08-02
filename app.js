@@ -965,17 +965,16 @@ const App = {
 
         const itemsToRender = isFirstLoad ? pool.splice(0, currentTargetSize) : pool.splice(0, targetSize);
         if (itemsToRender.length === 0) {
-          // Pool exhausted — try next fallback filter instead of stopping
           if (this.grid.children.length === 0) {
             this.grid.innerHTML = `
               <div style="grid-column: 1 / -1; text-align: center; padding: 5rem 2rem; color: var(--text-muted); font-size: 1.5rem; font-weight: 600; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px;">
                 Not Found
               </div>
             `;
-            const loadMoreContainer = document.getElementById('load-more-container');
-            if (loadMoreContainer) loadMoreContainer.style.display = 'none';
-          } else {
-            // Try next fallback filter
+          }
+          const loadMoreContainer = document.getElementById('load-more-container');
+          if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+          if (type === 'fresh-drop' || type === 'upcoming') {
             this._tryFallbackFilter();
           }
           return;
@@ -1069,14 +1068,42 @@ const App = {
         // Auto-scan visible category items for 404 links in background
         this.scanFeedForBrokenVideos(itemsToRender);
 
-        const loadMoreContainer = document.getElementById('load-more-container');
-        if (loadMoreContainer) {
-          loadMoreContainer.style.display = type === 'upcoming' ? 'none' : 'none'; // hidden — infinite scroll handles it
+        const isInfiniteType = type === 'fresh-drop' || type === 'upcoming';
+        let loadMoreContainer = document.getElementById('load-more-container');
+
+        if (isInfiniteType) {
+          // Infinite Scroll mode
+          if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+          this._setupInfiniteScroll();
+        } else {
+          // Manual button click mode
+          if (this._infiniteObserver) {
+            this._infiniteObserver.disconnect();
+            this._infiniteObserver = null;
+          }
+          const sentinel = document.getElementById('infinite-sentinel');
+          if (sentinel) sentinel.remove();
+
+          if (!loadMoreContainer) {
+            loadMoreContainer = document.createElement('div');
+            loadMoreContainer.id = 'load-more-container';
+            loadMoreContainer.style.textAlign = 'center';
+            loadMoreContainer.style.margin = '2rem 0';
+            loadMoreContainer.innerHTML = '<button id="load-more-btn" class="btn-primary">View More</button>';
+            this.grid.parentNode.insertBefore(loadMoreContainer, this.grid.nextSibling);
+          }
+
+          loadMoreContainer.style.display = 'block';
+          const loadMoreBtn = document.getElementById('load-more-btn');
+          if (loadMoreBtn) {
+            loadMoreBtn.onclick = () => {
+              this.fetchAndRenderBatch();
+            };
+          }
         }
+
         const paginationContainer = document.getElementById('pagination-container');
         if (paginationContainer) paginationContainer.style.display = 'none';
-        // Re-observe sentinel for next batch
-        this._setupInfiniteScroll();
 
       } catch (e) {
         console.error(e);
@@ -1185,9 +1212,21 @@ const App = {
           const type = isManual ? (m.type || cat.fallbackType) : (m.title ? 'movie' : 'tv');
           const contentType = this.getContentType(m, type);
 
+          const badgeText = m.schedule_time
+            ? (m.schedule_note ? `${m.schedule_time} • ${m.schedule_note}` : m.schedule_time)
+            : '';
+          const scheduleBadge = badgeText
+            ? `<span class="schedule-badge" aria-hidden="true">${badgeText}</span>`
+            : '';
+          const dayBadge = m.schedule_day
+            ? `<span class="day-badge" aria-hidden="true">${m.schedule_day.substring(0, 3)}</span>`
+            : '';
+
           return `
             <div class="movie-card fade-in" style="flex: 0 0 150px; width: 150px; scroll-snap-align: start;" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${type}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle}">
               <span class="type-badge" aria-hidden="true">${contentType}</span>
+              ${dayBadge}
+              ${scheduleBadge}
               <img
                 src="${poster}"
                 srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"

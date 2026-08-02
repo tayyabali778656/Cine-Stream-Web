@@ -657,6 +657,42 @@ nav.scrolled {
   z-index: 2;
 }
 
+/* Day badge for upcoming cards — top-right corner */
+.day-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, #e50914, #b0060f);
+  color: #fff;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 6px rgba(229,9,20,0.5);
+  z-index: 3;
+}
+
+/* Schedule time/note badge — bottom of the card image */
+.schedule-badge {
+  position: absolute;
+  bottom: 44px; /* sits just above the info strip */
+  left: 0;
+  right: 0;
+  background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.0) 100%);
+  color: rgba(255,255,255,0.92);
+  padding: 6px 8px 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.02em;
+  z-index: 2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Skeleton Loading */
 .skeleton {
   background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
