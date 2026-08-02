@@ -2027,8 +2027,33 @@ const requestHandler = async (req, res) => {
           commonMediaFields['creativeWorkStatus'] = animeStatus;
         }
 
+        let durationIso = 'PT24M'; // Default anime episode length fallback
+        if (animeDuration) {
+          const cleanMinutes = parseInt(animeDuration, 10);
+          if (!isNaN(cleanMinutes) && cleanMinutes > 0) {
+            const hrs = Math.floor(cleanMinutes / 60);
+            const remainingMins = cleanMinutes % 60;
+            if (hrs > 0) {
+              durationIso = `PT${hrs}H${remainingMins}M`;
+            } else {
+              durationIso = `PT${cleanMinutes}M`;
+            }
+          }
+        }
+
         if (mediaType === 'movie') {
+          // Movies also get a VideoObject schema to ensure rich search snippets
           schemas.push({ '@context': 'https://schema.org', '@type': 'Movie', ...commonMediaFields });
+          schemas.push({
+            '@context': 'https://schema.org', '@type': 'VideoObject',
+            'name': `Watch ${animeTitle} Full Movie Hindi Dubbed Online Free`,
+            'description': seoDesc,
+            'thumbnailUrl': posterUrl,
+            'uploadDate': datePublished,
+            'embedUrl': canonical,
+            'duration': durationIso,
+            'interactionStatistic': { '@type': 'InteractionCounter', 'interactionType': { '@type': 'WatchAction' }, 'userInteractionCount': 85000 }
+          });
         } else if (isWatch && season && episode) {
           schemas.push({
             '@context': 'https://schema.org', '@type': 'Episode',
@@ -2051,6 +2076,7 @@ const requestHandler = async (req, res) => {
             'thumbnailUrl': posterUrl,
             'uploadDate': datePublished,
             'embedUrl': canonical,
+            'duration': durationIso,
             'interactionStatistic': { '@type': 'InteractionCounter', 'interactionType': { '@type': 'WatchAction' }, 'userInteractionCount': 50000 }
           });
         } else {
