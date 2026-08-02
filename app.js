@@ -2817,11 +2817,8 @@ const App = {
   },
 
   scanFeedForBrokenVideos(items) {
-    if (this.currentFilter === 'upcoming') return;
-    if (!items || !Array.isArray(items)) return;
-
-    // Scan missing download source catalog links
-    this.checkMissingCatalog(items);
+    // Disabled to drastically reduce serverless function calls, bandwidth, and Vercel datapoints.
+    return;
   },
 
   /**
