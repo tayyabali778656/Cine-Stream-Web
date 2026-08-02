@@ -48,6 +48,10 @@ const App = {
   singleCategoryMode: 'fresh-drop', // 'fresh-drop', 'upcoming', 'anime-series', 'anime-movies', 'cartoon-series', 'cartoon-movies'
   singleCategoryPage: 1,
   animeSubFilter: 'anime',
+  _catalogExhausted: false, // true when current filter has no more pages
+  _fallbackFilters: ['popular', 'top_rated', 'trending', 'fresh-drop'], // cycle through when exhausted
+  _fallbackFilterIndex: 0, // index into _fallbackFilters
+  _infiniteObserver: null,  // IntersectionObserver for infinite scroll
 
   filterHidden(items) {
     if (!items || !Array.isArray(items)) return [];
@@ -455,26 +459,8 @@ const App = {
     // Sound toggle in modal
     document.getElementById('sound-toggle').addEventListener('click', () => this.toggleSound());
 
-    // Load More button setup
-    let loadMoreBtn = document.getElementById('load-more-btn');
-    if (!loadMoreBtn) {
-      let container = document.getElementById('load-more-container');
-      if (!container) {
-        container = document.createElement('div');
-        container.id = 'load-more-container';
-        container.style.textAlign = 'center';
-        container.style.margin = '2rem 0';
-        container.innerHTML = '<button id="load-more-btn" class="btn-primary">Load More</button>';
-        this.grid.parentNode.insertBefore(container, this.grid.nextSibling);
-      }
-      loadMoreBtn = document.getElementById('load-more-btn');
-    }
-
-    if (loadMoreBtn) {
-      loadMoreBtn.onclick = () => {
-        this.fetchAndRenderBatch();
-      };
-    }
+    // ── Infinite Scroll setup ─────────────────────────────────────────────────
+    this._setupInfiniteScroll();
 
     // Back to feed button click listener
     const backToFeedBtn = document.getElementById('back-to-feed-btn');
@@ -580,6 +566,8 @@ const App = {
     }
     this.singleCategoryPage = 1;
     this.currentPage = 1;
+    this._fallbackFilterIndex = 0;
+    this._catalogExhausted = false;
     if (isInitial) {
       this.freshDropPagesLoaded = parseInt(sessionStorage.getItem('s_freshDropPagesLoaded') || '1', 10);
       this.upcomingPagesLoaded = parseInt(sessionStorage.getItem('s_upcomingPagesLoaded') || '1', 10);
@@ -705,6 +693,67 @@ const App = {
     if (paginationContainer) paginationContainer.style.display = 'none';
 
     await this.fetchAndRenderBatch();
+  },
+
+  /**
+   * Setup IntersectionObserver sentinel for infinite scroll.
+   * An invisible div is placed after the grid; when it enters the viewport the next batch loads.
+   */
+  _setupInfiniteScroll() {
+    // Disconnect old observer if exists
+    if (this._infiniteObserver) {
+      this._infiniteObserver.disconnect();
+      this._infiniteObserver = null;
+    }
+    // Remove old sentinel
+    const oldSentinel = document.getElementById('infinite-sentinel');
+    if (oldSentinel) oldSentinel.remove();
+
+    // Create sentinel div below the grid
+    const sentinel = document.createElement('div');
+    sentinel.id = 'infinite-sentinel';
+    sentinel.style.cssText = 'width:100%;height:1px;visibility:hidden;';
+    if (this.grid && this.grid.parentNode) {
+      this.grid.parentNode.insertBefore(sentinel, this.grid.nextSibling);
+    }
+
+    this._infiniteObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !this._isLoadingFeed) {
+          this.fetchAndRenderBatch();
+        }
+      });
+    }, { rootMargin: '300px' }); // Start loading 300px before sentinel is visible
+
+    this._infiniteObserver.observe(sentinel);
+  },
+
+  /**
+   * When the current category pool is exhausted, switch to the next fallback filter
+   * so the infinite scroll continues seamlessly.
+   */
+  _tryFallbackFilter() {
+    const fallbacks = this._fallbackFilters;
+    if (this._fallbackFilterIndex >= fallbacks.length) {
+      // All fallbacks exhausted — stop
+      if (this._infiniteObserver) {
+        this._infiniteObserver.disconnect();
+        this._infiniteObserver = null;
+      }
+      const sentinel = document.getElementById('infinite-sentinel');
+      if (sentinel) sentinel.remove();
+      return;
+    }
+    const nextFilter = fallbacks[this._fallbackFilterIndex++];
+    // Switch singleCategoryMode to the fallback filter and reset its pagination
+    this.singleCategoryMode = nextFilter;
+    this.animeSubFilter = 'anime';
+    // Reset the pools and page for the fallback
+    const key = nextFilter.replace(/-/g, '');
+    if (this[key + 'Pool'] !== undefined) this[key + 'Pool'] = [];
+    if (this[key + 'Page'] !== undefined) this[key + 'Page'] = 1;
+    // Fetch the next batch silently (cards get appended to existing grid)
+    this.fetchAndRenderBatch();
   },
 
   /**
@@ -857,17 +906,19 @@ const App = {
 
         const itemsToRender = isFirstLoad ? pool.splice(0, currentTargetSize) : pool.splice(0, targetSize);
         if (itemsToRender.length === 0) {
-          // Only show Not Found if grid is truly empty (first load with no data)
-          // If cards already exist (View More at end), just hide button gracefully
+          // Pool exhausted — try next fallback filter instead of stopping
           if (this.grid.children.length === 0) {
             this.grid.innerHTML = `
               <div style="grid-column: 1 / -1; text-align: center; padding: 5rem 2rem; color: var(--text-muted); font-size: 1.5rem; font-weight: 600; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px;">
                 Not Found
               </div>
             `;
+            const loadMoreContainer = document.getElementById('load-more-container');
+            if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+          } else {
+            // Try next fallback filter
+            this._tryFallbackFilter();
           }
-          const loadMoreContainer = document.getElementById('load-more-container');
-          if (loadMoreContainer) loadMoreContainer.style.display = 'none';
           return;
         }
 
@@ -961,12 +1012,12 @@ const App = {
 
         const loadMoreContainer = document.getElementById('load-more-container');
         if (loadMoreContainer) {
-          loadMoreContainer.style.display = type === 'upcoming' ? 'none' : 'block';
-          const btn = document.getElementById('load-more-btn');
-          if (btn) btn.textContent = 'View More';
+          loadMoreContainer.style.display = type === 'upcoming' ? 'none' : 'none'; // hidden — infinite scroll handles it
         }
         const paginationContainer = document.getElementById('pagination-container');
         if (paginationContainer) paginationContainer.style.display = 'none';
+        // Re-observe sentinel for next batch
+        this._setupInfiniteScroll();
 
       } catch (e) {
         console.error(e);
