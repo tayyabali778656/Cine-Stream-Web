@@ -177,6 +177,9 @@
     (function () {
       let adsLoaded = false;
       function loadAdSense() {
+        if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+          return; // Do not load ads on the home page
+        }
         if (adsLoaded) return;
         adsLoaded = true;
         const sc = document.createElement('script');
