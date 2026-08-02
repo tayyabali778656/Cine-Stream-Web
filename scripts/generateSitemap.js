@@ -160,13 +160,17 @@ function entryToXml(p) {
   const imageTag = p.image
     ? `\n    <image:image>\n      <image:loc>${escapeXml(p.image)}</image:loc>\n      <image:title>${escapeXml(p.imageTitle)}</image:title>${p.imageCaption ? `\n      <image:caption>${escapeXml(p.imageCaption)}</image:caption>` : ''}\n    </image:image>`
     : '';
-  return `  <url>\n    <loc>${p.loc}</loc>\n    <lastmod>${p.lastmod}</lastmod>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>${imageTag}\n  </url>`;
+  const videoTag = p.video
+    ? `\n    <video:video>\n      <video:thumbnail_loc>${escapeXml(p.video.thumbnail)}</video:thumbnail_loc>\n      <video:title>${escapeXml(p.video.title)}</video:title>\n      <video:description>${escapeXml(p.video.description)}</video:description>\n      <video:content_loc>${escapeXml(p.loc)}</video:content_loc>\n      <video:player_loc>${escapeXml(p.loc)}</video:player_loc>\n      <video:duration>${p.video.duration || 1440}</video:duration>\n      <video:family_friendly>yes</video:family_friendly>\n      <video:live>no</video:live>\n    </video:video>`
+    : '';
+  return `  <url>\n    <loc>${p.loc}</loc>\n    <lastmod>${p.lastmod}</lastmod>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>${imageTag}${videoTag}\n  </url>`;
 }
 
 function buildSitemapXml(entries) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${entries.map(entryToXml).join('\n')}
 </urlset>`;
@@ -287,46 +291,85 @@ async function run() {
       }
 
       let animeAdded = 0;
+      let episodeAdded = 0;
       for (const item of filteredAnime) {
         if (!isValidContentId(item.id)) {
           console.log(`      ⚠ Skipping invalid anime ID: "${item.id}"`);
           continue;
         }
         const type = item.type === 'movie' ? 'movie' : 'tv';
+        const posterUrl = item.poster || null;
+        const title     = item.title || '';
+        const desc      = (item.description || '').slice(0, 200);
+
+        // Media detail page with video sitemap tag
         addEntry({
           loc:          `${BASE_URL}/media/${type}/${item.id}`,
           priority:     '0.9',
           changefreq:   'weekly',
           lastmod:      TODAY,
-          image:        item.poster ? item.poster : null,
-          imageTitle:   item.title || '',
-          imageCaption: (item.description || '').slice(0, 200),
+          image:        posterUrl,
+          imageTitle:   title,
+          imageCaption: desc,
+          video: posterUrl ? {
+            thumbnail:   posterUrl,
+            title:       `Watch ${title} Hindi Dubbed Online Free`,
+            description: desc || `Watch ${title} in Hindi Dubbed online free on CineStream. Stream all episodes in HD.`,
+            duration:    (item.runtime || item.duration) ? parseInt(item.runtime || item.duration, 10) * 60 : 1440,
+          } : null,
         });
         animeAdded++;
+
+        // Episode pages — add first 3 episodes for TV series
+        if (type === 'tv') {
+          const totalSeasons = item.number_of_seasons || item.seasons || 1;
+          const maxSeasons   = Math.min(totalSeasons, 2); // max 2 seasons
+          for (let s = 1; s <= maxSeasons; s++) {
+            for (let e = 1; e <= 3; e++) {
+              addEntry({
+                loc:        `${BASE_URL}/watch/tv/${item.id}?s=${s}&e=${e}`,
+                priority:   '0.8',
+                changefreq: 'daily',
+                lastmod:    TODAY,
+                image:      posterUrl,
+                imageTitle: `${title} S${s}E${e} Hindi Dubbed`,
+                imageCaption: `Watch ${title} Season ${s} Episode ${e} in Hindi Dubbed free on CineStream.`,
+                video: posterUrl ? {
+                  thumbnail:   posterUrl,
+                  title:       `${title} Season ${s} Episode ${e} Hindi Dubbed`,
+                  description: `Watch ${title} S${s}E${e} Hindi Dubbed online free in HD on CineStream.`,
+                  duration:    1440,
+                } : null,
+              });
+              episodeAdded++;
+            }
+          }
+        }
       }
       console.log(`      → ${adminAdded}/${adminItems.length} admin items & ${animeAdded}/${animeItems.length} anime items added from DB`);
+      console.log(`      → ${episodeAdded} episode pages added`);
   } catch (err) {
     console.warn(`      ⚠ MongoDB unavailable: ${err.message}`);
   }
 
-  // ── Step 2.4: Genre collection pages (Removed to exclude genre landing pages from sitemap) ──
-  /*
+  // ── Step 2.4: Genre collection pages ──────────────────────────────────────
   console.log('[2.4/4] Adding genre collection pages...');
   const genresList = [
     'action', 'adventure', 'comedy', 'drama', 'fantasy', 'sci-fi', 'romance',
     'thriller', 'slice-of-life', 'shounen', 'isekai', 'mecha', 'supernatural',
-    'sports', 'mystery', 'historical', 'school'
+    'sports', 'mystery', 'historical', 'school', 'horror', 'magic', 'demons',
+    'psychological', 'military', 'music', 'police', 'samurai', 'vampire'
   ];
   for (const g of genresList) {
     const genreSlug = g.toLowerCase().replace(/\s+/g, '-');
     addEntry({
-      loc:          `${BASE_URL}/genre/${genreSlug}`,
-      priority:     '0.6',
-      changefreq:   'weekly',
-      lastmod:      TODAY
+      loc:        `${BASE_URL}/genre/${genreSlug}`,
+      priority:   '0.7',
+      changefreq: 'weekly',
+      lastmod:    TODAY,
     });
   }
-  */
+  console.log(`      → ${genresList.length} genre pages added`);
 
   // ── Step 2.5: Fetch live entries from ToonStream categories (Disabled for priority-only sitemap) ──
   if (false) {
