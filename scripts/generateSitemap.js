@@ -248,7 +248,10 @@ async function run() {
       await client.close();
 
       const filterItems = (items) => {
-        return items; // Include all items regardless of rating or release year
+        return items.filter(item => {
+          const yearVal = parseInt(item.release_year || 0, 10);
+          return yearVal >= 2024;
+        });
       };
 
       const filteredAdmin = filterItems(adminItems);
