@@ -1905,33 +1905,33 @@ nav.scrolled {
   }
 
   #recently-viewed-section .section-title {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     margin-bottom: 0;
   }
 
   #recently-viewed-grid {
-    gap: 0.75rem !important;
-    margin-top: 0.75rem !important;
-    padding-bottom: 0.5rem !important;
+    gap: 0.9rem !important;
+    margin-top: 0.9rem !important;
+    padding-bottom: 0.6rem !important;
   }
 
   /* Shrink each card in the row */
   #recently-viewed-grid .movie-card {
-    width: 90px !important;
-    min-width: 90px !important;
-    flex: 0 0 90px !important;
+    width: 110px !important;
+    min-width: 110px !important;
+    flex: 0 0 110px !important;
   }
 
   #recently-viewed-grid .movie-card img {
-    width: 90px !important;
-    height: 135px !important;
+    width: 110px !important;
+    height: 165px !important;
   }
 
   #recently-viewed-grid .movie-title {
-    font-size: 0.65rem !important;
+    font-size: 0.72rem !important;
   }
 
   #recently-viewed-grid .movie-card-info {
-    padding: 0.25rem !important;
+    padding: 0.35rem !important;
   }
 }
