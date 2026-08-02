@@ -352,7 +352,8 @@ async function run() {
     console.warn(`      ⚠ MongoDB unavailable: ${err.message}`);
   }
 
-  // ── Step 2.4: Genre collection pages ──────────────────────────────────────
+  // ── Step 2.4: Genre collection pages (Removed as requested) ─────────────
+  /*
   console.log('[2.4/4] Adding genre collection pages...');
   const genresList = [
     'action', 'adventure', 'comedy', 'drama', 'fantasy', 'sci-fi', 'romance',
@@ -370,6 +371,7 @@ async function run() {
     });
   }
   console.log(`      → ${genresList.length} genre pages added`);
+  */
 
   // ── Step 2.5: Fetch live entries from ToonStream categories (Disabled for priority-only sitemap) ──
   if (false) {
