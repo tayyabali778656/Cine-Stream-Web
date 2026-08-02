@@ -249,8 +249,10 @@ async function run() {
 
       const filterItems = (items) => {
         return items.filter(item => {
-          const yearVal = parseInt(item.release_year || 0, 10);
-          return yearVal >= 2024;
+          const yearVal  = parseInt(item.release_year || 0, 10);
+          const ratingVal = parseFloat(item.rating || item.vote_average || 0);
+          // Include if: new anime (2024+) OR popular anime (rating >= 7.5)
+          return yearVal >= 2024 || ratingVal >= 7.5;
         });
       };
 
