@@ -163,7 +163,7 @@ function entryToXml(p) {
   const videoTag = p.video
     ? `\n    <video:video>\n      <video:thumbnail_loc>${escapeXml(p.video.thumbnail)}</video:thumbnail_loc>\n      <video:title>${escapeXml(p.video.title)}</video:title>\n      <video:description>${escapeXml(p.video.description)}</video:description>\n      <video:player_loc>${escapeXml(p.video.playerUrl)}</video:player_loc>\n      <video:duration>${p.video.duration || 1440}</video:duration>\n      <video:family_friendly>yes</video:family_friendly>\n      <video:live>no</video:live>\n    </video:video>`
     : '';
-  return `  <url>\n    <loc>${p.loc}</loc>\n    <lastmod>${p.lastmod}</lastmod>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>${imageTag}${videoTag}\n  </url>`;
+  return `  <url>\n    <loc>${escapeXml(p.loc)}</loc>\n    <lastmod>${p.lastmod}</lastmod>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>${imageTag}${videoTag}\n  </url>`;
 }
 
 function buildSitemapXml(entries) {
