@@ -12,6 +12,36 @@
     gtag('config', 'G-3VV4MRPP76');
   </script>
 
+  <!-- SPA navigation helper to toggle body class for ad hiding -->
+  <script>
+    (function() {
+      function updatePageClass() {
+        const isHome = window.location.pathname === '/' || window.location.pathname === '/index.html';
+        if (isHome) {
+          document.body.classList.add('is-home-page');
+        } else {
+          document.body.classList.remove('is-home-page');
+        }
+      }
+      
+      const originalPush = window.history.pushState;
+      window.history.pushState = function() {
+        originalPush.apply(this, arguments);
+        updatePageClass();
+      };
+      const originalReplace = window.history.replaceState;
+      window.history.replaceState = function() {
+        originalReplace.apply(this, arguments);
+        updatePageClass();
+      };
+      
+      window.addEventListener('popstate', updatePageClass);
+      window.addEventListener('DOMContentLoaded', updatePageClass);
+      // fallback intervals to check route changes
+      setInterval(updatePageClass, 500);
+    })();
+  </script>
+
   <script>
     // Global catch-all to prevent third-party scripts (like Google Ads/AdSense)
     // from polluting the console with uncaught promise rejections.
@@ -169,6 +199,23 @@
       to {
         transform: rotate(360deg);
       }
+    }
+
+    /* Hide AdSense and third-party Vignette/Push ads on home page (handles SPA back-navigation) */
+    body.is-home-page .adsbygoogle,
+    body.is-home-page ins.adsbygoogle,
+    body.is-home-page [class*="adsbygoogle"],
+    body.is-home-page [id*="google_ads"],
+    body.is-home-page iframe[id*="google_ads"],
+    body.is-home-page [class*="vignette"],
+    body.is-home-page [id*="vignette"],
+    body.is-home-page iframe[src*="googleads"],
+    body.is-home-page div[style*="z-index: 2147483647"],
+    body.is-home-page div[id*="google_ads"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
   </style>
 

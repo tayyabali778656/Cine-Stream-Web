@@ -248,11 +248,7 @@ async function run() {
       await client.close();
 
       const filterItems = (items) => {
-        return items.filter(item => {
-          const ratingVal = parseFloat(item.rating || item.vote_average || 0);
-          const yearVal = parseInt(item.release_year || 0, 10);
-          return ratingVal >= 7.5 || yearVal >= 2025;
-        });
+        return items; // Include all items regardless of rating or release year
       };
 
       const filteredAdmin = filterItems(adminItems);
