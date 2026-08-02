@@ -155,32 +155,37 @@ body {
 
 /* Specific Premium Horizontal Scrollbar for Continue Watching & Favorites */
 #recently-viewed-grid,
-#favorites-grid {
+#favorites-grid,
+.category-row-scroll {
   /* Firefox support */
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) var(--glass);
 }
 
 #recently-viewed-grid::-webkit-scrollbar,
-#favorites-grid::-webkit-scrollbar {
+#favorites-grid::-webkit-scrollbar,
+.category-row-scroll::-webkit-scrollbar {
   height: 6px;
 }
 
 #recently-viewed-grid::-webkit-scrollbar-track,
-#favorites-grid::-webkit-scrollbar-track {
+#favorites-grid::-webkit-scrollbar-track,
+.category-row-scroll::-webkit-scrollbar-track {
   background: var(--glass);
   border-radius: 10px;
   margin: 0px 10px;
 }
 
 #recently-viewed-grid::-webkit-scrollbar-thumb,
-#favorites-grid::-webkit-scrollbar-thumb {
+#favorites-grid::-webkit-scrollbar-thumb,
+.category-row-scroll::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
 }
 
 #recently-viewed-grid::-webkit-scrollbar-thumb:hover,
-#favorites-grid::-webkit-scrollbar-thumb:hover {
+#favorites-grid::-webkit-scrollbar-thumb:hover,
+.category-row-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
   cursor: pointer;
 }
@@ -1916,22 +1921,26 @@ nav.scrolled {
   }
 
   /* Shrink each card in the row */
-  #recently-viewed-grid .movie-card {
+  #recently-viewed-grid .movie-card,
+  .category-row-scroll .movie-card {
     width: 110px !important;
     min-width: 110px !important;
     flex: 0 0 110px !important;
   }
 
-  #recently-viewed-grid .movie-card img {
+  #recently-viewed-grid .movie-card img,
+  .category-row-scroll .movie-card img {
     width: 110px !important;
     height: 165px !important;
   }
 
-  #recently-viewed-grid .movie-title {
+  #recently-viewed-grid .movie-title,
+  .category-row-scroll .movie-title {
     font-size: 0.72rem !important;
   }
 
-  #recently-viewed-grid .movie-card-info {
+  #recently-viewed-grid .movie-card-info,
+  .category-row-scroll .movie-card-info {
     padding: 0.35rem !important;
   }
 }

@@ -421,22 +421,13 @@ const App = {
         chip.setAttribute('aria-pressed', 'true');
         this.currentFilter = chip.dataset.filter;
 
-        if (this.singleCategoryMode) {
+        if (this.singleCategoryMode && this.singleCategoryMode !== 'combined') {
           // Reset the pool & page pointers for the active category
           const category = this.singleCategoryMode;
-          if (category === 'movie') {
-            this.moviePool = [];
-            this.moviePage = 1;
-            sessionStorage.setItem('s_moviePage', '1');
-          } else if (category === 'tv') {
-            this.tvPool = [];
-            this.tvPage = 1;
-            sessionStorage.setItem('s_tvPage', '1');
-          } else if (category === 'anime') {
-            this.animePool = [];
-            this.animePage = 1;
-            sessionStorage.setItem('s_animePage', '1');
-          }
+          const key = category.replace(/-/g, '');
+          if (this[key + 'Pool'] !== undefined) this[key + 'Pool'] = [];
+          if (this[key + 'Page'] !== undefined) this[key + 'Page'] = 1;
+          
           this.grid.innerHTML = '';
           this.renderedIds.clear();
           this.showSkeletons();
@@ -559,10 +550,10 @@ const App = {
    */
   async resetAndFetch(isInitial = false) {
     if (isInitial) {
-      this.singleCategoryMode = localStorage.getItem('cinestream_active_filter') || 'fresh-drop';
+      this.singleCategoryMode = localStorage.getItem('cinestream_active_filter') || 'combined';
     } else {
-      this.singleCategoryMode = 'fresh-drop';
-      localStorage.setItem('cinestream_active_filter', 'fresh-drop');
+      this.singleCategoryMode = 'combined';
+      localStorage.setItem('cinestream_active_filter', 'combined');
     }
     this.singleCategoryPage = 1;
     this.currentPage = 1;
@@ -647,6 +638,16 @@ const App = {
    * Switch into a single category view mode (resets feed to render 30 cards per page)
    */
   async switchToCategory(category) {
+    document.querySelectorAll('.category-filter-btn').forEach(btn => {
+      if (btn.dataset.filterType === category) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    });
+
     this.singleCategoryMode = category;
     this.singleCategoryPage = 1;
     this.moviePool = [];
@@ -673,7 +674,14 @@ const App = {
 
     const heading = document.getElementById('category-view-heading');
     if (heading) {
-      const labels = { movie: 'All Movies', tv: 'All TV Series', anime: 'All Anime' };
+      const labels = {
+        'fresh-drop': 'Fresh Drop',
+        'upcoming': 'Upcoming Anime',
+        'anime-series': 'Anime Series',
+        'anime-movies': 'Anime Movies',
+        'cartoon-series': 'Cartoon Series',
+        'cartoon-movies': 'Cartoon Movies'
+      };
       const textElem = heading.querySelector('.heading-text') || heading;
       textElem.textContent = labels[category] || 'All Content';
       heading.style.display = 'flex';
@@ -767,7 +775,7 @@ const App = {
     const fMap = { 'trending': 'Trending', 'popular': 'Popular', 'top_rated': 'Top Rated', 'upcoming': 'Upcoming' };
     const filterTxt = fMap[this.currentFilter] || 'Trending';
 
-    if (this.singleCategoryMode) {
+    if (this.singleCategoryMode && this.singleCategoryMode !== 'combined') {
       const type = this.singleCategoryMode;
       const targetSize = type === 'upcoming' ? 100 : 30;
 
@@ -1029,113 +1037,93 @@ const App = {
       return;
     }
 
-    // 2. Homepage Feed Combined Mode (1 block of Movies, 1 TV, 1 Anime with category buttons)
-    const batchSize = blockSize * 3;
-    this.grid.innerHTML = Array(batchSize).fill('<div class="movie-card skeleton"></div>').join('');
+    // 2. Homepage Feed Combined Mode (Netflix-style rows for each category)
+    this.grid.innerHTML = `
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2rem;">
+        ${Array(6).fill(`
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+              <div class="skeleton" style="width: 150px; height: 1.5rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
+              <div class="skeleton" style="width: 80px; height: 1.5rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
+            </div>
+            <div style="display: flex; gap: 1rem; overflow: hidden; padding-bottom: 0.8rem;">
+              ${Array(8).fill('<div class="movie-card skeleton" style="flex: 0 0 150px; width: 150px; height: 225px;"></div>').join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
 
     try {
-      const fetchPromises = [];
+      const categories = [
+        { id: 'fresh-drop', label: 'Fresh Drop', fallbackType: 'tv' },
+        { id: 'upcoming', label: 'Upcoming', fallbackType: 'tv' },
+        { id: 'anime-series', label: 'Anime Series', fallbackType: 'tv' },
+        { id: 'anime-movies', label: 'Anime Movies', fallbackType: 'movie' },
+        { id: 'cartoon-series', label: 'Cartoon Series', fallbackType: 'tv' },
+        { id: 'cartoon-movies', label: 'Cartoon Movies', fallbackType: 'movie' }
+      ];
 
-      if (this.moviePool.length < blockSize) {
-        fetchPromises.push((async () => {
-          let pagePointer = this.moviePage;
-          while (this.moviePool.length < blockSize) {
-            const data = await API.getMovies('movie', this.currentFilter, pagePointer, '', '');
-            if (data && data.results && data.results.length > 0) {
-              let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
-              if (this.currentFilter === 'upcoming') {
-                const nowUTC = new Date().toISOString().split('T')[0];
-                results = results.filter(item => {
-                  const rd = item.release_date || item.first_air_date;
-                  return rd && rd > nowUTC;
-                });
-              }
-              this.moviePool.push(...results);
-              pagePointer++;
-            } else {
-              break;
+      const fetchResults = {};
+      const fetchPromises = categories.map(async (cat) => {
+        let pool = [];
+        let page = 1;
+        let attempts = 0;
+        // Fetch until we have 20 items or reach 3 attempts/pages
+        while (pool.length < 20 && attempts < 3) {
+          attempts++;
+          const data = await API.getMovies(cat.id, this.currentFilter, page, '', '');
+          if (data && data.results && data.results.length > 0) {
+            let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
+            if (cat.id === 'upcoming') {
+              const nowUTC = new Date().toISOString().split('T')[0];
+              results = results.filter(item => {
+                const rd = item.release_date || item.first_air_date;
+                return rd && rd > nowUTC;
+              });
             }
-          }
-          this.moviePage = pagePointer;
-        })());
-      }
-
-      if (this.tvPool.length < blockSize) {
-        fetchPromises.push((async () => {
-          let pagePointer = this.tvPage;
-          while (this.tvPool.length < blockSize) {
-            const data = await API.getMovies('tv', this.currentFilter, pagePointer, '', '');
-            if (data && data.results && data.results.length > 0) {
-              let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
-              if (this.currentFilter === 'upcoming') {
-                const nowUTC = new Date().toISOString().split('T')[0];
-                results = results.filter(item => {
-                  const rd = item.release_date || item.first_air_date;
-                  return rd && rd > nowUTC;
-                });
+            const seen = new Set(pool.map(p => String(p.id)));
+            results.forEach(r => {
+              if (!seen.has(String(r.id))) {
+                pool.push(r);
+                seen.add(String(r.id));
               }
-              this.tvPool.push(...results);
-              pagePointer++;
-            } else {
-              break;
-            }
+            });
+            page++;
+          } else {
+            break;
           }
-          this.tvPage = pagePointer;
-        })());
-      }
-
-      if (this.animePool.length < blockSize) {
-        fetchPromises.push((async () => {
-          let pagePointer = this.animePage;
-          let attempts = 0;
-          while (this.animePool.length < blockSize && attempts < 8) {
-            attempts++;
-            const data = await API.getMovies('anime', this.currentFilter, pagePointer, '', '');
-            if (data && data.results && data.results.length > 0) {
-              let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
-
-              if (this.currentFilter === 'upcoming') {
-                const nowUTC = new Date().toISOString().split('T')[0];
-                results = results.filter(item => {
-                  const rd = item.release_date || item.first_air_date;
-                  return rd && rd > nowUTC;
-                });
-              }
-              results = results.filter(item => this.isAnime(item));
-              this.animePool.push(...results);
-              pagePointer++;
-            } else {
-              break;
-            }
-          }
-          this.animePage = pagePointer;
-        })());
-      }
+        }
+        fetchResults[cat.id] = pool.slice(0, 20);
+      });
 
       await Promise.all(fetchPromises);
 
-      const moviesToRender = this.moviePool.splice(0, blockSize);
-      const tvToRender = this.tvPool.splice(0, blockSize);
-      const animeToRender = this.animePool.splice(0, blockSize);
-
-      // Render category groups regardless of empty states so Not Found placeholders show correctly
-
-      const renderGroup = (items, label, fallbackType, targetCategory) => {
+      const renderRow = (cat) => {
+        const items = fetchResults[cat.id] || [];
         const headingHtml = `
-          <h3 class="section-title" style="grid-column: 1 / -1; margin-top: 2rem; margin-bottom: 0.5rem; width: 100%; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
-            ${filterTxt} ${label}
-          </h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+            <h3 class="section-title" style="margin: 0; font-size: clamp(1rem, 2vw, 1.25rem); font-weight: 700;">
+              ${cat.label}
+            </h3>
+            <button class="btn-secondary" style="font-size: 0.72rem; padding: 4px 10px; margin: 0; border-radius: 6px;" onclick="App.switchToCategory('${cat.id}')">
+              View All
+            </button>
+          </div>
         `;
 
         if (items.length === 0) {
-          return headingHtml + `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 2rem; color: var(--text-muted); font-size: 1.2rem; font-weight: 500; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; margin-bottom: 1.5rem;">
-              Not Found
+          return `
+            <div style="display: flex; flex-direction: column; width: 100%;">
+              ${headingHtml}
+              <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 1rem; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px;">
+                No content available
+              </div>
             </div>
           `;
         }
 
-        const cardsHtml = items.map((m, idx) => {
+        const cardsHtml = items.map((m) => {
           this.renderedIds.add(String(m.id));
           const title = m.title || m.name || 'Unknown';
           const safeTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1149,29 +1137,27 @@ const App = {
               : 'https://placehold.co/500x750?text=No+Poster');
           const posterSm = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w185/') : poster;
           const posterMd = poster.includes('image.tmdb.org') ? poster.replace('/w500/', '/w342/') : poster;
-          const type = isManual ? (m.type || fallbackType) : (m.title ? 'movie' : 'tv');
-
+          const type = isManual ? (m.type || cat.fallbackType) : (m.title ? 'movie' : 'tv');
           const contentType = this.getContentType(m, type);
 
-          const imgAttrs = `decoding="async" loading="eager"`;
-
           return `
-            <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${type}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle}">
+            <div class="movie-card fade-in" style="flex: 0 0 150px; width: 150px; scroll-snap-align: start;" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${type}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle}">
               <span class="type-badge" aria-hidden="true">${contentType}</span>
               <img
                 src="${poster}"
                 srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"
-                sizes="(max-width:480px) 160px, (max-width:768px) 200px, 240px"
+                sizes="(max-width:480px) 110px, (max-width:768px) 150px, 200px"
                 alt="${safeTitle} poster"
-                ${imgAttrs}
-                width="500"
-                height="750"
+                decoding="async"
+                loading="lazy"
+                width="150"
+                height="225"
                 onload="this.parentElement.classList.add('loaded')"
                 onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');"
               >
-              <div class="movie-card-info">
-                <h4 class="movie-title">${safeTitle}</h4>
-                <div class="movie-meta">
+              <div class="movie-card-info" style="padding: 0.5rem;">
+                <h4 class="movie-title" style="font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">${safeTitle}</h4>
+                <div class="movie-meta" style="font-size: 0.7rem;">
                   <span><i class="fas fa-star rating-star" aria-hidden="true"></i> ${rating}</span>
                   <span>${year}</span>
                 </div>
@@ -1180,30 +1166,30 @@ const App = {
           `;
         }).join('');
 
-        const buttonHtml = `
-          <button class="btn-secondary" style="grid-column: 1 / -1; margin: 1.5rem auto; display: block;" onclick="App.switchToCategory('${targetCategory}')">
-            View More ${label}
-          </button>
+        return `
+          <div style="display: flex; flex-direction: column; width: 100%;">
+            ${headingHtml}
+            <div class="category-row-scroll" style="display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 0.8rem; scroll-snap-type: x mandatory;">
+              ${cardsHtml}
+            </div>
+          </div>
         `;
-
-        return headingHtml + cardsHtml + buttonHtml;
       };
 
       this.grid.innerHTML = '';
       this.renderedIds.clear();
 
-      const batchContainer = document.createElement('div');
-      batchContainer.style.display = 'contents';
-      batchContainer.innerHTML =
-        renderGroup(moviesToRender, 'Movies', 'movie', 'movie') +
-        renderGroup(tvToRender, 'TV Series', 'tv', 'tv') +
-        renderGroup(animeToRender, 'Anime', 'tv', 'anime');
-      this.grid.appendChild(batchContainer);
+      const mainContainer = document.createElement('div');
+      mainContainer.style.cssText = 'grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2rem; width: 100%;';
+      mainContainer.innerHTML = categories.map(renderRow).join('');
+      this.grid.appendChild(mainContainer);
 
       // Auto-scan visible homepage items for 404 links in background
-      this.scanFeedForBrokenVideos(moviesToRender);
-      this.scanFeedForBrokenVideos(tvToRender);
-      this.scanFeedForBrokenVideos(animeToRender);
+      categories.forEach(cat => {
+        if (fetchResults[cat.id]) {
+          this.scanFeedForBrokenVideos(fetchResults[cat.id]);
+        }
+      });
 
       const loadMoreContainer = document.getElementById('load-more-container');
       if (loadMoreContainer) loadMoreContainer.style.display = 'none';
@@ -1300,7 +1286,25 @@ const App = {
    * Show skeleton state
    */
   showSkeletons() {
-    this.grid.innerHTML = Array(12).fill('<div class="movie-card skeleton"></div>').join('');
+    if (this.singleCategoryMode === 'combined') {
+      this.grid.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2rem; width: 100%;">
+          ${Array(6).fill(`
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                <div class="skeleton" style="width: 150px; height: 1.5rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
+                <div class="skeleton" style="width: 80px; height: 1.5rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
+              </div>
+              <div style="display: flex; gap: 1rem; overflow: hidden; padding-bottom: 0.8rem;">
+                ${Array(8).fill('<div class="movie-card skeleton" style="flex: 0 0 150px; width: 150px; height: 225px;"></div>').join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } else {
+      this.grid.innerHTML = Array(12).fill('<div class="movie-card skeleton"></div>').join('');
+    }
   },
 
   /**
