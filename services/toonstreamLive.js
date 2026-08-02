@@ -346,9 +346,9 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
 
   if (query) {
     targetUrl = `/s?q=${encodeURIComponent(query)}`;
-  } else if (type === 'anime-movies') {
+  } else if (type === 'anime-movies' || type === 'movie') {
     targetUrl = `/category/anime-movies/?page=${page}`;
-  } else if (type === 'cartoon-series') {
+  } else if (type === 'cartoon-series' || type === 'cartoon') {
     targetUrl = `/category/cartoon-series/?page=${page}`;
   } else if (type === 'cartoon-movies') {
     targetUrl = `/category/cartoon-movies/?page=${page}`;

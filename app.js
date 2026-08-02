@@ -19,6 +19,18 @@ const App = {
   episodeSourcesCache: {},
   animeDetailsCache: {},
 
+  animePool: [],
+  animePage: 1,
+  animePagesLoaded: 1,
+
+  cartoonPool: [],
+  cartoonPage: 1,
+  cartoonPagesLoaded: 1,
+
+  moviePool: [],
+  moviePage: 1,
+  moviePagesLoaded: 1,
+
   freshDropPool: [],
   freshDropPage: 1,
   freshDropPagesLoaded: 1,
@@ -371,7 +383,10 @@ const App = {
 
         const filterType = btn.dataset.filterType;
         
-        // Reset state
+        // Reset state — all pools and pages
+        this.animePool = [];
+        this.cartoonPool = [];
+        this.moviePool = [];
         this.freshDropPool = [];
         this.upcomingPool = [];
         this.animeSeriesPool = [];
@@ -379,6 +394,9 @@ const App = {
         this.cartoonSeriesPool = [];
         this.cartoonMoviesPool = [];
 
+        this.animePage = 1;
+        this.cartoonPage = 1;
+        this.moviePage = 1;
         this.freshDropPage = 1;
         this.upcomingPage = 1;
         this.animeSeriesPage = 1;
@@ -386,6 +404,9 @@ const App = {
         this.cartoonSeriesPage = 1;
         this.cartoonMoviesPage = 1;
 
+        this.animePagesLoaded = 1;
+        this.cartoonPagesLoaded = 1;
+        this.moviePagesLoaded = 1;
         this.freshDropPagesLoaded = 1;
         this.upcomingPagesLoaded = 1;
         this.animeSeriesPagesLoaded = 1;
@@ -675,10 +696,13 @@ const App = {
     const heading = document.getElementById('category-view-heading');
     if (heading) {
       const labels = {
-        'fresh-drop': 'Fresh Drop',
-        'upcoming': 'Upcoming Anime',
-        'anime-series': 'Anime Series',
-        'anime-movies': 'Anime Movies',
+        'fresh-drop':     'Fresh Drop',
+        'upcoming':       'Upcoming',
+        'anime':          'Anime',
+        'cartoon':        'Animation & Cartoon',
+        'movie':          'Movies',
+        'anime-series':   'Anime Series',
+        'anime-movies':   'Anime Movies',
         'cartoon-series': 'Cartoon Series',
         'cartoon-movies': 'Cartoon Movies'
       };
@@ -790,6 +814,9 @@ const App = {
       try {
         const pool = type === 'fresh-drop' ? this.freshDropPool
                    : type === 'upcoming' ? this.upcomingPool
+                   : type === 'anime' ? this.animePool
+                   : type === 'cartoon' ? this.cartoonPool
+                   : type === 'movie' ? this.moviePool
                    : type === 'anime-series' ? this.animeSeriesPool
                    : type === 'anime-movies' ? this.animeMoviesPool
                    : type === 'cartoon-series' ? this.cartoonSeriesPool
@@ -801,6 +828,9 @@ const App = {
         let pagesToFetch = 1;
         let startPage = type === 'fresh-drop' ? this.freshDropPage
                       : type === 'upcoming' ? this.upcomingPage
+                      : type === 'anime' ? this.animePage
+                      : type === 'cartoon' ? this.cartoonPage
+                      : type === 'movie' ? this.moviePage
                       : type === 'anime-series' ? this.animeSeriesPage
                       : type === 'anime-movies' ? this.animeMoviesPage
                       : type === 'cartoon-series' ? this.cartoonSeriesPage
@@ -812,6 +842,9 @@ const App = {
           startPage = 1;
           pagesToFetch = type === 'fresh-drop' ? this.freshDropPagesLoaded
                        : type === 'upcoming' ? this.upcomingPagesLoaded
+                       : type === 'anime' ? this.animePagesLoaded
+                       : type === 'cartoon' ? this.cartoonPagesLoaded
+                       : type === 'movie' ? this.moviePagesLoaded
                        : type === 'anime-series' ? this.animeSeriesPagesLoaded
                        : type === 'anime-movies' ? this.animeMoviesPagesLoaded
                        : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
@@ -826,6 +859,15 @@ const App = {
           } else if (type === 'upcoming') {
             this.upcomingPagesLoaded++;
             sessionStorage.setItem('s_upcomingPagesLoaded', this.upcomingPagesLoaded);
+          } else if (type === 'anime') {
+            this.animePagesLoaded++;
+            sessionStorage.setItem('s_animePagesLoaded', this.animePagesLoaded);
+          } else if (type === 'cartoon') {
+            this.cartoonPagesLoaded++;
+            sessionStorage.setItem('s_cartoonPagesLoaded', this.cartoonPagesLoaded);
+          } else if (type === 'movie') {
+            this.moviePagesLoaded++;
+            sessionStorage.setItem('s_moviePagesLoaded', this.moviePagesLoaded);
           } else if (type === 'anime-series') {
             this.animeSeriesPagesLoaded++;
             sessionStorage.setItem('s_animeSeriesPagesLoaded', this.animeSeriesPagesLoaded);
@@ -841,6 +883,9 @@ const App = {
           }
           const loadedVal = type === 'fresh-drop' ? this.freshDropPagesLoaded
                           : type === 'upcoming' ? this.upcomingPagesLoaded
+                          : type === 'anime' ? this.animePagesLoaded
+                          : type === 'cartoon' ? this.cartoonPagesLoaded
+                          : type === 'movie' ? this.moviePagesLoaded
                           : type === 'anime-series' ? this.animeSeriesPagesLoaded
                           : type === 'anime-movies' ? this.animeMoviesPagesLoaded
                           : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
@@ -853,6 +898,9 @@ const App = {
         if (isFirstLoad) {
           const loadedVal = type === 'fresh-drop' ? this.freshDropPagesLoaded
                           : type === 'upcoming' ? this.upcomingPagesLoaded
+                          : type === 'anime' ? this.animePagesLoaded
+                          : type === 'cartoon' ? this.cartoonPagesLoaded
+                          : type === 'movie' ? this.moviePagesLoaded
                           : type === 'anime-series' ? this.animeSeriesPagesLoaded
                           : type === 'anime-movies' ? this.animeMoviesPagesLoaded
                           : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
@@ -903,6 +951,9 @@ const App = {
 
         if (type === 'fresh-drop') { this.freshDropPage = currentPagePointer; }
         else if (type === 'upcoming') { this.upcomingPage = currentPagePointer; }
+        else if (type === 'anime') { this.animePage = currentPagePointer; }
+        else if (type === 'cartoon') { this.cartoonPage = currentPagePointer; }
+        else if (type === 'movie') { this.moviePage = currentPagePointer; }
         else if (type === 'anime-series') { this.animeSeriesPage = currentPagePointer; }
         else if (type === 'anime-movies') { this.animeMoviesPage = currentPagePointer; }
         else if (type === 'cartoon-series') { this.cartoonSeriesPage = currentPagePointer; }
@@ -1056,12 +1107,12 @@ const App = {
 
     try {
       const categories = [
-        { id: 'fresh-drop', label: 'Fresh Drop', fallbackType: 'tv' },
-        { id: 'upcoming', label: 'Upcoming', fallbackType: 'tv' },
-        { id: 'anime-series', label: 'Anime Series', fallbackType: 'tv' },
-        { id: 'anime-movies', label: 'Anime Movies', fallbackType: 'movie' },
-        { id: 'cartoon-series', label: 'Cartoon Series', fallbackType: 'tv' },
-        { id: 'cartoon-movies', label: 'Cartoon Movies', fallbackType: 'movie' }
+        { id: 'fresh-drop',    label: 'Fresh Drop',           fallbackType: 'tv' },
+        { id: 'upcoming',      label: 'Upcoming',             fallbackType: 'tv' },
+        { id: 'anime',         label: 'Anime',                fallbackType: 'tv' },
+        { id: 'cartoon',       label: 'Animation & Cartoon',  fallbackType: 'tv' },
+        { id: 'movie',         label: 'Movies',               fallbackType: 'movie' },
+        { id: 'cartoon-movies', label: 'Cartoon Movies',      fallbackType: 'movie' }
       ];
 
       const fetchResults = {};
@@ -1075,13 +1126,7 @@ const App = {
           const data = await API.getMovies(cat.id, this.currentFilter, page, '', '');
           if (data && data.results && data.results.length > 0) {
             let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
-            if (cat.id === 'upcoming') {
-              const nowUTC = new Date().toISOString().split('T')[0];
-              results = results.filter(item => {
-                const rd = item.release_date || item.first_air_date;
-                return rd && rd > nowUTC;
-              });
-            }
+            // NOTE: Do NOT filter upcoming by release_date — upcoming items use schedule_day/schedule_time
             const seen = new Set(pool.map(p => String(p.id)));
             results.forEach(r => {
               if (!seen.has(String(r.id))) {
