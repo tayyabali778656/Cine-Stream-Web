@@ -802,6 +802,9 @@
     (function () {
       let adsLoaded = false;
       function loadPushAds() {
+        if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+          return; // Do not load ads on the home page
+        }
         if (adsLoaded) return;
         adsLoaded = true;
 
