@@ -981,6 +981,8 @@ const requestHandler = async (req, res) => {
   const needsDb = pathname.startsWith('/api/') ||
                   pathname.startsWith('/proxy') ||
                   pathname.startsWith('/iframe-proxy') ||
+                  pathname === '/' ||
+                  pathname === '/index.html' ||
                   pathname === '/health' ||
                   pathname.endsWith('.xml') ||
                   pathname.match(/^\/watch\/tv\/(toon_[^/?]+)/);
@@ -2339,6 +2341,76 @@ const requestHandler = async (req, res) => {
         return;
       } catch (seoErr) {
         logger.warn('seo_search_inject_error', { message: seoErr.message });
+      }
+    } else if (pathname === '/' || pathname === '/index.html') {
+      // ── SEO: Homepage Dynamic Internal Links (Latest + Popular) ─────────────
+      try {
+        const htmlRaw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+        const animeCol = getCollection('anime');
+        if (animeCol) {
+          // Fetch latest anime (2024+) sorted by release year desc
+          const latestAnime = await animeCol
+            .find({ release_year: { $gte: 2024 } }, {
+              projection: { id: 1, title: 1, poster: 1, type: 1, release_year: 1 },
+              sort: { release_year: -1 },
+              limit: 12
+            }).toArray();
+
+          // Fetch popular anime sorted by rating desc
+          const popularAnime = await animeCol
+            .find({ $or: [{ rating: { $gte: 7 } }, { vote_average: { $gte: 7 } }] }, {
+              projection: { id: 1, title: 1, poster: 1, type: 1, rating: 1, vote_average: 1 },
+              sort: { rating: -1, vote_average: -1 },
+              limit: 12
+            }).toArray();
+
+          const makeCard = (item) => {
+            const t = (item.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+            const ty = item.type === 'movie' ? 'movie' : 'tv';
+            return `<a href="https://cinestream.watch/media/${ty}/${item.id}" style="display:block;text-align:center;text-decoration:none;color:inherit;flex:0 0 120px;" title="Watch ${t} Hindi Dubbed">
+              ${item.poster ? `<img src="${item.poster}" alt="Watch ${t} Hindi Dubbed" width="120" height="180" loading="lazy" style="border-radius:8px;object-fit:cover;width:120px;height:180px;box-shadow:0 4px 12px rgba(0,0,0,0.4);">` : ''}
+              <span style="display:block;font-size:0.72rem;margin-top:0.4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;color:var(--text-muted);">${t}</span>
+            </a>`;
+          };
+
+          const latestHtml = latestAnime.length > 0 ? `
+            <section style="padding:1.5rem 1rem;background:rgba(15,15,25,0.7);border-top:1px solid rgba(255,255,255,0.06);">
+              <div style="max-width:1200px;margin:0 auto;">
+                <h2 style="font-size:1.1rem;font-weight:700;color:var(--text);margin:0 0 1rem;letter-spacing:0.03em;">
+                  🆕 Latest Hindi Dubbed Anime Episodes
+                </h2>
+                <div style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:flex-start;">
+                  ${latestAnime.map(makeCard).join('')}
+                </div>
+              </div>
+            </section>` : '';
+
+          const popularHtml = popularAnime.length > 0 ? `
+            <section style="padding:1.5rem 1rem;background:rgba(15,15,25,0.5);border-top:1px solid rgba(255,255,255,0.06);">
+              <div style="max-width:1200px;margin:0 auto;">
+                <h2 style="font-size:1.1rem;font-weight:700;color:var(--text);margin:0 0 1rem;letter-spacing:0.03em;">
+                  ⭐ Popular Anime Series
+                </h2>
+                <div style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:flex-start;">
+                  ${popularAnime.map(makeCard).join('')}
+                </div>
+              </div>
+            </section>` : '';
+
+          if (latestHtml || popularHtml) {
+            const seoLinksHtml = `<div id="seo-links-area">${latestHtml}${popularHtml}</div>`;
+            const injected = htmlRaw.replace('<div id="seo-links-area"></div>', seoLinksHtml);
+            res.writeHead(200, {
+              'Content-Type': 'text/html; charset=utf-8',
+              'Cache-Control': 'public, max-age=900, stale-while-revalidate=1800',
+            });
+            res.end(Buffer.from(injected, 'utf8'));
+            logger.request(req, 200, Date.now() - startMs);
+            return;
+          }
+        }
+      } catch (homeErr) {
+        logger.warn('homepage_seo_links_error', { message: homeErr.message });
       }
     }
     // ── End SEO injection ─────────────────────────────────────────────────────

@@ -714,7 +714,7 @@ const App = {
     if (this._isLoadingFeed) return;
     this._isLoadingFeed = true;
     const isMobile = window.innerWidth <= 768;
-    const blockSize = isMobile ? 6 : 10;
+    const blockSize = isMobile ? 7 : 10;
     const fMap = { 'trending': 'Trending', 'popular': 'Popular', 'top_rated': 'Top Rated', 'upcoming': 'Upcoming' };
     const filterTxt = fMap[this.currentFilter] || 'Trending';
 
