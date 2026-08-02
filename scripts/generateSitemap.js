@@ -247,14 +247,22 @@ async function run() {
       const animeItems = await db.collection('anime').find({}).toArray();
       await client.close();
 
+
       const filterItems = (items) => {
         return items.filter(item => {
-          const yearVal  = parseInt(item.release_year || 0, 10);
+          // Check all possible year/date fields in DB
+          const rawYear = item.release_year
+            || (item.first_air_date ? String(item.first_air_date).slice(0, 4) : null)
+            || (item.release_date   ? String(item.release_date).slice(0, 4)   : null)
+            || (item.year           ? String(item.year)                        : null)
+            || '0';
+          const yearVal   = parseInt(rawYear, 10);
           const ratingVal = parseFloat(item.rating || item.vote_average || 0);
-          // Include if: new anime (2024+) OR popular anime (rating >= 7.5)
+          // Include if: new anime (2024, 2025, 2026+) OR popular anime (rating >= 7.5)
           return yearVal >= 2024 || ratingVal >= 7.5;
         });
       };
+
 
       const filteredAdmin = filterItems(adminItems);
       const filteredAnime = filterItems(animeItems);
