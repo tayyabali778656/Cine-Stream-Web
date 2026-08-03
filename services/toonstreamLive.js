@@ -355,8 +355,8 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
   } else if (type === 'upcoming' || type === 'fresh-drop') {
     targetUrl = '/home';
   } else {
-    // Default to anime-series category
-    targetUrl = `/category/anime-series/?page=${page}`;
+    // Default to anime category (e.g. type === 'anime' or default)
+    targetUrl = `/category/anime/?page=${page}`;
   }
 
   const { html, status } = await fetchPage(targetUrl);
