@@ -1092,33 +1092,34 @@ const App = {
         batchContainer.innerHTML = cardsHtml;
         this.grid.appendChild(batchContainer);
 
-        // Pad incomplete last row with invisible cards so View More button
-        // always appears below a complete row
-        requestAnimationFrame(() => {
-          // Remove old placeholders first
+        // Pad incomplete last row — use double rAF to ensure browser has fully
+        // computed grid layout before we measure card positions
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          // Clear stale placeholders
           this.grid.querySelectorAll('.movie-card-placeholder').forEach(p => p.remove());
 
-          const remainingCards = Array.from(this.grid.querySelectorAll('.movie-card:not(.skeleton)'));
-          if (remainingCards.length === 0) return;
+          const cards = Array.from(this.grid.querySelectorAll('.movie-card:not(.skeleton)'));
+          if (cards.length === 0) return;
 
-          // Dynamically compute exact columns matching screen width & CSS Grid columns
-          const containerWidth = this.grid.clientWidth;
-          const cardWidth = remainingCards[0].getBoundingClientRect().width;
-          const gap = parseFloat(window.getComputedStyle(this.grid).gap) || 16;
-          const cols = Math.floor((containerWidth + gap) / (cardWidth + gap)) || 1;
+          // Group cards into rows by their top-edge position (±2px tolerance for sub-pixel)
+          const rowMap = new Map();
+          cards.forEach(card => {
+            const top = Math.round(card.getBoundingClientRect().top);
+            rowMap.set(top, (rowMap.get(top) || 0) + 1);
+          });
 
-          const totalCards = remainingCards.length;
-          const remainder = totalCards % cols;
-          if (remainder !== 0) {
-            const needed = cols - remainder;
-            for (let i = 0; i < needed; i++) {
-              const ph = document.createElement('div');
-              ph.className = 'movie-card-placeholder';
-              ph.setAttribute('aria-hidden', 'true');
-              this.grid.appendChild(ph);
-            }
+          const rowCounts = Array.from(rowMap.values());
+          const cols = Math.max(...rowCounts);               // widest row = column count
+          const lastRowCount = rowCounts[rowCounts.length - 1];
+          const needed = cols - lastRowCount;
+
+          for (let i = 0; i < needed; i++) {
+            const ph = document.createElement('div');
+            ph.className = 'movie-card-placeholder';
+            ph.setAttribute('aria-hidden', 'true');
+            this.grid.appendChild(ph);
           }
-        });
+        }));
 
         // Restore scroll position if saved on page reload
         const savedScroll = parseInt(sessionStorage.getItem('s_scrollTop') || '0', 10);
