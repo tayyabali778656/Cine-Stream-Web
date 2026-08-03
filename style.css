@@ -2021,3 +2021,38 @@ nav.scrolled {
     padding: 0.35rem !important;
   }
 }
+
+/* Global Selection Reset for Clickable/Interactive Elements */
+button,
+select,
+option,
+a,
+label,
+.tab-btn,
+.category-filter-btn,
+.filter-chip,
+.filter-dropdown-select,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+.episode-badge,
+.schedule-badge,
+.day-badge,
+.type-badge,
+.logo,
+.logo *,
+.logo-text,
+.nav-link,
+#custom-episode-selectors *,
+.episode-selector,
+.server-btn,
+.btn-primary,
+.btn-secondary {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
