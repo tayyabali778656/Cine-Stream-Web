@@ -442,6 +442,7 @@ const App = {
           if (seoHero) seoHero.style.display = 'none';
         }
 
+        this._isLoadingFeed = false;
         this.fetchAndRenderBatch();
       });
     });
@@ -748,6 +749,7 @@ const App = {
     const paginationContainer = document.getElementById('pagination-container');
     if (paginationContainer) paginationContainer.style.display = 'none';
 
+    this._isLoadingFeed = false;
     await this.fetchAndRenderBatch();
   },
 
