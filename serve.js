@@ -788,12 +788,13 @@ async function handleApiV1(req, res, pathname) {
         const resourceUrl = matches.find(url => url.includes('/resource/'));
 
         const finalUrl = hakunaResource || hakunaAny || resourceUrl || matches[0];
-        sendJson(res, 200, { url: finalUrl });
+        // Enable Edge caching: s-maxage=120, stale-while-revalidate=600
+        sendJson(res, 200, { url: finalUrl }, 'public, max-age=120, s-maxage=120, stale-while-revalidate=600');
       } else {
         const fallbackMatches = html.match(/https?:\/\/[^\s\x22\x27]+\.mp4/g) || [];
         const hakunaFallback = fallbackMatches.find(url => url.includes('hakunaymatata') || url.includes('hakunamata'));
         if (hakunaFallback || fallbackMatches.length > 0) {
-          sendJson(res, 200, { url: hakunaFallback || fallbackMatches[0] });
+          sendJson(res, 200, { url: hakunaFallback || fallbackMatches[0] }, 'public, max-age=120, s-maxage=120, stale-while-revalidate=600');
         } else {
           sendJson(res, 404, { error: 'No video stream found in NetMirror page' });
         }
@@ -1597,7 +1598,8 @@ const requestHandler = async (req, res) => {
           `;
           res.writeHead(200, {
             'Content-Type': 'text/html',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'public, max-age=120, s-maxage=120, stale-while-revalidate=600'
           });
           res.end(cleanPlayerHtml);
           return;
@@ -1762,7 +1764,8 @@ const requestHandler = async (req, res) => {
 
         res.writeHead(200, {
           'Content-Type': 'text/html',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=120, s-maxage=120, stale-while-revalidate=600'
         });
         res.end(html);
       } catch (err) {
@@ -2065,17 +2068,34 @@ const requestHandler = async (req, res) => {
           }
         }
 
+        // Shared publisher object used in all VideoObject schemas
+        const publisherSchema = {
+          '@type': 'Organization',
+          'name': 'CineStream',
+          'url': 'https://cinestream.watch',
+          'logo': { '@type': 'ImageObject', 'url': 'https://cinestream.watch/android-chrome-512x512.png', 'width': 512, 'height': 512 }
+        };
+
         if (mediaType === 'movie') {
           // Movies also get a VideoObject schema to ensure rich search snippets
           schemas.push({ '@context': 'https://schema.org', '@type': 'Movie', ...commonMediaFields });
+          const movieEmbedUrl = `https://cinestream.watch/iframe-proxy?id=${toonId}`;
           schemas.push({
             '@context': 'https://schema.org', '@type': 'VideoObject',
             'name': `Watch ${animeTitle} Full Movie Hindi Dubbed Online Free`,
             'description': seoDesc,
-            'thumbnailUrl': posterUrl,
+            'thumbnailUrl': [posterUrl],
             'uploadDate': datePublished,
-            'embedUrl': canonical,
             'duration': durationIso,
+            'embedUrl': movieEmbedUrl,
+            'url': canonical,
+            'requiresSubscription': false,
+            'isAccessibleForFree': true,
+            'isFamilyFriendly': true,
+            'inLanguage': 'hi',
+            'keywords': `${animeTitle} hindi dubbed, watch ${animeTitle} online free, ${animeTitle} full movie hindi`,
+            'potentialAction': { '@type': 'WatchAction', 'target': [canonical] },
+            'publisher': publisherSchema,
             'interactionStatistic': { '@type': 'InteractionCounter', 'interactionType': { '@type': 'WatchAction' }, 'userInteractionCount': 85000 }
           });
         } else if (isWatch && season && episode) {
@@ -2093,14 +2113,23 @@ const requestHandler = async (req, res) => {
             'datePublished': datePublished,
             'dateModified': dateModified,
           });
+          const epEmbedUrl = `https://cinestream.watch/iframe-proxy?id=${toonId}&s=${season}&e=${episode}`;
           schemas.push({
             '@context': 'https://schema.org', '@type': 'VideoObject',
             'name': `Watch ${animeTitle} S${season}E${episode} Hindi Dubbed Online Free`,
             'description': seoDesc,
-            'thumbnailUrl': posterUrl,
+            'thumbnailUrl': [posterUrl],
             'uploadDate': datePublished,
-            'embedUrl': canonical,
             'duration': durationIso,
+            'embedUrl': epEmbedUrl,
+            'url': canonical,
+            'requiresSubscription': false,
+            'isAccessibleForFree': true,
+            'isFamilyFriendly': true,
+            'inLanguage': 'hi',
+            'keywords': `${animeTitle} episode ${episode} hindi dubbed, watch ${animeTitle} S${season}E${episode} online free, ${animeTitle} season ${season} hindi`,
+            'potentialAction': { '@type': 'WatchAction', 'target': [canonical] },
+            'publisher': publisherSchema,
             'interactionStatistic': { '@type': 'InteractionCounter', 'interactionType': { '@type': 'WatchAction' }, 'userInteractionCount': 50000 }
           });
         } else {

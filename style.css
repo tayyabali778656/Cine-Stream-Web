@@ -558,7 +558,23 @@ nav.scrolled {
   background: var(--bg-card);
   aspect-ratio: 2/3;
   user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.movie-card * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  pointer-events: none;
 }
 
 /* Invisible filler cards to complete the last grid row before View More button */

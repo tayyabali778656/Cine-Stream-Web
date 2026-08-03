@@ -161,7 +161,19 @@ function entryToXml(p) {
     ? `\n    <image:image>\n      <image:loc>${escapeXml(p.image)}</image:loc>\n      <image:title>${escapeXml(p.imageTitle)}</image:title>${p.imageCaption ? `\n      <image:caption>${escapeXml(p.imageCaption)}</image:caption>` : ''}\n    </image:image>`
     : '';
   const videoTag = p.video
-    ? `\n    <video:video>\n      <video:thumbnail_loc>${escapeXml(p.video.thumbnail)}</video:thumbnail_loc>\n      <video:title>${escapeXml(p.video.title)}</video:title>\n      <video:description>${escapeXml(p.video.description)}</video:description>\n      <video:player_loc>${escapeXml(p.video.playerUrl)}</video:player_loc>\n      <video:duration>${p.video.duration || 1440}</video:duration>\n      <video:family_friendly>yes</video:family_friendly>\n      <video:live>no</video:live>\n    </video:video>`
+    ? `\n    <video:video>
+      <video:thumbnail_loc>${escapeXml(p.video.thumbnail)}</video:thumbnail_loc>
+      <video:title>${escapeXml(p.video.title)}</video:title>
+      <video:description>${escapeXml(p.video.description)}</video:description>
+      <video:player_loc allow_embed="yes">${escapeXml(p.video.playerUrl)}</video:player_loc>
+      <video:duration>${p.video.duration || 1440}</video:duration>
+      <video:family_friendly>yes</video:family_friendly>
+      <video:live>no</video:live>
+      <video:requires_subscription>no</video:requires_subscription>
+      <video:uploader info="https://cinestream.watch/about.html">CineStream</video:uploader>
+      <video:publication_date>${p.lastmod}T00:00:00+00:00</video:publication_date>
+      <video:category>${escapeXml(p.video.category || 'Anime')}</video:category>
+    </video:video>`
     : '';
   return `  <url>\n    <loc>${escapeXml(p.loc)}</loc>\n    <lastmod>${p.lastmod}</lastmod>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>${imageTag}${videoTag}\n  </url>`;
 }
@@ -317,6 +329,7 @@ async function run() {
             description: desc || `Watch ${title} in Hindi Dubbed online free on CineStream. Stream all episodes in HD.`,
             playerUrl:   `${BASE_URL}/iframe-proxy?id=${item.id}`,
             duration:    (item.runtime || item.duration) ? parseInt(item.runtime || item.duration, 10) * 60 : 1440,
+            category:    type === 'movie' ? 'Anime Movie' : 'Anime',
           } : null,
         });
         animeAdded++;
@@ -341,6 +354,7 @@ async function run() {
                   description: `Watch ${title} S${s}E${e} Hindi Dubbed online free in HD on CineStream.`,
                   playerUrl:   `${BASE_URL}/iframe-proxy?id=${item.id}&s=${s}&e=${e}`,
                   duration:    1440,
+                  category:    'Anime',
                 } : null,
               });
               episodeAdded++;
