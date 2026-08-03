@@ -1454,7 +1454,7 @@ nav.scrolled {
 
 /* Info Pages Professional Styling */
 .info-container {
-  padding: 2rem 0 80px;
+ 
   min-height: 80vh;
 }
 
@@ -1539,9 +1539,7 @@ nav.scrolled {
     gap: 40px;
   }
 
-  .info-container {
-    padding-top: 100px;
-  }
+ 
 }
 
 /* Final Global Responsiveness Polish */
@@ -2095,4 +2093,4 @@ label,
     height: 36px;
   }
 }
-
+
