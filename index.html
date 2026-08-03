@@ -6,7 +6,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3VV4MRPP76"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
 
     gtag('config', 'G-3VV4MRPP76');
@@ -14,7 +14,7 @@
 
   <!-- SPA navigation helper to toggle body class for ad hiding -->
   <script>
-    (function() {
+    (function () {
       function updatePageClass() {
         const isHome = window.location.pathname === '/' || window.location.pathname === '/index.html';
         if (isHome) {
@@ -23,18 +23,18 @@
           document.body.classList.remove('is-home-page');
         }
       }
-      
+
       const originalPush = window.history.pushState;
-      window.history.pushState = function() {
+      window.history.pushState = function () {
         originalPush.apply(this, arguments);
         updatePageClass();
       };
       const originalReplace = window.history.replaceState;
-      window.history.replaceState = function() {
+      window.history.replaceState = function () {
         originalReplace.apply(this, arguments);
         updatePageClass();
       };
-      
+
       window.addEventListener('popstate', updatePageClass);
       window.addEventListener('DOMContentLoaded', updatePageClass);
       // fallback intervals to check route changes
@@ -778,15 +778,15 @@
           style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
           aria-label="Demon Slayer Anime">Demon Slayer</a>
       </div>
-    <div class="footer-bottom">
-      <p>&copy; 2026 CineStream | All Rights Reserved |
-        <a href="/privacy.html" style="color:var(--text-muted);" aria-label="Privacy Policy">Privacy Policy</a> |
-        <a href="/disclaimer.html" style="color:var(--text-muted);" aria-label="Disclaimer">Disclaimer</a>
-      </p>
-      <p style="font-size: 0.7rem; color: var(--text-muted); margin: 0.3rem;">
-        Watch Anime Online Free | Hindi Dubbed Anime | Anime Series Streaming | HD Quality
-      </p>
-    </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 CineStream | All Rights Reserved |
+          <a href="/privacy.html" style="color:var(--text-muted);" aria-label="Privacy Policy">Privacy Policy</a> |
+          <a href="/disclaimer.html" style="color:var(--text-muted);" aria-label="Disclaimer">Disclaimer</a>
+        </p>
+        <p style="font-size: 0.7rem; color: var(--text-muted); margin: 0.3rem;">
+          Watch Anime Online Free | Hindi Dubbed Anime | Anime Series Streaming | HD Quality
+        </p>
+      </div>
   </footer>
 
   <!-- Toast Notifications -->
@@ -804,32 +804,37 @@
 
   <!-- PWA Service Worker Registration & Gatekeeper (Prevents HTML flashing on SW check) -->
   <script>
-    // Safety timeout: always hide the loading overlay after max 500ms to prevent black screen traps
-    const safetyTimeout = setTimeout(() => {
-      const overlay = document.getElementById('sw-loading-overlay');
-      if (overlay && overlay.style.display !== 'none') {
-        console.warn('Service Worker registration taking too long; bypassing overlay.');
-        overlay.style.display = 'none';
-      }
-    }, 500);
-
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
           .then(reg => {
             console.log('Service Worker registered successfully:', reg.scope);
+            sessionStorage.removeItem('sw_reloaded'); // Reset reload tracker on success
+            const overlay = document.getElementById('sw-loading-overlay');
+            if (overlay) overlay.style.display = 'none'; // Reveal site
           })
           .catch(err => {
-            console.warn('Service Worker registration failed:', err);
-          })
-          .finally(() => {
-            clearTimeout(safetyTimeout);
-            const overlay = document.getElementById('sw-loading-overlay');
-            if (overlay) overlay.style.display = 'none'; // Always reveal the site!
+            console.error('Service Worker registration failed:', err);
+            const reloaded = sessionStorage.getItem('sw_reloaded');
+            if (!reloaded) {
+              sessionStorage.setItem('sw_reloaded', 'true');
+              window.location.reload();
+            } else {
+              // If registration still fails after reload, show ONLY the "Enter CineStream" button inside the black overlay
+              sessionStorage.removeItem('sw_reloaded');
+              const overlay = document.getElementById('sw-loading-overlay');
+              if (overlay) {
+                overlay.innerHTML = `
+                  <h1 style="color: #e50914; font-size: clamp(2.2rem, 6vw, 3.5rem); font-weight: 800; margin-bottom: 20px; letter-spacing: -1px; font-family: 'Outfit', sans-serif;">Cine<span style="color: #fff;">Stream</span></h1>
+                  <p style="color: #b3b3b3; font-size: 1rem; margin-bottom: 30px; max-width: 400px; line-height: 1.5; text-align: center; padding: 0 20px;">Please click below to access the streaming site.</p>
+                  <button onclick="window.location.reload()" style="background: #e50914; color: #fff; border: none; padding: 14px 36px; font-size: 1.05rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);" onmouseover="this.style.background='#ff0f22'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#e50914'; this.style.transform='translateY(0)'">Enter CineStream</button>
+                `;
+              }
+            }
           });
       });
     } else {
-      clearTimeout(safetyTimeout);
+      // Browser doesn't support Service Workers - reveal site instantly
       const overlay = document.getElementById('sw-loading-overlay');
       if (overlay) overlay.style.display = 'none';
     }
