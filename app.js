@@ -325,7 +325,7 @@ const App = {
     if (activeType && activeType !== 'combined') {
       if (seoHeroInit) seoHeroInit.style.display = 'none';
     }
-    
+
     document.querySelectorAll('.category-filter-btn').forEach(btn => {
       if (btn.dataset.filterType === activeType) {
         btn.classList.add('active');
@@ -376,9 +376,6 @@ const App = {
       });
     }
 
-    // Setup live search suggestions dropdown
-    this.setupSearchSuggestions();
-
     // Category Filter Buttons (Fresh Drop, Anime Series, Anime Movies, Cartoon Series, Cartoon Movies)
     const categoryBtns = document.querySelectorAll('.category-filter-btn');
     categoryBtns.forEach(btn => {
@@ -391,7 +388,7 @@ const App = {
         btn.setAttribute('aria-pressed', 'true');
 
         const filterType = btn.dataset.filterType;
-        
+
         // Reset state — all pools and pages
         this.animePool = [];
         this.cartoonPool = [];
@@ -467,7 +464,7 @@ const App = {
           const key = category.replace(/-/g, '');
           if (this[key + 'Pool'] !== undefined) this[key + 'Pool'] = [];
           if (this[key + 'Page'] !== undefined) this[key + 'Page'] = 1;
-          
+
           this.grid.innerHTML = '';
           this.renderedIds.clear();
           this.showSkeletons();
@@ -724,13 +721,13 @@ const App = {
     const heading = document.getElementById('category-view-heading');
     if (heading) {
       const labels = {
-        'fresh-drop':     'Fresh Drop',
-        'upcoming':       'Upcoming',
-        'anime':          'Anime',
-        'cartoon':        'Animation & Cartoon',
-        'movie':          'Movies',
-        'anime-series':   'Anime Series',
-        'anime-movies':   'Anime Movies',
+        'fresh-drop': 'Fresh Drop',
+        'upcoming': 'Upcoming',
+        'anime': 'Anime',
+        'cartoon': 'Animation & Cartoon',
+        'movie': 'Movies',
+        'anime-series': 'Anime Series',
+        'anime-movies': 'Anime Movies',
         'cartoon-series': 'Cartoon Series',
         'cartoon-movies': 'Cartoon Movies'
       };
@@ -847,43 +844,43 @@ const App = {
 
       try {
         const pool = type === 'fresh-drop' ? this.freshDropPool
-                   : type === 'upcoming' ? this.upcomingPool
-                   : type === 'anime' ? this.animePool
-                   : type === 'cartoon' ? this.cartoonPool
-                   : type === 'movie' ? this.moviePool
-                   : type === 'anime-series' ? this.animeSeriesPool
-                   : type === 'anime-movies' ? this.animeMoviesPool
-                   : type === 'cartoon-series' ? this.cartoonSeriesPool
-                   : type === 'cartoon-movies' ? this.cartoonMoviesPool
-                   : this.animePool;
+          : type === 'upcoming' ? this.upcomingPool
+            : type === 'anime' ? this.animePool
+              : type === 'cartoon' ? this.cartoonPool
+                : type === 'movie' ? this.moviePool
+                  : type === 'anime-series' ? this.animeSeriesPool
+                    : type === 'anime-movies' ? this.animeMoviesPool
+                      : type === 'cartoon-series' ? this.cartoonSeriesPool
+                        : type === 'cartoon-movies' ? this.cartoonMoviesPool
+                          : this.animePool;
 
         const isFirstLoad = this.grid.querySelectorAll('.movie-card:not(.skeleton)').length === 0;
 
         let pagesToFetch = 1;
         let startPage = type === 'fresh-drop' ? this.freshDropPage
-                      : type === 'upcoming' ? this.upcomingPage
-                      : type === 'anime' ? this.animePage
-                      : type === 'cartoon' ? this.cartoonPage
-                      : type === 'movie' ? this.moviePage
-                      : type === 'anime-series' ? this.animeSeriesPage
-                      : type === 'anime-movies' ? this.animeMoviesPage
+          : type === 'upcoming' ? this.upcomingPage
+            : type === 'anime' ? this.animePage
+              : type === 'cartoon' ? this.cartoonPage
+                : type === 'movie' ? this.moviePage
+                  : type === 'anime-series' ? this.animeSeriesPage
+                    : type === 'anime-movies' ? this.animeMoviesPage
                       : type === 'cartoon-series' ? this.cartoonSeriesPage
-                      : type === 'cartoon-movies' ? this.cartoonMoviesPage
-                      : this.animePage;
+                        : type === 'cartoon-movies' ? this.cartoonMoviesPage
+                          : this.animePage;
 
         let currentTargetSize = targetSize;
         if (isFirstLoad) {
           startPage = 1;
           pagesToFetch = type === 'fresh-drop' ? this.freshDropPagesLoaded
-                       : type === 'upcoming' ? this.upcomingPagesLoaded
-                       : type === 'anime' ? this.animePagesLoaded
-                       : type === 'cartoon' ? this.cartoonPagesLoaded
-                       : type === 'movie' ? this.moviePagesLoaded
-                       : type === 'anime-series' ? this.animeSeriesPagesLoaded
-                       : type === 'anime-movies' ? this.animeMoviesPagesLoaded
-                       : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
-                       : type === 'cartoon-movies' ? this.cartoonMoviesPagesLoaded
-                       : this.animePagesLoaded;
+            : type === 'upcoming' ? this.upcomingPagesLoaded
+              : type === 'anime' ? this.animePagesLoaded
+                : type === 'cartoon' ? this.cartoonPagesLoaded
+                  : type === 'movie' ? this.moviePagesLoaded
+                    : type === 'anime-series' ? this.animeSeriesPagesLoaded
+                      : type === 'anime-movies' ? this.animeMoviesPagesLoaded
+                        : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
+                          : type === 'cartoon-movies' ? this.cartoonMoviesPagesLoaded
+                            : this.animePagesLoaded;
           currentTargetSize = targetSize * pagesToFetch;
         } else {
           pagesToFetch = 1;
@@ -916,30 +913,30 @@ const App = {
             sessionStorage.setItem('s_cartoonMoviesPagesLoaded', this.cartoonMoviesPagesLoaded);
           }
           const loadedVal = type === 'fresh-drop' ? this.freshDropPagesLoaded
-                          : type === 'upcoming' ? this.upcomingPagesLoaded
-                          : type === 'anime' ? this.animePagesLoaded
-                          : type === 'cartoon' ? this.cartoonPagesLoaded
-                          : type === 'movie' ? this.moviePagesLoaded
-                          : type === 'anime-series' ? this.animeSeriesPagesLoaded
-                          : type === 'anime-movies' ? this.animeMoviesPagesLoaded
-                          : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
+            : type === 'upcoming' ? this.upcomingPagesLoaded
+              : type === 'anime' ? this.animePagesLoaded
+                : type === 'cartoon' ? this.cartoonPagesLoaded
+                  : type === 'movie' ? this.moviePagesLoaded
+                    : type === 'anime-series' ? this.animeSeriesPagesLoaded
+                      : type === 'anime-movies' ? this.animeMoviesPagesLoaded
+                        : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
                           : type === 'cartoon-movies' ? this.cartoonMoviesPagesLoaded
-                          : this.animePagesLoaded;
+                            : this.animePagesLoaded;
           currentTargetSize = targetSize * loadedVal;
         }
 
         let currentPagePointer = startPage;
         if (isFirstLoad) {
           const loadedVal = type === 'fresh-drop' ? this.freshDropPagesLoaded
-                          : type === 'upcoming' ? this.upcomingPagesLoaded
-                          : type === 'anime' ? this.animePagesLoaded
-                          : type === 'cartoon' ? this.cartoonPagesLoaded
-                          : type === 'movie' ? this.moviePagesLoaded
-                          : type === 'anime-series' ? this.animeSeriesPagesLoaded
-                          : type === 'anime-movies' ? this.animeMoviesPagesLoaded
-                          : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
+            : type === 'upcoming' ? this.upcomingPagesLoaded
+              : type === 'anime' ? this.animePagesLoaded
+                : type === 'cartoon' ? this.cartoonPagesLoaded
+                  : type === 'movie' ? this.moviePagesLoaded
+                    : type === 'anime-series' ? this.animeSeriesPagesLoaded
+                      : type === 'anime-movies' ? this.animeMoviesPagesLoaded
+                        : type === 'cartoon-series' ? this.cartoonSeriesPagesLoaded
                           : type === 'cartoon-movies' ? this.cartoonMoviesPagesLoaded
-                          : this.animePagesLoaded;
+                            : this.animePagesLoaded;
           const fetchPromises = [];
           for (let p = 1; p <= loadedVal; p++) {
             fetchPromises.push(API.getMovies(type, this.currentFilter, p, '', ''));
@@ -1215,12 +1212,12 @@ const App = {
 
     try {
       const categories = [
-        { id: 'fresh-drop',    label: 'Fresh Drop',           fallbackType: 'tv' },
-        { id: 'upcoming',      label: 'Upcoming',             fallbackType: 'tv' },
-        { id: 'anime',         label: 'Anime',                fallbackType: 'tv' },
-        { id: 'cartoon',       label: 'Animation & Cartoon',  fallbackType: 'tv' },
-        { id: 'movie',         label: 'Movies',               fallbackType: 'movie' },
-        { id: 'cartoon-movies', label: 'Cartoon Movies',      fallbackType: 'movie' }
+        { id: 'fresh-drop', label: 'Fresh Drop', fallbackType: 'tv' },
+        { id: 'upcoming', label: 'Upcoming', fallbackType: 'tv' },
+        { id: 'anime', label: 'Anime', fallbackType: 'tv' },
+        { id: 'cartoon', label: 'Animation & Cartoon', fallbackType: 'tv' },
+        { id: 'movie', label: 'Movies', fallbackType: 'movie' },
+        { id: 'cartoon-movies', label: 'Cartoon Movies', fallbackType: 'movie' }
       ];
 
       const fetchResults = {};
@@ -1476,158 +1473,6 @@ const App = {
     } else {
       this.grid.innerHTML = Array(12).fill('<div class="movie-card skeleton"></div>').join('');
     }
-  },
-
-  /**
-   * Live Search Suggestions Dropdown — ToonStream-style autocomplete
-   */
-  setupSearchSuggestions() {
-    const input = document.getElementById('movie-search');
-    const suggestionsBox = document.getElementById('search-suggestions');
-    if (!input || !suggestionsBox) return;
-
-    let suggestTimer = null;
-    let currentFocusIdx = -1;
-    let lastQuery = '';
-
-    const hideSuggestions = () => {
-      suggestionsBox.classList.remove('active');
-      suggestionsBox.innerHTML = '';
-      currentFocusIdx = -1;
-    };
-
-    const highlightItem = (items, idx) => {
-      items.forEach((el, i) => el.classList.toggle('focused', i === idx));
-      if (items[idx]) items[idx].scrollIntoView({ block: 'nearest' });
-    };
-
-    const buildSuggestionUrl = (item) => {
-      const type = item.type === 'movie' ? 'movie' : 'tv';
-      const id = item.id || '';
-      const slug = item.slug || (item.title || item.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      return `/watch/${type}/${id.startsWith('toon_') ? id : 'toon_' + slug}`;
-    };
-
-    const renderSuggestions = (results, query) => {
-      if (!results || results.length === 0) {
-        hideSuggestions();
-        return;
-      }
-
-      const top = results.slice(0, 6);
-      suggestionsBox.innerHTML = top.map(item => {
-        const title = item.title || item.name || 'Unknown';
-        const poster = item.poster || item.poster_path || '';
-        const type = item.type === 'movie' ? 'Movie' : 'Anime';
-        const year = item.year || item.release_date?.slice(0, 4) || item.first_air_date?.slice(0, 4) || '';
-        const url = buildSuggestionUrl(item);
-        const posterHtml = poster
-          ? `<img class="suggestion-poster" src="${poster}" alt="${title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'suggestion-poster-placeholder\\'><i class=\\'fas fa-film\\'></i></div>'">`
-          : `<div class="suggestion-poster-placeholder"><i class="fas fa-film"></i></div>`;
-
-        return `
-          <a class="suggestion-item" href="${url}" data-url="${url}">
-            ${posterHtml}
-            <div class="suggestion-info">
-              <div class="suggestion-title">${title}</div>
-              <div class="suggestion-meta">
-                <span class="suggestion-type">${type}</span>
-                ${year ? `<span class="suggestion-year">${year}</span>` : ''}
-              </div>
-            </div>
-          </a>`;
-      }).join('');
-
-      // "See all results" row
-      suggestionsBox.innerHTML += `
-        <div class="suggestion-see-all" id="suggestion-see-all">
-          <i class="fas fa-search" style="font-size:0.75rem;"></i>
-          See all results for "<strong>${query}</strong>"
-        </div>`;
-
-      suggestionsBox.classList.add('active');
-      currentFocusIdx = -1;
-
-      // "See all" click
-      const seeAll = document.getElementById('suggestion-see-all');
-      if (seeAll) {
-        seeAll.addEventListener('click', () => {
-          hideSuggestions();
-          this.searchQuery = query;
-          this.handleSearch();
-        });
-      }
-    };
-
-    // Input event — fetch suggestions with debounce
-    input.addEventListener('input', (e) => {
-      const query = e.target.value.trim();
-      clearTimeout(suggestTimer);
-      currentFocusIdx = -1;
-
-      if (query.length < 2) {
-        hideSuggestions();
-        lastQuery = '';
-        return;
-      }
-
-      // Show loading spinner instantly
-      suggestionsBox.innerHTML = `
-        <div class="suggestion-loading">
-          <div class="suggestion-spinner"></div>
-          Searching...
-        </div>`;
-      suggestionsBox.classList.add('active');
-
-      suggestTimer = setTimeout(async () => {
-        if (query !== input.value.trim()) return;
-        lastQuery = query;
-        try {
-          const searchType = this.animeSubFilter === 'cartoon' ? 'cartoon' : 'anime';
-          const data = await API.getMovies(searchType, 'trending', 1, query, '');
-          const results = (data && data.results) ? data.results.filter(m => m.poster || m.poster_path) : [];
-          if (input.value.trim() !== lastQuery) return;
-          renderSuggestions(results, query);
-        } catch (e) {
-          hideSuggestions();
-        }
-      }, 280);
-    });
-
-    // Keyboard navigation: Arrow Up/Down, Enter, Escape
-    input.addEventListener('keydown', (e) => {
-      const items = suggestionsBox.querySelectorAll('.suggestion-item');
-      if (!suggestionsBox.classList.contains('active')) return;
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        currentFocusIdx = Math.min(currentFocusIdx + 1, items.length - 1);
-        highlightItem(items, currentFocusIdx);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        currentFocusIdx = Math.max(currentFocusIdx - 1, 0);
-        highlightItem(items, currentFocusIdx);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (currentFocusIdx >= 0 && items[currentFocusIdx]) {
-          window.location.href = items[currentFocusIdx].dataset.url;
-        } else {
-          hideSuggestions();
-          this.searchQuery = input.value.trim();
-          this.handleSearch();
-        }
-      } else if (e.key === 'Escape') {
-        hideSuggestions();
-        input.blur();
-      }
-    });
-
-    // Hide suggestions when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!input.contains(e.target) && !suggestionsBox.contains(e.target)) {
-        hideSuggestions();
-      }
-    });
   },
 
   /**
@@ -2614,16 +2459,32 @@ const App = {
           // Inject Download & "Report Broken" buttons cleanly
           const dlContainer = document.getElementById('player-download-container');
           if (dlContainer) {
-            // PLACEHOLDER: Replace '#' with the path to your app file (e.g. '/app-release.apk' or direct link)
-            const downloadUrl = 'https://github.com/tayyabali778656/Cine-Stream-Web/releases/download/v1.0/CineStream.apk';
+            const dlBtnText = movie.type === 'movie' ? 'Download Movie' : 'Download Episode';
             dlContainer.innerHTML = `
-              <a href="${downloadUrl}" download class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); border: none; cursor: pointer; color: white;">
-                <i class="fas fa-mobile-alt"></i> Download App
-              </a>
+              <button id="player-dl-btn" class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); border: none; cursor: pointer; color: white;">
+                <i class="fas fa-download"></i> <span id="player-dl-text">${dlBtnText}</span>
+              </button>
               <select id="player-server-select" class="glass" 
                 style="outline: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 4px; color: white; background: #222; cursor: pointer; font-size: 0.85rem; font-family: 'Outfit', sans-serif; font-weight: 600; margin-left: 8px; display: none;">
               </select>
             `;
+
+            const dlBtn = document.getElementById('player-dl-btn');
+            if (dlBtn) {
+              dlBtn.onclick = () => {
+                if (this.activePlayer && this.activePlayer.sources && this.activePlayer.sources[this.activePlayer.currentIndex]) {
+                  let videoUrl = this.activePlayer.sources[this.activePlayer.currentIndex].url;
+                  if (videoUrl.includes('/iframe-proxy?url=')) {
+                    videoUrl = decodeURIComponent(videoUrl.split('/iframe-proxy?url=')[1]);
+                  }
+                  window.open(videoUrl, '_blank');
+                } else {
+                  // Fallback: Download App APK if no active video stream exists
+                  window.location.href = 'https://github.com/tayyabali778656/Cine-Stream-Web/releases/download/v1.0/CineStream.apk';
+                }
+              };
+            }
+
             const serverSelect = document.getElementById('player-server-select');
             if (serverSelect) {
               serverSelect.onchange = () => {
