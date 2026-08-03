@@ -2459,66 +2459,16 @@ const App = {
           // Inject Download & "Report Broken" buttons cleanly
           const dlContainer = document.getElementById('player-download-container');
           if (dlContainer) {
-            const dlBtnText = movie.type === 'movie' ? 'Download Movie' : 'Download Episode';
+            const downloadUrl = 'https://github.com/tayyabali778656/Cine-Stream-Web/releases/download/v1.0/CineStream.apk';
             dlContainer.innerHTML = `
-              <button id="player-dl-btn" class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); border: none; cursor: pointer; color: white;">
-                <i class="fas fa-download"></i> <span id="player-dl-text">${dlBtnText}</span>
-              </button>
+              <a href="${downloadUrl}" download class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); border: none; cursor: pointer; color: white;">
+                <i class="fas fa-mobile-alt"></i> Download App
+              </a>
               <select id="player-server-select" class="glass" 
                 style="outline: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 4px; color: white; background: #222; cursor: pointer; font-size: 0.85rem; font-family: 'Outfit', sans-serif; font-weight: 600; margin-left: 8px; display: none;">
               </select>
             `;
 
-            const dlBtn = document.getElementById('player-dl-btn');
-            if (dlBtn) {
-              dlBtn.onclick = () => {
-                if (this.activePlayer && this.activePlayer.sources && this.activePlayer.sources[this.activePlayer.currentIndex]) {
-                  let videoUrl = this.activePlayer.sources[this.activePlayer.currentIndex].url;
-                  if (videoUrl.includes('/iframe-proxy?url=')) {
-                    videoUrl = decodeURIComponent(videoUrl.split('/iframe-proxy?url=')[1]);
-                  }
-
-                  // Rewrite embed URLs to their download page counterparts
-                  try {
-                    const urlObj = new URL(videoUrl);
-                    if (urlObj.hostname.includes('streamruby') || urlObj.hostname.includes('rubystm')) {
-                      urlObj.pathname = urlObj.pathname.replace('/embed-', '/d/');
-                      videoUrl = urlObj.toString();
-                    } else if (urlObj.hostname.includes('strmup') || urlObj.hostname.includes('streamup')) {
-                      urlObj.pathname = urlObj.pathname.replace(/^\/(e|embed)\//, '/d/');
-                      videoUrl = urlObj.toString();
-                    } else if (urlObj.hostname.includes('upstream')) {
-                      urlObj.pathname = urlObj.pathname.replace('/embed-', '/d/');
-                      videoUrl = urlObj.toString();
-                    } else if (urlObj.hostname.includes('filemoon')) {
-                      urlObj.pathname = urlObj.pathname.replace(/^\/e\//, '/d/');
-                      videoUrl = urlObj.toString();
-                    } else if (urlObj.hostname.includes('vidmoly')) {
-                      urlObj.pathname = urlObj.pathname.replace('/embed-', '/d/').replace(/^\/w\//, '/d/');
-                      videoUrl = urlObj.toString();
-                    }
-                  } catch (e) {
-                    console.warn("URL rewrite failed for download:", e);
-                  }
-
-                  window.open(videoUrl, '_blank');
-                } else {
-                  // Fallback: Download App APK if no active video stream exists
-                  window.location.href = 'https://github.com/tayyabali778656/Cine-Stream-Web/releases/download/v1.0/CineStream.apk';
-                }
-              };
-            }
-
-            // Inject a user-friendly troubleshooting tip for expired embeds
-            const tipId = 'player-server-tip';
-            let tipEl = document.getElementById(tipId);
-            if (!tipEl) {
-              tipEl = document.createElement('div');
-              tipEl.id = tipId;
-              tipEl.style.cssText = 'font-size: 0.78rem; color: #ffaa00; margin-top: 8px; font-weight: 500; display: flex; align-items: center; gap: 6px; opacity: 0.9;';
-              tipEl.innerHTML = '<i class="fas fa-lightbulb"></i> <span>If you see "Expired/Invalid Embed" or loading fails, please switch the server from the dropdown above.</span>';
-              dlContainer.parentNode.appendChild(tipEl);
-            }
 
 
             const serverSelect = document.getElementById('player-server-select');

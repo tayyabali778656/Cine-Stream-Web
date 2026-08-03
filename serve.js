@@ -549,7 +549,11 @@ async function handleApiV1(req, res, pathname) {
 
       let episodes = [];
       const targetEp = dbEpisodes.find(ep => ep.season === season && ep.episode === episode);
-      if (dbEpisodes.length > 0 && targetEp && targetEp.sources && targetEp.sources.length > 0) {
+      
+      // Expire cached stream links after 6 hours since third-party embeds (strmup, streamruby, etc.) invalidate their URLs
+      const isFresh = targetEp && targetEp.updatedAt && (Date.now() - new Date(targetEp.updatedAt).getTime() < 6 * 60 * 60 * 1000);
+
+      if (dbEpisodes.length > 0 && targetEp && targetEp.sources && targetEp.sources.length > 0 && isFresh) {
         // Serve from DB directly
         episodes = dbEpisodes.map(ep => ({ ...ep }));
       } else {
@@ -562,14 +566,14 @@ async function handleApiV1(req, res, pathname) {
 
         if (!Array.isArray(episodes)) episodes = [];
 
-        // Save scraped episodes to MongoDB
+        // Save scraped episodes to MongoDB with timestamp
         if (episodes.length > 0) {
           try {
             const episodesCol = getCollection('episodes');
             const bulkOps = episodes.map(ep => ({
               updateOne: {
                 filter: { id: ep.id },
-                update: { $set: ep },
+                update: { $set: { ...ep, updatedAt: new Date() } },
                 upsert: true
               }
             }));
