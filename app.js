@@ -319,6 +319,14 @@ const App = {
     await this.resetAndFetch(true);
 
     const activeType = this.singleCategoryMode;
+
+    // Apply correct visibility for hero/recently-viewed on initial load
+    const seoHeroInit = document.getElementById('seo-hero');
+    const recentlyViewedInit = document.getElementById('recently-viewed-section');
+    if (activeType && activeType !== 'combined') {
+      if (seoHeroInit) seoHeroInit.style.display = 'none';
+      if (recentlyViewedInit) recentlyViewedInit.style.display = 'none';
+    }
     
     document.querySelectorAll('.category-filter-btn').forEach(btn => {
       if (btn.dataset.filterType === activeType) {
@@ -426,6 +434,19 @@ const App = {
 
         this.singleCategoryMode = filterType;
         localStorage.setItem('cinestream_active_filter', filterType);
+
+        // Show/hide hero and recently-viewed based on page
+        const seoHero = document.getElementById('seo-hero');
+        const recentlyViewedSection = document.getElementById('recently-viewed-section');
+        if (filterType === 'combined') {
+          // Home — restore visible elements
+          if (seoHero) seoHero.style.display = '';
+          this.renderRecentlyViewed(); // shows section only if history exists
+        } else {
+          // Category page (Anime / Cartoon / Movies) — hide hero sections
+          if (seoHero) seoHero.style.display = 'none';
+          if (recentlyViewedSection) recentlyViewedSection.style.display = 'none';
+        }
 
         this.fetchAndRenderBatch();
       });
@@ -633,6 +654,11 @@ const App = {
     const heading = document.getElementById('category-view-heading');
     if (heading) heading.style.display = 'none';
 
+    // Restore SEO hero and recently-viewed-section on Home (combined) mode
+    const seoHero = document.getElementById('seo-hero');
+    if (seoHero) seoHero.style.display = '';
+    this.renderRecentlyViewed(); // will show the section if history exists
+
     this.animeSubFilter = 'anime';
     const animeSelect = document.getElementById('anime-filter-select');
     if (animeSelect) {
@@ -668,6 +694,12 @@ const App = {
         btn.setAttribute('aria-pressed', 'false');
       }
     });
+
+    // Hide recently viewed section and SEO hero on single category pages
+    const recentlyViewed = document.getElementById('recently-viewed-section');
+    if (recentlyViewed) recentlyViewed.style.display = 'none';
+    const seoHero = document.getElementById('seo-hero');
+    if (seoHero) seoHero.style.display = 'none';
 
     this.singleCategoryMode = category;
     this.singleCategoryPage = 1;

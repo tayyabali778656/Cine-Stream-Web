@@ -349,7 +349,7 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
   } else if (type === 'anime-movies' || type === 'movie') {
     targetUrl = `/category/anime-movies/?page=${page}`;
   } else if (type === 'cartoon-series' || type === 'cartoon') {
-    targetUrl = `/category/cartoon-series/?page=${page}`;
+    targetUrl = `/category/cartoon/?page=${page}`;
   } else if (type === 'cartoon-movies') {
     targetUrl = `/category/cartoon-movies/?page=${page}`;
   } else if (type === 'upcoming' || type === 'fresh-drop') {
