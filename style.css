@@ -557,6 +557,7 @@ nav.scrolled {
   transition: box-shadow 0.3s ease;
   background: var(--bg-card);
   aspect-ratio: 2/3;
+  user-select: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
