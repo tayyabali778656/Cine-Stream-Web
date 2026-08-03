@@ -1596,12 +1596,10 @@ const requestHandler = async (req, res) => {
             </body>
             </html>
           `;
-          res.writeHead(200, {
-            'Content-Type': 'text/html',
+          compressAndSend(req, res, cleanPlayerHtml, 'text/html; charset=utf-8', {
             'Access-Control-Allow-Origin': '*',
             'Cache-Control': 'public, max-age=120, s-maxage=120, stale-while-revalidate=600'
           });
-          res.end(cleanPlayerHtml);
           return;
         }
 
@@ -1762,12 +1760,10 @@ const requestHandler = async (req, res) => {
           return attr + '="' + originBase + '/' + path + '"';
         });
 
-        res.writeHead(200, {
-          'Content-Type': 'text/html',
+        compressAndSend(req, res, html, 'text/html; charset=utf-8', {
           'Access-Control-Allow-Origin': '*',
           'Cache-Control': 'public, max-age=120, s-maxage=120, stale-while-revalidate=600'
         });
-        res.end(html);
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('Proxy error: ' + err.message);
