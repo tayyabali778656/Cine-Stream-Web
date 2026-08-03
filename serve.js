@@ -35,6 +35,10 @@ const { applySecurityHeaders, applyCors, applyRateLimit } = require('./middlewar
 const PORT = config.port;
 const PUBLIC_DIR = __dirname;
 
+// ── In-memory cache for iframe-proxy HLS resolutions (10-min TTL) ────────────
+const iframeProxyCache = new Map(); // url → { result, expiry }
+const PROXY_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
 // ── MIME types ────────────────────────────────────────────────────────────────
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -1536,8 +1540,17 @@ const requestHandler = async (req, res) => {
       };
 
       try {
-        // Attempt to resolve the direct HLS stream first
-        const result = await resolveHlsStream(targetUrl);
+        // Check in-memory cache first to skip expensive server-side fetches
+        let result;
+        const cacheEntry = iframeProxyCache.get(targetUrl);
+        if (cacheEntry && cacheEntry.expiry > Date.now()) {
+          result = cacheEntry.result;
+        } else {
+          // Attempt to resolve the direct HLS stream first
+          result = await resolveHlsStream(targetUrl);
+          iframeProxyCache.set(targetUrl, { result, expiry: Date.now() + PROXY_CACHE_TTL_MS });
+        }
+
         if (result && result.hlsUrl) {
           logger.info('Resolved direct HLS stream for player proxy', { targetUrl, hlsUrl: result.hlsUrl });
           const cleanPlayerHtml = `

@@ -136,7 +136,7 @@ class StreamPlayer {
     iframe.setAttribute('allowfullscreen', '');
     iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
     iframe.style.cssText = 'width:100%;height:100%;border:none;';
-    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('loading', 'eager');
 
     // Clear timeout once iframe fires load (doesn't guarantee stream plays)
     iframe.onload = () => {
