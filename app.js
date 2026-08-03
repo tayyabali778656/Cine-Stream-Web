@@ -2477,6 +2477,30 @@ const App = {
                   if (videoUrl.includes('/iframe-proxy?url=')) {
                     videoUrl = decodeURIComponent(videoUrl.split('/iframe-proxy?url=')[1]);
                   }
+
+                  // Rewrite embed URLs to their download page counterparts
+                  try {
+                    const urlObj = new URL(videoUrl);
+                    if (urlObj.hostname.includes('streamruby') || urlObj.hostname.includes('rubystm')) {
+                      urlObj.pathname = urlObj.pathname.replace('/embed-', '/d/');
+                      videoUrl = urlObj.toString();
+                    } else if (urlObj.hostname.includes('strmup') || urlObj.hostname.includes('streamup')) {
+                      urlObj.pathname = urlObj.pathname.replace(/^\/(e|embed)\//, '/d/');
+                      videoUrl = urlObj.toString();
+                    } else if (urlObj.hostname.includes('upstream')) {
+                      urlObj.pathname = urlObj.pathname.replace('/embed-', '/d/');
+                      videoUrl = urlObj.toString();
+                    } else if (urlObj.hostname.includes('filemoon')) {
+                      urlObj.pathname = urlObj.pathname.replace(/^\/e\//, '/d/');
+                      videoUrl = urlObj.toString();
+                    } else if (urlObj.hostname.includes('vidmoly')) {
+                      urlObj.pathname = urlObj.pathname.replace('/embed-', '/d/').replace(/^\/w\//, '/d/');
+                      videoUrl = urlObj.toString();
+                    }
+                  } catch (e) {
+                    console.warn("URL rewrite failed for download:", e);
+                  }
+
                   window.open(videoUrl, '_blank');
                 } else {
                   // Fallback: Download App APK if no active video stream exists
@@ -2484,6 +2508,18 @@ const App = {
                 }
               };
             }
+
+            // Inject a user-friendly troubleshooting tip for expired embeds
+            const tipId = 'player-server-tip';
+            let tipEl = document.getElementById(tipId);
+            if (!tipEl) {
+              tipEl = document.createElement('div');
+              tipEl.id = tipId;
+              tipEl.style.cssText = 'font-size: 0.78rem; color: #ffaa00; margin-top: 8px; font-weight: 500; display: flex; align-items: center; gap: 6px; opacity: 0.9;';
+              tipEl.innerHTML = '<i class="fas fa-lightbulb"></i> <span>If you see "Expired/Invalid Embed" or loading fails, please switch the server from the dropdown above.</span>';
+              dlContainer.parentNode.appendChild(tipEl);
+            }
+
 
             const serverSelect = document.getElementById('player-server-select');
             if (serverSelect) {
