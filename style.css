@@ -434,7 +434,7 @@ nav.scrolled {
 /* Mobile Responsive Navbar */
 @media (max-width: 768px) {
   body {
-    padding-top: 120px;
+    padding-top: 105px;
   }
   nav {
     height: auto;
