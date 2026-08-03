@@ -40,6 +40,26 @@
       "dest": "/_vercel/$1"
     },
     {
+      "src": "/(.*)\\.env(.*)",
+      "status": 404
+    },
+    {
+      "src": "/\\.git(.*)",
+      "status": 404
+    },
+    {
+      "src": "/(.*)\\.php(.*)",
+      "status": 404
+    },
+    {
+      "src": "/wp-(.*)",
+      "status": 404
+    },
+    {
+      "src": "/xmlrpc(.*)",
+      "status": 404
+    },
+    {
       "src": "/api/(.*)",
       "dest": "serve.js"
     },
