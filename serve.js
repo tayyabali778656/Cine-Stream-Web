@@ -1875,7 +1875,8 @@ const requestHandler = async (req, res) => {
         compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400' });
         logger.request(req, 200, Date.now() - startMs);
         return;
-
+      } catch (err) {
+        logger.warn('genre_seo_error', { message: err.message });
       }
     }
 
