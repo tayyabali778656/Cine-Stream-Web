@@ -1267,7 +1267,7 @@ const requestHandler = async (req, res) => {
 
       if (fs.existsSync(staticPath)) {
         // Serve the pre-generated static file — fastest path, no API calls needed
-        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
         res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
         fs.createReadStream(staticPath).pipe(res);
         logger.request(req, 200, Date.now() - startMs);
@@ -1875,7 +1875,7 @@ const requestHandler = async (req, res) => {
         const buf = Buffer.from(injected, 'utf8');
         res.writeHead(200, {
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
         });
         res.end(buf);
         logger.request(req, 200, Date.now() - startMs);
@@ -2318,7 +2318,7 @@ const requestHandler = async (req, res) => {
         const buf = Buffer.from(injected, 'utf8');
         res.writeHead(200, {
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=1800, stale-while-revalidate=3600',
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
         });
         res.end(buf);
         logger.request(req, 200, Date.now() - startMs);
