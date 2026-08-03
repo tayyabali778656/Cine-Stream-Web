@@ -2094,3 +2094,9 @@ label,
   }
 }
 
+/* Hide back button when watching the video player */
+.modal-overlay.watching .modal-body-back-btn {
+  display: none !important;
+}
+
+
