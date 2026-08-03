@@ -650,13 +650,22 @@ nav.scrolled {
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.58rem;
   font-weight: 700;
   text-transform: uppercase;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   z-index: 2;
+}
+
+@media (max-width: 768px) {
+  .type-badge {
+    top: 6px;
+    left: 6px;
+    padding: 1px 3px;
+    font-size: 0.48rem;
+  }
 }
 
 /* Day badge for upcoming cards — top-right corner */
