@@ -2460,7 +2460,7 @@ const App = {
           const dlContainer = document.getElementById('player-download-container');
           if (dlContainer) {
             // PLACEHOLDER: Replace '#' with the path to your app file (e.g. '/app-release.apk' or direct link)
-            const downloadUrl = 'https://github.com/tayyabali77865/cinestream/releases/download/v1.0/CineStream.apk';
+            const downloadUrl = 'https://github.com/tayyabali778656/Cine-Stream-Web/releases/download/v1.0/CineStream.apk';
             dlContainer.innerHTML = `
               <a href="${downloadUrl}" download class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); border: none; cursor: pointer; color: white;">
                 <i class="fas fa-mobile-alt"></i> Download App
