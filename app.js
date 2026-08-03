@@ -320,12 +320,10 @@ const App = {
 
     const activeType = this.singleCategoryMode;
 
-    // Apply correct visibility for hero/recently-viewed on initial load
+    // Apply correct visibility for hero on initial load (recently-viewed always stays visible)
     const seoHeroInit = document.getElementById('seo-hero');
-    const recentlyViewedInit = document.getElementById('recently-viewed-section');
     if (activeType && activeType !== 'combined') {
       if (seoHeroInit) seoHeroInit.style.display = 'none';
-      if (recentlyViewedInit) recentlyViewedInit.style.display = 'none';
     }
     
     document.querySelectorAll('.category-filter-btn').forEach(btn => {
@@ -435,17 +433,13 @@ const App = {
         this.singleCategoryMode = filterType;
         localStorage.setItem('cinestream_active_filter', filterType);
 
-        // Show/hide hero and recently-viewed based on page
+        // Show/hide SEO hero based on page (recently-viewed always stays visible)
         const seoHero = document.getElementById('seo-hero');
-        const recentlyViewedSection = document.getElementById('recently-viewed-section');
         if (filterType === 'combined') {
-          // Home — restore visible elements
           if (seoHero) seoHero.style.display = '';
-          this.renderRecentlyViewed(); // shows section only if history exists
+          this.renderRecentlyViewed();
         } else {
-          // Category page (Anime / Cartoon / Movies) — hide hero sections
           if (seoHero) seoHero.style.display = 'none';
-          if (recentlyViewedSection) recentlyViewedSection.style.display = 'none';
         }
 
         this.fetchAndRenderBatch();
@@ -695,9 +689,7 @@ const App = {
       }
     });
 
-    // Hide recently viewed section and SEO hero on single category pages
-    const recentlyViewed = document.getElementById('recently-viewed-section');
-    if (recentlyViewed) recentlyViewed.style.display = 'none';
+    // Hide SEO hero only on single category pages (recently-viewed stays visible)
     const seoHero = document.getElementById('seo-hero');
     if (seoHero) seoHero.style.display = 'none';
 
@@ -1087,6 +1079,27 @@ const App = {
         batchContainer.style.display = 'contents';
         batchContainer.innerHTML = cardsHtml;
         this.grid.appendChild(batchContainer);
+
+        // Pad incomplete last row with invisible cards so View More button
+        // always appears below a complete row
+        requestAnimationFrame(() => {
+          const gridStyle = window.getComputedStyle(this.grid);
+          const cols = gridStyle.getPropertyValue('grid-template-columns')
+            .split(' ').filter(s => s.trim()).length || 1;
+          const totalCards = this.grid.querySelectorAll('.movie-card:not(.skeleton)').length;
+          const remainder = totalCards % cols;
+          // Remove old placeholders first
+          this.grid.querySelectorAll('.movie-card-placeholder').forEach(p => p.remove());
+          if (remainder !== 0) {
+            const needed = cols - remainder;
+            for (let i = 0; i < needed; i++) {
+              const ph = document.createElement('div');
+              ph.className = 'movie-card-placeholder';
+              ph.setAttribute('aria-hidden', 'true');
+              this.grid.appendChild(ph);
+            }
+          }
+        });
 
         // Restore scroll position if saved on page reload
         const savedScroll = parseInt(sessionStorage.getItem('s_scrollTop') || '0', 10);

@@ -565,6 +565,13 @@ nav.scrolled {
   will-change: transform, box-shadow;
 }
 
+/* Invisible filler cards to complete the last grid row before View More button */
+.movie-card-placeholder {
+  aspect-ratio: 2/3;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .movie-card:hover {
   box-shadow: var(--shadow-premium);
   z-index: 10;
