@@ -1872,16 +1872,10 @@ const requestHandler = async (req, res) => {
           .replace('<div id="seo-content-area"></div>', `<div id="seo-content-area">${collectionContent}</div>`)
           .replace('<script id="ld-collection-dynamic" type="application/ld+json"></script>', `<script id="ld-collection-dynamic" type="application/ld+json">${JSON.stringify(collectionSchema)}</script>`);
 
-        const buf = Buffer.from(injected, 'utf8');
-        res.writeHead(200, {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
-        });
-        res.end(buf);
+        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400' });
         logger.request(req, 200, Date.now() - startMs);
         return;
-      } catch (err) {
-        logger.warn('genre_seo_error', { message: err.message });
+
       }
     }
 
@@ -2315,12 +2309,7 @@ const requestHandler = async (req, res) => {
 
 
 
-        const buf = Buffer.from(injected, 'utf8');
-        res.writeHead(200, {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
-        });
-        res.end(buf);
+        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400' });
         logger.request(req, 200, Date.now() - startMs);
         return;
       } catch (seoErr) {
@@ -2408,12 +2397,7 @@ const requestHandler = async (req, res) => {
             `<script id="ld-dynamic" type="application/ld+json">${jsonLd}</script>`
           );
 
-        const buf = Buffer.from(injected, 'utf8');
-        res.writeHead(200, {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600',
-        });
-        res.end(buf);
+        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400' });
         logger.request(req, 200, Date.now() - startMs);
         return;
       } catch (seoErr) {
