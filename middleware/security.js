@@ -19,7 +19,7 @@ const STREAMING_SOURCES = [
 
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://pagead2.googlesyndication.com https://*.adtrafficquality.google https://cdn.jsdelivr.net https://*.effectivecpmnetwork.com https://*.highperformanceformat.com https://*.5gvci.com https://5gvci.com https://*.n6wxm.com https://n6wxm.com https://*.nap5k.com https://nap5k.com 'unsafe-inline' 'unsafe-eval'`,
+  `script-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://*.adtrafficquality.google https://cdn.jsdelivr.net https://*.effectivecpmnetwork.com https://*.highperformanceformat.com https://*.5gvci.com https://5gvci.com https://*.n6wxm.com https://n6wxm.com https://*.nap5k.com https://nap5k.com 'unsafe-inline' 'unsafe-eval'`,
   `style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com 'unsafe-inline'`,
   `font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:`,
   `img-src 'self' https: http: data: blob:`,
