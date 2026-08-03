@@ -477,6 +477,10 @@ const App = {
 
     // Modal close events
     document.getElementById('close-modal').addEventListener('click', () => this.closeModal());
+    const bodyBackBtn = document.getElementById('modal-back-to-home');
+    if (bodyBackBtn) {
+      bodyBackBtn.addEventListener('click', () => this.closeModal());
+    }
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.closeModal();
     });

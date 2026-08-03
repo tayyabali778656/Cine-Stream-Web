@@ -474,8 +474,7 @@
         <label for="movie-search" class="sr-only">Search anime</label>
         <span class="search-icon-wrapper" aria-hidden="true"><i class="fas fa-search"></i></span>
         <input type="search" id="movie-search" name="q" placeholder="Search anime..." autocomplete="off"
-          aria-label="Search anime" aria-autocomplete="list" aria-controls="search-suggestions">
-        <div id="search-suggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions"></div>
+          aria-label="Search anime">
       </form>
 
       <a href="/app" class="apk-download-btn" aria-label="Download Android App">
@@ -665,7 +664,11 @@
       </button>
 
       <div class="modal-body">
+        <button id="modal-back-to-home" class="modal-body-back-btn" aria-label="Go Back">
+          <i class="fas fa-arrow-left"></i>
+        </button>
         <div class="modal-poster-container">
+
           <img id="modal-poster" src="" alt="Movie poster" class="modal-poster" loading="lazy" decoding="async">
           <div class="mobile-only-meta"
             style="display: none; justify-content: center; gap: 15px; margin-top: 10px; font-weight: 600; font-size: 0.9rem;">
@@ -809,7 +812,7 @@
       window.addEventListener('load', () => {
         // Race service worker registration against a 1-second timeout to handle ad-blockers instantly
         const registerPromise = navigator.serviceWorker.register('/sw.js');
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('SW_TIMEOUT')), 1000)
         );
 
