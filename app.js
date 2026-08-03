@@ -376,6 +376,9 @@ const App = {
       });
     }
 
+    // Setup live search suggestions dropdown
+    this.setupSearchSuggestions();
+
     // Category Filter Buttons (Fresh Drop, Anime Series, Anime Movies, Cartoon Series, Cartoon Movies)
     const categoryBtns = document.querySelectorAll('.category-filter-btn');
     categoryBtns.forEach(btn => {
@@ -1473,6 +1476,158 @@ const App = {
     } else {
       this.grid.innerHTML = Array(12).fill('<div class="movie-card skeleton"></div>').join('');
     }
+  },
+
+  /**
+   * Live Search Suggestions Dropdown — ToonStream-style autocomplete
+   */
+  setupSearchSuggestions() {
+    const input = document.getElementById('movie-search');
+    const suggestionsBox = document.getElementById('search-suggestions');
+    if (!input || !suggestionsBox) return;
+
+    let suggestTimer = null;
+    let currentFocusIdx = -1;
+    let lastQuery = '';
+
+    const hideSuggestions = () => {
+      suggestionsBox.classList.remove('active');
+      suggestionsBox.innerHTML = '';
+      currentFocusIdx = -1;
+    };
+
+    const highlightItem = (items, idx) => {
+      items.forEach((el, i) => el.classList.toggle('focused', i === idx));
+      if (items[idx]) items[idx].scrollIntoView({ block: 'nearest' });
+    };
+
+    const buildSuggestionUrl = (item) => {
+      const type = item.type === 'movie' ? 'movie' : 'tv';
+      const id = item.id || '';
+      const slug = item.slug || (item.title || item.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      return `/watch/${type}/${id.startsWith('toon_') ? id : 'toon_' + slug}`;
+    };
+
+    const renderSuggestions = (results, query) => {
+      if (!results || results.length === 0) {
+        hideSuggestions();
+        return;
+      }
+
+      const top = results.slice(0, 6);
+      suggestionsBox.innerHTML = top.map(item => {
+        const title = item.title || item.name || 'Unknown';
+        const poster = item.poster || item.poster_path || '';
+        const type = item.type === 'movie' ? 'Movie' : 'Anime';
+        const year = item.year || item.release_date?.slice(0, 4) || item.first_air_date?.slice(0, 4) || '';
+        const url = buildSuggestionUrl(item);
+        const posterHtml = poster
+          ? `<img class="suggestion-poster" src="${poster}" alt="${title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'suggestion-poster-placeholder\\'><i class=\\'fas fa-film\\'></i></div>'">`
+          : `<div class="suggestion-poster-placeholder"><i class="fas fa-film"></i></div>`;
+
+        return `
+          <a class="suggestion-item" href="${url}" data-url="${url}">
+            ${posterHtml}
+            <div class="suggestion-info">
+              <div class="suggestion-title">${title}</div>
+              <div class="suggestion-meta">
+                <span class="suggestion-type">${type}</span>
+                ${year ? `<span class="suggestion-year">${year}</span>` : ''}
+              </div>
+            </div>
+          </a>`;
+      }).join('');
+
+      // "See all results" row
+      suggestionsBox.innerHTML += `
+        <div class="suggestion-see-all" id="suggestion-see-all">
+          <i class="fas fa-search" style="font-size:0.75rem;"></i>
+          See all results for "<strong>${query}</strong>"
+        </div>`;
+
+      suggestionsBox.classList.add('active');
+      currentFocusIdx = -1;
+
+      // "See all" click
+      const seeAll = document.getElementById('suggestion-see-all');
+      if (seeAll) {
+        seeAll.addEventListener('click', () => {
+          hideSuggestions();
+          this.searchQuery = query;
+          this.handleSearch();
+        });
+      }
+    };
+
+    // Input event — fetch suggestions with debounce
+    input.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      clearTimeout(suggestTimer);
+      currentFocusIdx = -1;
+
+      if (query.length < 2) {
+        hideSuggestions();
+        lastQuery = '';
+        return;
+      }
+
+      // Show loading spinner instantly
+      suggestionsBox.innerHTML = `
+        <div class="suggestion-loading">
+          <div class="suggestion-spinner"></div>
+          Searching...
+        </div>`;
+      suggestionsBox.classList.add('active');
+
+      suggestTimer = setTimeout(async () => {
+        if (query !== input.value.trim()) return;
+        lastQuery = query;
+        try {
+          const searchType = this.animeSubFilter === 'cartoon' ? 'cartoon' : 'anime';
+          const data = await API.getMovies(searchType, 'trending', 1, query, '');
+          const results = (data && data.results) ? data.results.filter(m => m.poster || m.poster_path) : [];
+          if (input.value.trim() !== lastQuery) return;
+          renderSuggestions(results, query);
+        } catch (e) {
+          hideSuggestions();
+        }
+      }, 280);
+    });
+
+    // Keyboard navigation: Arrow Up/Down, Enter, Escape
+    input.addEventListener('keydown', (e) => {
+      const items = suggestionsBox.querySelectorAll('.suggestion-item');
+      if (!suggestionsBox.classList.contains('active')) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        currentFocusIdx = Math.min(currentFocusIdx + 1, items.length - 1);
+        highlightItem(items, currentFocusIdx);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        currentFocusIdx = Math.max(currentFocusIdx - 1, 0);
+        highlightItem(items, currentFocusIdx);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (currentFocusIdx >= 0 && items[currentFocusIdx]) {
+          window.location.href = items[currentFocusIdx].dataset.url;
+        } else {
+          hideSuggestions();
+          this.searchQuery = input.value.trim();
+          this.handleSearch();
+        }
+      } else if (e.key === 'Escape') {
+        hideSuggestions();
+        input.blur();
+      }
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!input.contains(e.target) && !suggestionsBox.contains(e.target)) {
+        hideSuggestions();
+      }
+    });
   },
 
   /**
