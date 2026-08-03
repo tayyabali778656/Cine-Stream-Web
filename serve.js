@@ -325,7 +325,7 @@ async function buildSitemap() {
       const filteredItems = animeItems.filter(item => {
         const ratingVal = parseFloat(item.rating || item.vote_average || 0);
         const yearVal = parseInt(item.release_year || 0, 10);
-        return ratingVal >= 7.5 || yearVal >= 2025;
+        return ratingVal >= 6.0 || yearVal >= 2023;
       });
 
       for (const item of filteredItems) {
