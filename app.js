@@ -820,6 +820,10 @@ const App = {
   async fetchAndRenderBatch() {
     if (this._isLoadingFeed) return;
     this._isLoadingFeed = true;
+
+    const initialMode = this.singleCategoryMode;
+    const initialFilter = this.currentFilter;
+
     const isMobile = window.innerWidth <= 768;
     const blockSize = isMobile ? 7 : 10;
     const fMap = { 'trending': 'Trending', 'popular': 'Popular', 'top_rated': 'Top Rated', 'upcoming': 'Upcoming' };
@@ -975,6 +979,12 @@ const App = {
           }
         }
 
+        // Race condition check: abort if mode/filter has changed during fetch
+        if (this.singleCategoryMode !== initialMode || this.currentFilter !== initialFilter) {
+          this._isLoadingFeed = false;
+          return;
+        }
+
         if (type === 'fresh-drop') { this.freshDropPage = currentPagePointer; }
         else if (type === 'upcoming') { this.upcomingPage = currentPagePointer; }
         else if (type === 'anime') { this.animePage = currentPagePointer; }
@@ -1085,13 +1095,25 @@ const App = {
         // Pad incomplete last row with invisible cards so View More button
         // always appears below a complete row
         requestAnimationFrame(() => {
-          const gridStyle = window.getComputedStyle(this.grid);
-          const cols = gridStyle.getPropertyValue('grid-template-columns')
-            .split(' ').filter(s => s.trim()).length || 1;
-          const totalCards = this.grid.querySelectorAll('.movie-card:not(.skeleton)').length;
-          const remainder = totalCards % cols;
           // Remove old placeholders first
           this.grid.querySelectorAll('.movie-card-placeholder').forEach(p => p.remove());
+
+          const remainingCards = Array.from(this.grid.querySelectorAll('.movie-card:not(.skeleton)'));
+          if (remainingCards.length === 0) return;
+
+          const firstOffsetTop = remainingCards[0].offsetTop;
+          let cols = 0;
+          for (const card of remainingCards) {
+            if (card.offsetTop === firstOffsetTop) {
+              cols++;
+            } else {
+              break;
+            }
+          }
+          if (cols === 0) cols = 1;
+
+          const totalCards = remainingCards.length;
+          const remainder = totalCards % cols;
           if (remainder !== 0) {
             const needed = cols - remainder;
             for (let i = 0; i < needed; i++) {
@@ -1217,6 +1239,12 @@ const App = {
       });
 
       await Promise.all(fetchPromises);
+
+      // Race condition check: abort if mode/filter has changed during fetch
+      if (this.singleCategoryMode !== initialMode || this.currentFilter !== initialFilter) {
+        this._isLoadingFeed = false;
+        return;
+      }
 
       const renderRow = (cat) => {
         const items = fetchResults[cat.id] || [];
