@@ -298,12 +298,12 @@ const App = {
       }
       stalePostKeys.forEach(k => localStorage.removeItem(k));
     } catch (e) { }
-    // Clear old mv5_ prefixed localStorage caches only (NOT recently_viewed)
+    // Clear old mv5_ and v8_ prefixed localStorage caches only (NOT recently_viewed)
     try {
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith('mv5_')) {
+        if (key && (key.startsWith('mv5_') || key.startsWith('v8_'))) {
           keysToRemove.push(key);
         }
       }
@@ -831,7 +831,8 @@ const App = {
 
     if (this.singleCategoryMode && this.singleCategoryMode !== 'combined') {
       const type = this.singleCategoryMode;
-      const targetSize = type === 'upcoming' ? 100 : 30;
+      const targetSize = 20;
+
 
       const skeletons = [];
       for (let i = 0; i < 12; i++) {
@@ -1001,16 +1002,28 @@ const App = {
 
         const itemsToRender = isFirstLoad ? pool.splice(0, currentTargetSize) : pool.splice(0, targetSize);
         if (itemsToRender.length === 0) {
-          if (this.grid.children.length === 0) {
+          // Remove ALL skeletons and placeholders so the empty state msg starts on the next row
+          this.grid.querySelectorAll('.movie-card.skeleton').forEach(s => s.remove());
+          this.grid.querySelectorAll('.movie-card-placeholder').forEach(p => p.remove());
+
+          const loadMoreContainer = document.getElementById('load-more-container');
+          if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+
+          if (type === 'upcoming') {
+            if (!this.grid.querySelector('.empty-state-msg')) {
+              const emptyDiv = document.createElement('div');
+              emptyDiv.className = 'empty-state-msg';
+              emptyDiv.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 1.2rem; font-weight: 600; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; margin-top: 1rem;';
+              emptyDiv.textContent = 'Empty';
+              this.grid.appendChild(emptyDiv);
+            }
+          } else if (this.grid.querySelectorAll('.movie-card').length === 0) {
             this.grid.innerHTML = `
               <div style="grid-column: 1 / -1; text-align: center; padding: 5rem 2rem; color: var(--text-muted); font-size: 1.5rem; font-weight: 600; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px;">
                 Not Found
               </div>
             `;
-          }
-          const loadMoreContainer = document.getElementById('load-more-container');
-          if (loadMoreContainer) loadMoreContainer.style.display = 'none';
-          if (type === 'fresh-drop' || type === 'upcoming') {
+          } else if (type === 'fresh-drop') {
             this._tryFallbackFilter();
           }
           return;
@@ -1133,7 +1146,7 @@ const App = {
         // Auto-scan visible category items for 404 links in background
         this.scanFeedForBrokenVideos(itemsToRender);
 
-        const isInfiniteType = type === 'fresh-drop' || type === 'upcoming';
+        const isInfiniteType = false;
         let loadMoreContainer = document.getElementById('load-more-container');
 
         if (isInfiniteType) {
@@ -1842,8 +1855,7 @@ const App = {
       const soundToggle = document.getElementById('sound-toggle');
       const backBtn = document.getElementById('back-to-details');
 
-      // Sync admin cache in background (respects throttle and uses local storage cache if available)
-      this.syncDatabaseCache(false).catch(() => { });
+      // Details fetched directly below; DB cache synced in background by init only
 
       const adminStore = this.adminCache || {};
       const getLocalMovie = () => {

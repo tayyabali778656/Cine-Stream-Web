@@ -5,7 +5,7 @@
 window.API_CONFIG = {
   API_BASE: '/api/v1',
   CACHE_TIME: 300000,   // 5 minutes for browse data
-  CACHE_VERSION: 'v8', // bump this to invalidate ALL old cached entries
+  CACHE_VERSION: 'v9', // bump this to invalidate ALL old cached entries
 };
 
 const API = {

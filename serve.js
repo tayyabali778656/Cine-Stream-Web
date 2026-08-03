@@ -70,7 +70,7 @@ const COMPRESSIBLE = new Set([
 
 // Cache-Control values per file type
 const CACHE_CONTROL = {
-  '.html': 'no-store, no-cache, must-revalidate, max-age=0',
+  '.html': 'public, max-age=0, s-maxage=86400, stale-while-revalidate=3600',
   '.css': 'public, max-age=31536000, immutable',
   '.js': 'public, max-age=31536000, immutable',
   '.json': 'no-store', // catalog JSONs should NOT be cached by browser
@@ -626,15 +626,39 @@ async function handleApiV1(req, res, pathname) {
     const cacheKey = `list_${type}_${page}_${filter}_${genre}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) {
-      sendJson(res, 200, cachedData, 'public, max-age=120, s-maxage=1800, stale-while-revalidate=3600');
+      sendJson(res, 200, cachedData, 'public, max-age=120, s-maxage=3600, stale-while-revalidate=7200');
       return;
+    }
+
+    // Try MongoDB persistent cache to avoid ToonStream scraping latency on new sessions/cold starts
+    try {
+      if (isConnected()) {
+        const dbCached = await getCollection('listings_cache').findOne({ id: cacheKey });
+        if (dbCached && (Date.now() - dbCached.timestamp) < 60 * 60 * 1000) {
+          cache.set(cacheKey, dbCached.data, 60 * 60 * 1000);
+          sendJson(res, 200, dbCached.data, 'public, max-age=120, s-maxage=3600, stale-while-revalidate=7200');
+          return;
+        }
+      }
+    } catch (dbErr) {
+      logger.warn('Failed to query listings_cache from MongoDB:', dbErr.message);
     }
 
     try {
       const data = await liveSvc.getLiveAnimeList(filter, page, type, genre);
-      // Cache lists for 15 minutes to enable instant category switching
-      cache.set(cacheKey, data, 15 * 60 * 1000);
-      sendJson(res, 200, data, 'public, max-age=120, s-maxage=1800, stale-while-revalidate=3600');
+      // Cache lists for 60 minutes for fast repeat loads
+      cache.set(cacheKey, data, 60 * 60 * 1000);
+
+      // Save to MongoDB in background
+      if (isConnected()) {
+        getCollection('listings_cache').updateOne(
+          { id: cacheKey },
+          { $set: { id: cacheKey, data, timestamp: Date.now() } },
+          { upsert: true }
+        ).catch(e => logger.warn('Failed to save listing to MongoDB cache:', e.message));
+      }
+
+      sendJson(res, 200, data, 'public, max-age=120, s-maxage=3600, stale-while-revalidate=7200');
     } catch (err) {
       sendJson(res, 500, { error: err.message });
     }

@@ -230,12 +230,10 @@ body {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -316,9 +314,7 @@ nav {
 }
 
 nav.scrolled {
-  background: rgba(15, 15, 15, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #0f0f0f;
   border-bottom: 1px solid var(--glass-border);
   height: 110px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
@@ -558,11 +554,10 @@ nav.scrolled {
   border-radius: var(--border-radius);
   overflow: hidden;
   cursor: pointer;
-  transition: var(--transition-smooth);
+  transition: box-shadow 0.3s ease;
   background: var(--bg-card);
   aspect-ratio: 2/3;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  will-change: transform, box-shadow;
 }
 
 /* Invisible filler cards to complete the last grid row before View More button */
@@ -689,8 +684,8 @@ nav.scrolled {
   right: 0;
   background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.0) 100%);
   color: rgba(255,255,255,0.92);
-  padding: 6px 8px 4px;
-  font-size: 0.65rem;
+  padding: 4px 6px 3px;
+  font-size: 0.55rem;
   font-weight: 600;
   text-align: center;
   letter-spacing: 0.02em;
@@ -749,7 +744,7 @@ nav.scrolled {
   font-family: 'Outfit', sans-serif;
   font-weight: 600;
   font-size: 0.8rem;
-  transition: all var(--transition-smooth);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   height: 34px;
   flex-shrink: 0;
@@ -759,7 +754,6 @@ nav.scrolled {
 .category-filter-btn.active {
   background: var(--primary);
   border-color: var(--primary);
-  transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
 }
 
@@ -1393,8 +1387,18 @@ nav.scrolled {
   }
 
   .footer-links {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     justify-content: center;
-    gap: 15px 30px;
+    align-items: center;
+    gap: 15px;
+  }
+  .footer-links strong {
+    display: none !important;
+  }
+  .footer-links a {
+    font-size: 0.8rem !important;
   }
 
   .footer-bottom {
@@ -1905,13 +1909,17 @@ nav.scrolled {
   left: 10px;
   background: var(--primary);
   color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.58rem;
   font-weight: 700;
   z-index: 2;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: calc(100% - 20px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .day-badge {
@@ -1932,10 +1940,10 @@ nav.scrolled {
 
 @media (max-width: 768px) {
   .schedule-badge {
-    bottom: 6px;
-    left: 6px;
-    padding: 2px 5px;
-    font-size: 0.55rem;
+    bottom: 4px;
+    left: 4px;
+    padding: 1px 3px;
+    font-size: 0.48rem;
   }
 
   .day-badge {

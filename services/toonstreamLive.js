@@ -352,8 +352,10 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
     targetUrl = `/category/cartoon/?page=${page}`;
   } else if (type === 'cartoon-movies') {
     targetUrl = `/category/cartoon?type=movies&page=${page}`;
-  } else if (type === 'upcoming' || type === 'fresh-drop') {
+  } else if (type === 'upcoming') {
     targetUrl = '/home';
+  } else if (type === 'fresh-drop') {
+    targetUrl = page === 1 ? '/home' : `/category/anime/?page=${page}`;
   } else {
     // Default to anime category (e.g. type === 'anime' or default)
     targetUrl = `/category/anime/?page=${page}`;
@@ -505,14 +507,21 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
   const results = parseCardsFromHtml(html, isCartoon);
 
   if (type === 'fresh-drop') {
-    const pageSize = 30;
-    const startIndex = (page - 1) * pageSize;
-    const paginatedResults = results.slice(startIndex, startIndex + pageSize);
-    return {
-      results: paginatedResults,
-      page,
-      total_pages: Math.ceil(results.length / pageSize) || 1
-    };
+    if (page === 1) {
+      const pageSize = 30;
+      const paginatedResults = results.slice(0, pageSize);
+      return {
+        results: paginatedResults,
+        page,
+        total_pages: 50
+      };
+    } else {
+      return {
+        results,
+        page,
+        total_pages: results.length > 0 ? 50 : 1
+      };
+    }
   }
 
   return {
