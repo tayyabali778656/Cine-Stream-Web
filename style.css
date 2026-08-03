@@ -2065,7 +2065,7 @@ label,
 /* Modal Body Back Button */
 .modal-body-back-btn {
   position: absolute;
-  top: 16px;
+  top: -48px;
   left: 20px;
   background: rgba(0, 0, 0, 0.7);
   color: white;
@@ -2090,9 +2090,10 @@ label,
 
 @media (max-width: 768px) {
   .modal-body-back-btn {
-    top: 10px;
+    top: -42px;
     left: 10px;
     width: 36px;
     height: 36px;
   }
-}
+}
+
