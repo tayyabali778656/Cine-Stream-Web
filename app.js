@@ -426,12 +426,12 @@ const App = {
         sessionStorage.setItem('s_animeMoviesPagesLoaded', '1');
         sessionStorage.setItem('s_cartoonSeriesPagesLoaded', '1');
         sessionStorage.setItem('s_cartoonMoviesPagesLoaded', '1');
+        this.singleCategoryMode = filterType;
+        localStorage.setItem('cinestream_active_filter', filterType);
+
         this.grid.innerHTML = '';
         this.renderedIds.clear();
         this.showSkeletons();
-
-        this.singleCategoryMode = filterType;
-        localStorage.setItem('cinestream_active_filter', filterType);
 
         // Show/hide SEO hero based on page (recently-viewed always stays visible)
         const seoHero = document.getElementById('seo-hero');
@@ -1101,16 +1101,11 @@ const App = {
           const remainingCards = Array.from(this.grid.querySelectorAll('.movie-card:not(.skeleton)'));
           if (remainingCards.length === 0) return;
 
-          const firstOffsetTop = remainingCards[0].offsetTop;
-          let cols = 0;
-          for (const card of remainingCards) {
-            if (card.offsetTop === firstOffsetTop) {
-              cols++;
-            } else {
-              break;
-            }
-          }
-          if (cols === 0) cols = 1;
+          // Dynamically compute exact columns matching screen width & CSS Grid columns
+          const containerWidth = this.grid.clientWidth;
+          const cardWidth = remainingCards[0].getBoundingClientRect().width;
+          const gap = parseFloat(window.getComputedStyle(this.grid).gap) || 16;
+          const cols = Math.floor((containerWidth + gap) / (cardWidth + gap)) || 1;
 
           const totalCards = remainingCards.length;
           const remainder = totalCards % cols;
