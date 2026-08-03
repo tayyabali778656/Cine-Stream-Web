@@ -804,37 +804,32 @@
 
   <!-- PWA Service Worker Registration & Gatekeeper (Prevents HTML flashing on SW check) -->
   <script>
+    // Safety timeout: always hide the loading overlay after max 500ms to prevent black screen traps
+    const safetyTimeout = setTimeout(() => {
+      const overlay = document.getElementById('sw-loading-overlay');
+      if (overlay && overlay.style.display !== 'none') {
+        console.warn('Service Worker registration taking too long; bypassing overlay.');
+        overlay.style.display = 'none';
+      }
+    }, 500);
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
           .then(reg => {
             console.log('Service Worker registered successfully:', reg.scope);
-            sessionStorage.removeItem('sw_reloaded'); // Reset reload tracker on success
-            const overlay = document.getElementById('sw-loading-overlay');
-            if (overlay) overlay.style.display = 'none'; // Reveal site
           })
           .catch(err => {
-            console.error('Service Worker registration failed:', err);
-            const reloaded = sessionStorage.getItem('sw_reloaded');
-            if (!reloaded) {
-              sessionStorage.setItem('sw_reloaded', 'true');
-              window.location.reload();
-            } else {
-              // If registration still fails after reload, show ONLY the "Enter CineStream" button inside the black overlay
-              sessionStorage.removeItem('sw_reloaded');
-              const overlay = document.getElementById('sw-loading-overlay');
-              if (overlay) {
-                overlay.innerHTML = `
-                  <h1 style="color: #e50914; font-size: clamp(2.2rem, 6vw, 3.5rem); font-weight: 800; margin-bottom: 20px; letter-spacing: -1px; font-family: 'Outfit', sans-serif;">Cine<span style="color: #fff;">Stream</span></h1>
-                  <p style="color: #b3b3b3; font-size: 1rem; margin-bottom: 30px; max-width: 400px; line-height: 1.5; text-align: center; padding: 0 20px;">Please click below to access the streaming site.</p>
-                  <button onclick="window.location.reload()" style="background: #e50914; color: #fff; border: none; padding: 14px 36px; font-size: 1.05rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);" onmouseover="this.style.background='#ff0f22'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#e50914'; this.style.transform='translateY(0)'">Enter CineStream</button>
-                `;
-              }
-            }
+            console.warn('Service Worker registration failed:', err);
+          })
+          .finally(() => {
+            clearTimeout(safetyTimeout);
+            const overlay = document.getElementById('sw-loading-overlay');
+            if (overlay) overlay.style.display = 'none'; // Always reveal the site!
           });
       });
     } else {
-      // Browser doesn't support Service Workers - reveal site instantly
+      clearTimeout(safetyTimeout);
       const overlay = document.getElementById('sw-loading-overlay');
       if (overlay) overlay.style.display = 'none';
     }
