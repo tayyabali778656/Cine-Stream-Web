@@ -2692,6 +2692,12 @@ const App = {
     this.setById('tw-desc', 'content', desc);
     this.setById('tw-image', 'content', poster);
 
+    // Reset SEO Hero Heading (seo-h1) to default homepage title
+    const seoH1 = document.getElementById('seo-h1');
+    if (seoH1) {
+      seoH1.textContent = 'CineStream — Watch Anime Online Free in Hindi';
+    }
+
     // Clear dynamic JSON-LD
     const dyn = document.getElementById('ld-dynamic');
     if (dyn) dyn.textContent = '';

@@ -12,19 +12,7 @@
     gtag('config', 'G-3VV4MRPP76');
   </script>
 
-  <!-- Instant Black Screen Flash Protection -->
-  <style id="pwa-flash-style">
-    html, body { background: #000000 !important; color: #000000 !important; }
-  </style>
-  <script>
-    // Reveal page styles once DOM content is validated, or keep black if reloading
-    window.addEventListener('DOMContentLoaded', function () {
-      if (!sessionStorage.getItem('sw_reloaded')) {
-        var el = document.getElementById('pwa-flash-style');
-        if (el) el.remove();
-      }
-    });
-  </script>
+
 
 
   <!-- SPA navigation helper to toggle body class for ad hiding -->
@@ -33,9 +21,13 @@
       function updatePageClass() {
         const isHome = window.location.pathname === '/' || window.location.pathname === '/index.html';
         if (isHome) {
-          document.body.classList.add('is-home-page');
+          if (!document.body.classList.contains('is-home-page')) {
+            document.body.classList.add('is-home-page');
+          }
         } else {
-          document.body.classList.remove('is-home-page');
+          if (document.body.classList.contains('is-home-page')) {
+            document.body.classList.remove('is-home-page');
+          }
         }
       }
 
@@ -52,8 +44,6 @@
 
       window.addEventListener('popstate', updatePageClass);
       window.addEventListener('DOMContentLoaded', updatePageClass);
-      // fallback intervals to check route changes
-      setInterval(updatePageClass, 500);
     })();
   </script>
 
@@ -755,47 +745,21 @@
       </div>
     </div>
 
-    <!-- SEO: Keyword-rich genre links for Googlebot -->
-    <div class="container" style="padding: 1rem 0; border-top: 1px solid var(--glass-border); margin-top: 1rem;">
-      <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0 0 0.5rem; font-weight: 600;">Popular Categories:
-      </p>
-        <a href="/genre/action"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Watch Action Anime">Action Anime</a>
-        <a href="/genre/adventure"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Watch Adventure Anime">Adventure Anime</a>
-        <a href="/genre/fantasy"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Watch Fantasy Anime">Fantasy Anime</a>
-        <a href="/genre/comedy"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Watch Comedy Anime">Comedy Anime</a>
-        <a href="/genre/romance"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Watch Romance Anime">Romance Anime</a>
-        <a href="/genre/isekai"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Watch Isekai Anime">Isekai Anime</a>
-        <a href="/genre/shounen"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Watch Shonen Anime">Shonen</a>
-        <a href="/anime/naruto"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Naruto Hindi Dubbed">Naruto</a>
-        <a href="/anime/one-piece"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="One Piece Hindi Dubbed">One Piece</a>
-        <a href="/anime/demon-slayer-kimetsu-no-yaiba"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Demon Slayer Hindi Dubbed">Demon Slayer</a>
-        <a href="/anime/dragon-ball-z"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Dragon Ball Z Hindi Dubbed">Dragon Ball Z</a>
-        <a href="/anime/attack-on-titan"
-          style="font-size:0.72rem; color:var(--text-muted); background:var(--glass); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); text-decoration:none;"
-          aria-label="Attack on Titan Hindi Dubbed">Attack on Titan</a>
-      </div>
+    <!-- SEO: Keyword-rich genre links for Googlebot (hidden from users) -->
+    <div aria-hidden="true" style="display:none;">
+        <a href="/genre/action">Action Anime</a>
+        <a href="/genre/adventure">Adventure Anime</a>
+        <a href="/genre/fantasy">Fantasy Anime</a>
+        <a href="/genre/comedy">Comedy Anime</a>
+        <a href="/genre/romance">Romance Anime</a>
+        <a href="/genre/isekai">Isekai Anime</a>
+        <a href="/genre/shounen">Shonen</a>
+        <a href="/anime/naruto">Naruto</a>
+        <a href="/anime/one-piece">One Piece</a>
+        <a href="/anime/demon-slayer-kimetsu-no-yaiba">Demon Slayer</a>
+        <a href="/anime/dragon-ball-z">Dragon Ball Z</a>
+        <a href="/anime/attack-on-titan">Attack on Titan</a>
+    </div>
       <div class="footer-bottom">
         <p>&copy; 2026 CineStream | All Rights Reserved |
           <a href="/privacy.html" style="color:var(--text-muted);" aria-label="Privacy Policy">Privacy Policy</a> |
@@ -806,6 +770,7 @@
         </p>
       </div>
   </footer>
+
 
   <!-- Toast Notifications -->
   <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
@@ -820,136 +785,17 @@
   <script src="/app.js?v=3.5.0" defer></script>
   <script src="/admin.js?v=3.4.0" defer></script>
 
-  <!-- PWA Service Worker Registration: Fast, non-blocking, black screen on failure -->
+  <!-- PWA Service Worker Registration: Silent, non-blocking -->
   <script>
     (function () {
-      function removeFlashProtector() {
-        var el = document.getElementById('pwa-flash-style');
-        if (el) el.remove();
-      }
-
-      if (!('serviceWorker' in navigator)) {
-        removeFlashProtector();
-        return;
-      }
-
-      // ── Black screen overlay shown when SW fails permanently ──
-      function showBlackScreen(errMsg) {
-        // Keep flash protector style active to keep background pitch black
-        var overlay = document.createElement('div');
-        overlay.id = 'sw-fail-overlay';
-        overlay.style.cssText = [
-          'position:fixed', 'inset:0', 'z-index:2147483647',
-          'background:#000', 'display:flex', 'flex-direction:column',
-          'align-items:center', 'justify-content:center', 'gap:18px',
-          'font-family:Outfit,sans-serif', 'color:#fff', 'text-align:center',
-          'padding:2rem'
-        ].join(';');
-        overlay.innerHTML =
-          '<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#e50914" stroke-width="1.8">'
-          + '<circle cx="12" cy="12" r="10"/>'
-          + '<line x1="12" y1="8" x2="12" y2="12"/>'
-          + '<line x1="12" y1="16" x2="12.01" y2="16"/>'
-          + '</svg>'
-          + '<p style="font-size:1.1rem;font-weight:700;max-width:360px;margin:0;">Connection error — could not load the app.</p>'
-          + '<p style="font-size:0.8rem;opacity:0.45;margin:0;max-width:340px;">' + (errMsg || '') + '</p>'
-          + '<button id="sw-retry-btn" style="margin-top:6px;padding:11px 28px;background:#e50914;border:none;'
-          + 'border-radius:30px;color:#fff;font-family:Outfit,sans-serif;font-weight:700;'
-          + 'font-size:0.95rem;cursor:pointer;letter-spacing:0.02em;">Try Again</button>';
-        document.body.appendChild(overlay);
-        document.getElementById('sw-retry-btn').addEventListener('click', function () {
-          sessionStorage.removeItem('sw_reloaded');
-          window.location.reload();
-        });
-      }
-
-      function registerSW() {
-        navigator.serviceWorker.register('/sw.js')
-          .then(function (reg) {
-            console.log('[SW] Registered:', reg.scope);
-            sessionStorage.removeItem('sw_reloaded');
-            removeFlashProtector();
-          })
-          .catch(function (err) {
-            console.warn('[SW] Registration failed:', err.message);
-            if (!sessionStorage.getItem('sw_reloaded')) {
-              // First failure — try once more via reload
-              sessionStorage.setItem('sw_reloaded', '1');
-              window.location.reload();
-            } else {
-              // Second failure — show black screen instead of broken HTML
-              sessionStorage.removeItem('sw_reloaded');
-              showBlackScreen(err.message);
-            }
-          });
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', registerSW);
-      } else {
-        registerSW();
-      }
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.register('/sw.js')
+        .then(function (reg) { console.log('[SW] Registered:', reg.scope); })
+        .catch(function (err) { console.warn('[SW] Failed:', err.message); });
     })();
   </script>
-  <!-- ═══ Popunder Ad — 2min delay, 60s cooldown per click ═══ -->
-  <script>
-    (function () {
-      // ── Config ──────────────────────────────────────────────
-      var INITIAL_DELAY_MS  = 2 * 60 * 1000;  // 2 minutes before ANY popunder
-      var COOLDOWN_MS       = 60 * 1000;       // 60s cooldown between popunders
-      // ────────────────────────────────────────────────────────
-
-      var popunderReady  = false;
-      var lastPopTime    = 0;
-
-      // Step 1 — Inject the ad tag instantly to let Banner/Vignettes load immediately.
-      (function (s) {
-        s.dataset.zone = '11462740';
-        s.src = 'https://al5sm.com/tag.min.js';
-      })(
-        [document.documentElement, document.body]
-          .filter(Boolean).pop()
-          .appendChild(document.createElement('script'))
-      );
-
-      // Step 2 — Start the timer. Popunder redirects will only be allowed after 2 minutes.
-      setTimeout(function () {
-        popunderReady = true;
-      }, INITIAL_DELAY_MS);
-
-      // Step 3 — Intercept window.open triggers (often used for popunder actions)
-      var _open = window.open;
-      window.open = function (url, target, features) {
-        var now = Date.now();
-        // Check if initial 2 minutes have passed
-        if (!popunderReady) {
-          console.log('[Ad] Popunder blocked (initial 2m delay active)');
-          return null;
-        }
-        // Check if cooldown of 60 seconds is active
-        if (now - lastPopTime < COOLDOWN_MS) {
-          console.log('[Ad] Popunder blocked (cooldown active)');
-          return null;
-        }
-
-        lastPopTime = now;
-        if (typeof _open === 'function') {
-          return _open(url, target, features);
-        }
-        return null;
-      };
-
-      // Handle raw touch/click events to record the timestamp for click-cooldown 
-      function trackCooldownClick() {
-        if (!popunderReady) return;
-        var now = Date.now();
-        if (now - lastPopTime < COOLDOWN_MS) return;
-        lastPopTime = now;
-      }
-      document.addEventListener('click', trackCooldownClick, true);
-      document.addEventListener('touchend', trackCooldownClick, { passive: true });
-    })();
-  </script>
+  <!-- ═══ Ads Integration (Popunder & Vignette Banner) ═══ -->
+  <script>(function(s){s.dataset.zone='11462740',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+  <script>(function(s){s.dataset.zone='11462747',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 </body>
-
 </html>
