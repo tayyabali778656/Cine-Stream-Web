@@ -12,6 +12,21 @@
     gtag('config', 'G-3VV4MRPP76');
   </script>
 
+  <!-- Instant Black Screen Flash Protection -->
+  <style id="pwa-flash-style">
+    html, body { background: #000000 !important; color: #000000 !important; }
+  </style>
+  <script>
+    // Reveal page styles once DOM content is validated, or keep black if reloading
+    window.addEventListener('DOMContentLoaded', function () {
+      if (!sessionStorage.getItem('sw_reloaded')) {
+        var el = document.getElementById('pwa-flash-style');
+        if (el) el.remove();
+      }
+    });
+  </script>
+
+
   <!-- SPA navigation helper to toggle body class for ad hiding -->
   <script>
     (function () {
@@ -808,14 +823,8 @@
   <!-- PWA Service Worker Registration: Fast, non-blocking, black screen on failure -->
   <script>
     (function () {
-      // Instantly inject dark mode/black layout to prevent raw HTML flashing
-      var flashStyle = document.createElement('style');
-      flashStyle.id = 'pwa-flash-protector';
-      flashStyle.innerHTML = 'html, body { background: #000000 !important; color: #000000 !important; }';
-      document.documentElement.appendChild(flashStyle);
-
       function removeFlashProtector() {
-        var el = document.getElementById('pwa-flash-protector');
+        var el = document.getElementById('pwa-flash-style');
         if (el) el.remove();
       }
 
@@ -826,6 +835,7 @@
 
       // ── Black screen overlay shown when SW fails permanently ──
       function showBlackScreen(errMsg) {
+        // Keep flash protector style active to keep background pitch black
         var overlay = document.createElement('div');
         overlay.id = 'sw-fail-overlay';
         overlay.style.cssText = [
@@ -858,7 +868,6 @@
           .then(function (reg) {
             console.log('[SW] Registered:', reg.scope);
             sessionStorage.removeItem('sw_reloaded');
-            // SW dynamic registration was success, reveal normal styles
             removeFlashProtector();
           })
           .catch(function (err) {
