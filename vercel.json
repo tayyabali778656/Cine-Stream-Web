@@ -80,6 +80,10 @@
       "dest": "serve.js"
     },
     {
+      "src": "/anime/(.*)",
+      "dest": "serve.js"
+    },
+    {
       "src": "/media/(.*)",
       "dest": "serve.js"
     },

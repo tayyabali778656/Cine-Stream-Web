@@ -1592,6 +1592,14 @@ nav.scrolled {
   pointer-events: none;
 }
 
+/* Trailer / Player container — always black so first open has zero flash */
+#trailer-container {
+  background: #000;
+  /* GPU-composite layer so paint is instant */
+  will-change: contents;
+  contain: strict;
+}
+
 /* Modal Loading Screen Overlay */
 .modal-loading-screen {
   position: absolute;

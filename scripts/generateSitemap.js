@@ -334,6 +334,20 @@ async function run() {
         });
         animeAdded++;
 
+        // /anime/:slug — dedicated SEO page (highest priority)
+        const animeSlug = String(item.id || '').replace(/^toon_/, '');
+        if (animeSlug && animeSlug !== item.id) {
+          addEntry({
+            loc:        `${BASE_URL}/anime/${animeSlug}`,
+            priority:   '0.95',
+            changefreq: 'weekly',
+            lastmod:    TODAY,
+            image:      posterUrl,
+            imageTitle: `Watch ${title} Hindi Dubbed Online Free`,
+            imageCaption: `Stream ${title} all episodes in Hindi Dubbed free on CineStream. HD quality anime.`,
+          });
+        }
+
         // Episode pages — add first 3 episodes for TV series
         if (type === 'tv') {
           const totalSeasons = item.number_of_seasons || item.seasons || 1;

@@ -2069,6 +2069,17 @@ const App = {
             this.activePlayer = null;
           }
 
+          // ── Instant black loading frame (before any fetch) ──────────────
+          // Show spinner immediately so user never sees white/HTML flash
+          if (trailerContainer) {
+            trailerContainer.innerHTML =
+              '<div style="width:100%;height:100%;background:#000;display:flex;'
+              + 'align-items:center;justify-content:center;">'
+              + '<i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#e50914;opacity:0.8;"></i>'
+              + '</div>';
+          }
+          // ───────────────────────────────────────────────────────────────
+
           // Initialize active player
           this.activePlayer = new StreamPlayer(trailerContainer, {
             movieId: movieId,

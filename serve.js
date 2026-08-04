@@ -29,6 +29,7 @@ const cache = require('./services/cache');
 const catalogSvc = require('./services/catalogService');
 const queue = require('./services/queue');
 const sitemapSvc = require('./services/sitemapService');
+const crawlerSvc = require('./services/crawlerScheduler');
 const { requireAuth } = require('./middleware/authMiddleware');
 const { applySecurityHeaders, applyCors, applyRateLimit } = require('./middleware/security');
 
@@ -113,6 +114,7 @@ function ensureInit() {
       _initPromise = null; // Reset so next request retries connecting to the database
     }
     sitemapSvc.scheduleAutoRegen();
+    crawlerSvc.scheduleAutoCrawl();  // Auto-run crawler every 24h
   })();
   return _initPromise;
 }
@@ -1803,6 +1805,185 @@ const requestHandler = async (req, res) => {
       filePath = path.join(PUBLIC_DIR, 'app.html');
     } else if (pathname === '/' || !path.extname(pathname)) {
       filePath = path.join(PUBLIC_DIR, 'index.html');
+    }
+
+    // ── SEO: Dedicated Anime Detail Pages /anime/:slug ───────────────────────
+    // Full server-rendered page Google ke liye — title, desc, poster, episodes,
+    // Schema.org structured data — sab HTML mein. No JS needed by crawler.
+    const animePageMatch = pathname.match(/^\/anime\/([^/?#]+)/);
+    if (animePageMatch) {
+      const rawSlug = decodeURIComponent(animePageMatch[1]).toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      const toonId  = `toon_${rawSlug}`;
+      try {
+        const htmlRaw     = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+        const animeCol    = getCollection('anime');
+
+        // Fetch from MongoDB
+        let details = await animeCol.findOne({
+          $or: [{ id: toonId }, { slug: rawSlug }, { id: rawSlug }]
+        });
+
+        // Fallback: live scrape from ToonStream
+        if (!details || !details.title) {
+          try {
+            const liveSvcLocal = require('./services/toonstreamLive');
+            details = await liveSvcLocal.getLiveAnimeDetails(toonId, rawSlug);
+          } catch (_) {}
+        }
+
+        if (!details || !details.title) {
+          // Not found — serve normal SPA (will 404 gracefully)
+          throw new Error('anime_not_found');
+        }
+
+        // ── Data extraction ─────────────────────────────────────────────────
+        const animeTitle   = decodeHtmlEntities(details.title ||
+          rawSlug.split('-').filter(Boolean).map(w => w[0] ? w[0].toUpperCase() + w.slice(1) : w).join(' '));
+        // Safe: escape for HTML attribute context, no XSS
+        const animeTitleSafe = animeTitle.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        const rawDesc      = decodeHtmlEntities(details.description || details.overview || '');
+        // Keep for meta (short), and for display (longer)
+        const animeDesc    = rawDesc.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').trim();
+        const animePoster  = details.poster || details.poster_path || '';
+        const animeGenres  = Array.isArray(details.genres) ? details.genres.map(g => typeof g === 'string' ? g : (g.name || '')).filter(Boolean) : [];
+        const rawRating    = details.rating || details.vote_average || '';
+        const animeRating  = rawRating && !isNaN(Number(rawRating)) ? Number(rawRating).toFixed(1) : '';
+        const rawYear      = details.release_date || details.first_air_date || details.year || '';
+        const animeYear    = rawYear && String(rawYear).length > 4 ? String(rawYear).slice(0, 4) : String(rawYear || '');
+        const isMovie      = (details.type || 'tv') === 'movie';
+        const totalSeasons = Math.max(1, details.number_of_seasons || details.seasons || 1);
+        const totalEps     = details.number_of_episodes || null;
+        const animeStatus  = (details.status || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const canonical    = `https://cinestream.watch/anime/${rawSlug}`;
+        const mediaRoute   = isMovie ? `media/movie/${toonId}` : `media/tv/${toonId}`;
+        const watchRoute   = isMovie ? `watch/movie/${toonId}` : `watch/tv/${toonId}`;
+        const posterUrl    = animePoster || 'https://cinestream.watch/images/og-banner.png';
+        const dateToday    = new Date().toISOString().split('T')[0];
+        const datePubl     = animeYear ? `${animeYear}-01-01` : dateToday;
+
+        // ── SEO Strings ─────────────────────────────────────────────────────
+        const seoTitle = isMovie
+          ? `Watch ${animeTitle} Full Movie Hindi Dubbed Free HD | CineStream`
+          : `Watch ${animeTitle} All Episodes Hindi Dubbed Free HD | CineStream`;
+        const genreStr   = animeGenres.slice(0, 3).join(', ');
+        const fallbackDesc = `Watch ${animeTitle}${genreStr ? ` (${genreStr})` : ''}${animeYear ? ` (${animeYear})` : ''} in Hindi Dubbed free on CineStream. Stream HD quality anime.`;
+        const seoDescRaw  = animeDesc.length > 0 ? animeDesc.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').slice(0, 155) : fallbackDesc.slice(0, 155);
+        const seoDesc     = seoDescRaw.length === 155 ? seoDescRaw + '...' : seoDescRaw;
+        const seoKeywords = `${animeTitle} in hindi, ${animeTitle} hindi dubbed, watch ${animeTitle} online free, ${animeTitle} all episodes hindi, ${animeTitle} ${animeYear}, ${animeGenres.map(g => `${g} anime in hindi`).join(', ')}, CineStream, cinestream.watch`;
+
+        // ── Episode links (crawlable by Google) ─────────────────────────────
+        const maxSeasonLinks = Math.min(totalSeasons, 3);
+        let episodeLinksHtml = '';
+        for (let s = 1; s <= maxSeasonLinks; s++) {
+          const episodesThisSeason = 12; // show 12 episode links per season
+          episodeLinksHtml += `
+            <div style="margin-bottom:1.2rem;">
+              <h3 style="font-size:1rem;font-weight:700;color:var(--primary,#e50914);margin-bottom:0.6rem;">Season ${s}</h3>
+              <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+                ${Array.from({ length: episodesThisSeason }, (_, i) => {
+                  const ep = i + 1;
+                  return `<a href="https://cinestream.watch/watch/tv/${toonId}?s=${s}&e=${ep}" style="padding:0.3rem 0.7rem;background:rgba(229,9,20,0.15);border:1px solid rgba(229,9,20,0.3);border-radius:4px;color:var(--text,#fff);font-size:0.8rem;text-decoration:none;white-space:nowrap;">S${s}E${ep}</a>`;
+                }).join('')}
+              </div>
+            </div>`;
+        }
+
+        // ── Genre badge links ────────────────────────────────────────────────
+        const genreBadges = animeGenres.slice(0, 6).map(g =>
+          `<a href="https://cinestream.watch/genre/${encodeURIComponent(g.toLowerCase())}" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(255,255,255,0.07);border-radius:20px;color:var(--text-muted,#aaa);font-size:0.85rem;text-decoration:none;margin:0.2rem;">${g}</a>`
+        ).join('');
+
+        // ── Visible SSR content block ────────────────────────────────────────
+        const seoContentBlock = `
+          <div class="ssr-seo-details" style="padding:1.5rem;background:rgba(15,15,15,0.85);border-radius:12px;margin:1.5rem auto;max-width:1100px;border:1px solid rgba(255,255,255,0.07);color:var(--text,#fff);font-family:Outfit,system-ui,sans-serif;">
+            <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+              ${posterUrl !== 'https://cinestream.watch/images/og-banner.png' ? `<img src="${posterUrl}" alt="Watch ${animeTitleSafe} Hindi Dubbed Free on CineStream" width="160" height="240" loading="eager" style="border-radius:10px;object-fit:cover;flex-shrink:0;box-shadow:0 8px 32px rgba(0,0,0,0.5);">` : ''}
+              <div style="flex:1;min-width:200px;">
+                <h1 style="font-size:clamp(1.4rem,3vw,2rem);font-weight:800;margin:0 0 0.5rem;line-height:1.2;">Watch ${animeTitleSafe} Hindi Dubbed Online Free</h1>
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.8rem;align-items:center;font-size:0.9rem;color:var(--text-muted,#aaa);">
+                  ${animeYear ? `<span style="background:rgba(229,9,20,0.2);border-radius:4px;padding:0.2rem 0.5rem;color:#fff;">${animeYear}</span>` : ''}
+                  ${animeRating ? `<span>&#11088; ${animeRating}</span>` : ''}
+                  ${!isMovie ? `<span>&#128250; ${totalSeasons} Season${totalSeasons > 1 ? 's' : ''}${totalEps ? ` &bull; ${totalEps} Episodes` : ''}</span>` : '<span>&#127916; Movie</span>'}
+                  ${animeStatus ? `<span>&bull; ${animeStatus}</span>` : ''}
+                </div>
+                ${genreBadges ? `<div style="margin-bottom:0.8rem;">${genreBadges}</div>` : ''}
+                ${animeDesc ? `<p style="font-size:0.95rem;line-height:1.7;color:var(--text-muted,#bbb);margin:0 0 1rem;">${animeDesc.slice(0, 400)}${animeDesc.length > 400 ? '...' : ''}</p>` : ''}
+                <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
+                  <a href="https://cinestream.watch/${watchRoute}?s=1&amp;e=1" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.4rem;background:#e50914;color:#fff;border-radius:30px;text-decoration:none;font-weight:700;font-size:0.95rem;">&#9654; Watch Now (Hindi Dubbed)</a>
+                  <a href="https://cinestream.watch/${mediaRoute}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.1);color:#fff;border-radius:30px;text-decoration:none;font-weight:600;font-size:0.9rem;">&#x2139; Details</a>
+                </div>
+              </div>
+            </div>
+            ${!isMovie && episodeLinksHtml ? `
+              <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:1.2rem;margin-top:0.5rem;">
+                <h2 style="font-size:1.1rem;font-weight:700;margin:0 0 1rem;">All Episodes &mdash; ${animeTitleSafe} Hindi Dubbed</h2>
+                ${episodeLinksHtml}
+              </div>` : ''}
+            <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:1rem;margin-top:0.8rem;font-size:0.85rem;color:var(--text-muted,#999);">
+              &#127916; Stream more on CineStream:
+              <a href="https://cinestream.watch/" style="color:#e50914;margin:0 0.5rem;">Home</a> |
+              <a href="https://cinestream.watch/genre/action" style="color:#e50914;margin:0 0.5rem;">Action Anime</a> |
+              <a href="https://cinestream.watch/genre/romance" style="color:#e50914;margin:0 0.5rem;">Romance Anime</a> |
+              <a href="https://cinestream.watch/genre/isekai" style="color:#e50914;margin:0 0.5rem;">Isekai Anime</a>
+            </div>
+          </div>`;
+
+        // ── Schema.org structured data ───────────────────────────────────────
+        const schemaBase = {
+          '@context': 'https://schema.org',
+          '@type': isMovie ? 'Movie' : 'TVSeries',
+          'name': `${animeTitle} Hindi Dubbed`,
+          'alternateName': [`${animeTitle} in Hindi`, animeTitle],
+          'url': canonical,
+          'image': { '@type': 'ImageObject', 'url': posterUrl, 'width': 500, 'height': 750 },
+          'description': seoDesc,
+          'datePublished': datePubl,
+          'inLanguage': ['hi', 'en'],
+          'isAccessibleForFree': true,
+          'audience': { '@type': 'Audience', 'audienceType': 'Anime Fans', 'geographicArea': { '@type': 'Country', 'name': 'India' } },
+          'potentialAction': { '@type': 'WatchAction', 'target': { '@type': 'EntryPoint', 'urlTemplate': `https://cinestream.watch/${watchRoute}?s=1&e=1` } },
+        };
+        if (animeGenres.length > 0) schemaBase['genre'] = animeGenres;
+        if (animeRating) schemaBase['aggregateRating'] = { '@type': 'AggregateRating', 'ratingValue': animeRating, 'bestRating': '10', 'ratingCount': 500 };
+        if (!isMovie) { schemaBase['numberOfSeasons'] = totalSeasons; if (totalEps) schemaBase['numberOfEpisodes'] = totalEps; }
+
+        const breadcrumb = {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          'itemListElement': [
+            { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://cinestream.watch/' },
+            { '@type': 'ListItem', 'position': 2, 'name': isMovie ? 'Anime Movies' : 'Anime Series', 'item': `https://cinestream.watch/genre/${animeGenres[0] ? animeGenres[0].toLowerCase() : 'action'}` },
+            { '@type': 'ListItem', 'position': 3, 'name': animeTitle, 'item': canonical }
+          ]
+        };
+        const jsonLd = JSON.stringify([schemaBase, breadcrumb]);
+
+        // ── Inject into index.html ───────────────────────────────────────────
+        let injected = htmlRaw;
+        injected = injected.replace(/(<html lang=")[^"]*"/, `$1hi"`);
+        injected = injected
+          .replace(/<title id="seo-title">[^<]*<\/title>/, `<title id="seo-title">${seoTitle}</title>`)
+          .replace(/<meta id="seo-desc"[^>]*>/, `<meta id="seo-desc" name="description" content="${seoDesc}">`)
+          .replace(/<meta name="keywords"[^>]*>/, `<meta name="keywords" content="${seoKeywords}">`)
+          .replace(/<link id="seo-canonical"[^>]*>/, `<link id="seo-canonical" rel="canonical" href="${canonical}">`)
+          .replace(/<meta name="robots"[^>]*>/, `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">`)
+          .replace(/<meta id="og-title"[^>]*>/, `<meta id="og-title" property="og:title" content="${seoTitle}">`)
+          .replace(/<meta id="og-desc"[^>]*>/, `<meta id="og-desc" property="og:description" content="${seoDesc}">`)
+          .replace(/<meta id="og-url"[^>]*>/, `<meta id="og-url" property="og:url" content="${canonical}">`)
+          .replace(/<meta id="og-image"[^>]*>/, `<meta id="og-image" property="og:image" content="${posterUrl}">`)
+          .replace(/<meta property="og:type"[^>]*>/, `<meta property="og:type" content="${isMovie ? 'video.movie' : 'video.tv_show'}">`)
+          .replace(/<script id="ld-dynamic" type="application\/ld\+json"><\/script>/, `<script id="ld-dynamic" type="application/ld+json">${jsonLd}</script>`)
+          .replace('<div id="seo-content-area"></div>', `<div id="seo-content-area">${seoContentBlock}</div>`);
+
+        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' });
+        logger.request(req, 200, Date.now() - startMs);
+        return;
+      } catch (animePageErr) {
+        if (animePageErr.message !== 'anime_not_found') {
+          logger.warn('anime_page_ssr_error', { slug: rawSlug, message: animePageErr.message });
+        }
+        // Fall through to normal SPA serving
+      }
     }
 
     // ── SEO: Server-side Genre Collection Pages ──────────────────────────────
