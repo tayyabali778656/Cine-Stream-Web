@@ -973,24 +973,29 @@
   </section>
 
   <!-- Footer -->
-  <footer>
-    <a href="/" class="footer-logo">
+  <footer style="padding: 2rem 0; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; background: #000;">
+    <a href="/" class="footer-logo" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; margin-bottom: 0.5rem;">
       <img src="/images/fav-icon.png" alt="CineStream Logo" class="logo-img" width="32" height="32">
-      <span class="brand">Cine<span>Stream</span></span>
+      <span class="brand" style="color: #fff; font-weight: 800; font-family: Outfit, sans-serif;">Cine<span style="color: #e50914;">Stream</span></span>
     </a>
-    <p class="footer-copyright">&copy; 2026 CineStream. All rights reserved.</p>
+    <p class="footer-copyright" style="color: var(--text-muted, #999); font-size: 0.85rem; margin: 0.5rem 0 0;">&copy; 2026 CineStream. All rights reserved.</p>
   </footer>
+  <!-- PWA Service Worker Registration: Fast, non-blocking -->
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('Service Worker registered successfully:', reg.scope))
-          .catch(err => console.error('Service Worker registration failed:', err));
-      });
-    }
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.register('/sw.js')
+        .then(function (reg) {
+          console.log('[SW-App] Registered:', reg.scope);
+        })
+        .catch(function (err) {
+          console.warn('[SW-App] Registration failed:', err.message);
+        });
+    })();
   </script>
   <!-- ═══ Popunder Ad (no delay, no cooldown) ═══ -->
   <script>(function(s){s.dataset.zone='11462740',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 </body>
+
 
 </html>

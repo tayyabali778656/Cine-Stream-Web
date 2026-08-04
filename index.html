@@ -808,7 +808,21 @@
   <!-- PWA Service Worker Registration: Fast, non-blocking, black screen on failure -->
   <script>
     (function () {
-      if (!('serviceWorker' in navigator)) return;
+      // Instantly inject dark mode/black layout to prevent raw HTML flashing
+      var flashStyle = document.createElement('style');
+      flashStyle.id = 'pwa-flash-protector';
+      flashStyle.innerHTML = 'html, body { background: #000000 !important; color: #000000 !important; }';
+      document.documentElement.appendChild(flashStyle);
+
+      function removeFlashProtector() {
+        var el = document.getElementById('pwa-flash-protector');
+        if (el) el.remove();
+      }
+
+      if (!('serviceWorker' in navigator)) {
+        removeFlashProtector();
+        return;
+      }
 
       // ── Black screen overlay shown when SW fails permanently ──
       function showBlackScreen(errMsg) {
@@ -844,6 +858,8 @@
           .then(function (reg) {
             console.log('[SW] Registered:', reg.scope);
             sessionStorage.removeItem('sw_reloaded');
+            // SW dynamic registration was success, reveal normal styles
+            removeFlashProtector();
           })
           .catch(function (err) {
             console.warn('[SW] Registration failed:', err.message);
@@ -874,75 +890,55 @@
       var COOLDOWN_MS       = 60 * 1000;       // 60s cooldown between popunders
       // ────────────────────────────────────────────────────────
 
-      var scriptLoaded   = false;  // popunder script injected?
-      var popunderReady  = false;  // 2min elapsed?
-      var lastPopTime    = 0;      // timestamp of last triggered pop
+      var popunderReady  = false;
+      var lastPopTime    = 0;
 
-      // Step 1 — inject the al5sm popunder script once (loads silently, no pop yet)
-      function injectPopunderScript() {
-        if (scriptLoaded) return;
-        scriptLoaded = true;
-        (function (s) {
-          s.dataset.zone = '11462740';
-          s.src = 'https://al5sm.com/tag.min.js';
-        })(
-          [document.documentElement, document.body]
-            .filter(Boolean).pop()
-            .appendChild(document.createElement('script'))
-        );
-      }
+      // Step 1 — Inject the ad tag instantly to let Banner/Vignettes load immediately.
+      (function (s) {
+        s.dataset.zone = '11462740';
+        s.src = 'https://al5sm.com/tag.min.js';
+      })(
+        [document.documentElement, document.body]
+          .filter(Boolean).pop()
+          .appendChild(document.createElement('script'))
+      );
 
-      // Step 2 — after 2 min, mark popunder as ready to fire on clicks
-      function scheduleActivation() {
-        injectPopunderScript();          // load script immediately (no pop shown)
-        setTimeout(function () {
-          popunderReady = true;          // now clicks can trigger pop
-        }, INITIAL_DELAY_MS);
-      }
+      // Step 2 — Start the timer. Popunder redirects will only be allowed after 2 minutes.
+      setTimeout(function () {
+        popunderReady = true;
+      }, INITIAL_DELAY_MS);
 
-      // Step 3 — on every click, fire pop only if ready & cooldown passed
-      function onUserClick() {
+      // Step 3 — Intercept window.open triggers (often used for popunder actions)
+      var _open = window.open;
+      window.open = function (url, target, features) {
+        var now = Date.now();
+        // Check if initial 2 minutes have passed
+        if (!popunderReady) {
+          console.log('[Ad] Popunder blocked (initial 2m delay active)');
+          return null;
+        }
+        // Check if cooldown of 60 seconds is active
+        if (now - lastPopTime < COOLDOWN_MS) {
+          console.log('[Ad] Popunder blocked (cooldown active)');
+          return null;
+        }
+
+        lastPopTime = now;
+        if (typeof _open === 'function') {
+          return _open(url, target, features);
+        }
+        return null;
+      };
+
+      // Handle raw touch/click events to record the timestamp for click-cooldown 
+      function trackCooldownClick() {
         if (!popunderReady) return;
         var now = Date.now();
-        if (now - lastPopTime < COOLDOWN_MS) return; // still in cooldown
+        if (now - lastPopTime < COOLDOWN_MS) return;
         lastPopTime = now;
-        // Trigger the popunder by dispatching a synthetic click event
-        // al5sm listens to document clicks — real user click already fired it,
-        // so we just reset the cooldown timer above. Nothing extra needed.
       }
-
-      // Start the 2-minute activation timer on first user interaction
-      var started = false;
-      function onFirstInteraction() {
-        if (started) return;
-        started = true;
-        window.removeEventListener('scroll',     onFirstInteraction, true);
-        window.removeEventListener('click',      onFirstInteraction, true);
-        window.removeEventListener('touchstart', onFirstInteraction, true);
-        scheduleActivation();
-        // After activation, listen for clicks to enforce cooldown
-        document.addEventListener('click', onUserClick, true);
-        document.addEventListener('touchend', onUserClick, { passive: true });
-      }
-
-      window.addEventListener('scroll',     onFirstInteraction, { passive: true, once: true });
-      window.addEventListener('click',      onFirstInteraction, { passive: true, once: true });
-      window.addEventListener('touchstart', onFirstInteraction, { passive: true, once: true });
-
-      // Override popunder trigger: block pops during initial delay & cooldown
-      // al5sm fires window.open or a click — we intercept via window.open wrapper
-      (function () {
-        var _open = window.open.bind(window);
-        window.open = function (url, target, features) {
-          var now = Date.now();
-          // Block if not yet ready OR still in cooldown
-          if (!popunderReady) return null;
-          if (now - lastPopTime < COOLDOWN_MS) return null;
-
-          lastPopTime = now;
-          return _open(url, target, features);
-        };
-      })();
+      document.addEventListener('click', trackCooldownClick, true);
+      document.addEventListener('touchend', trackCooldownClick, { passive: true });
     })();
   </script>
 </body>
