@@ -785,13 +785,27 @@
   <script src="/app.js?v=3.5.0" defer></script>
   <script src="/admin.js?v=3.4.0" defer></script>
 
-  <!-- PWA Service Worker Registration: Silent, non-blocking -->
+  <!-- PWA Service Worker Registration: Single retry on fail -->
   <script>
     (function () {
       if (!('serviceWorker' in navigator)) return;
       navigator.serviceWorker.register('/sw.js')
-        .then(function (reg) { console.log('[SW] Registered:', reg.scope); })
-        .catch(function (err) { console.warn('[SW] Failed:', err.message); });
+        .then(function (reg) {
+          console.log('[SW] Registered:', reg.scope);
+          sessionStorage.removeItem('sw_reloaded');
+        })
+        .catch(function (err) {
+          console.warn('[SW] Registration failed:', err.message);
+          if (!sessionStorage.getItem('sw_reloaded')) {
+            // Pehli failure — ek baar reload karo
+            sessionStorage.setItem('sw_reloaded', '1');
+            window.location.reload();
+          } else {
+            // Dobara fail — silent fallback, koi reload nahi
+            sessionStorage.removeItem('sw_reloaded');
+            console.warn('[SW] Permanent failure, skipping reload.');
+          }
+        });
     })();
   </script>
   <!-- ═══ Ads Integration (Popunder & Vignette Banner) ═══ -->
