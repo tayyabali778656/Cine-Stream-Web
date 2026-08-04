@@ -362,7 +362,7 @@ const App = {
       debounceTimer = setTimeout(() => {
         this.searchQuery = e.target.value.trim();
         this.handleSearch();
-      }, 500);
+      }, 300);
     });
 
     // Search clear button

@@ -36,6 +36,11 @@ const INDEX_DEFS = [
   { collection: 'hindi_dubbed',    index: { id: 1 }, options: { unique: true } },
   { collection: 'anime',           index: { id: 1 }, options: { unique: true } },
   { collection: 'anime',           index: { slug: 1 }, options: { unique: true } },
+  // Search performance indexes — speeds up /api/v1/search regex queries
+  { collection: 'anime',           index: { title: 1 }, options: {} },
+  { collection: 'anime',           index: { name: 1 }, options: {} },
+  { collection: 'anime',           index: { popularity: -1 }, options: {} },
+  { collection: 'anime',           index: { updatedAt: -1 }, options: {} },
   { collection: 'episodes',        index: { animeId: 1 } },
   { collection: 'episodes',        index: { url: 1 }, options: { unique: true } },
   { collection: 'genres',          index: { name: 1 }, options: { unique: true } },

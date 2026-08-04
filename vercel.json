@@ -79,10 +79,7 @@
       "src": "/watch/(.*)",
       "dest": "serve.js"
     },
-    {
-      "src": "/anime/(.*)",
-      "dest": "serve.js"
-    },
+
     {
       "src": "/media/(.*)",
       "dest": "serve.js"
@@ -99,6 +96,26 @@
           "key": "q"
         }
       ],
+      "dest": "serve.js"
+    },
+    {
+      "src": "/site.webmanifest",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/browserconfig.xml",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/sw.js",
+      "dest": "serve.js"
+    },
+    {
+      "src": "/service-worker.js",
       "dest": "serve.js"
     },
     {

@@ -92,7 +92,9 @@ function applyCors(req, res) {
   const isSameOrigin = origin === `https://${host}` ||
                        origin === `http://${host}` ||
                        origin === 'https://cinestream.watch' ||
-                       origin === 'http://cinestream.watch';
+                       origin === 'http://cinestream.watch' ||
+                       origin === 'https://www.cinestream.watch' ||
+                       origin === 'http://www.cinestream.watch';
   if (isSameOrigin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -103,7 +105,9 @@ function applyCors(req, res) {
   }
 
   // Always allow CORS for GET requests to public API endpoints
-  if (req.method === 'GET' && req.url.startsWith('/api/v1/')) {
+  // Use both req.url and pathname (split on '?') to handle Vercel routing edge cases
+  const reqPathname = (req.url || '').split('?')[0];
+  if (req.method === 'GET' && (reqPathname.startsWith('/api/v1/') || req.url.startsWith('/api/v1/'))) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
