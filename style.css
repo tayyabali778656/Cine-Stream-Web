@@ -2100,3 +2100,45 @@ label,
 }
 
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Third-Party Vignette / Ad Popup Protection
+   Prevents our global CSS resets from breaking injected ad styles on mobile.
+   The vignette script (n6wxm.com) injects its own HTML/CSS into <body>.
+   Our * reset (margin/padding/box-sizing) and overflow-x:hidden on body
+   can strip those styles — especially on mobile browsers.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Isolate any high-z-index fixed overlay from our resets */
+body > div[style*="z-index: 2147483647"],
+body > div[style*="z-index:2147483647"],
+body > div[style*="position: fixed"][style*="z-index"],
+body > div[style*="position:fixed"][style*="z-index"] {
+  all: revert !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif !important;
+}
+
+/* Ensure vignette popup buttons don't get our margin/padding reset */
+body > div[style*="z-index: 2147483647"] button,
+body > div[style*="z-index: 2147483647"] a,
+body > div[style*="z-index: 2147483647"] div,
+body > div[style*="z-index: 2147483647"] span,
+body > div[style*="z-index: 2147483647"] p,
+body > div[style*="z-index: 2147483647"] img,
+body > div[style*="position: fixed"][style*="z-index"] button,
+body > div[style*="position: fixed"][style*="z-index"] a,
+body > div[style*="position: fixed"][style*="z-index"] div,
+body > div[style*="position: fixed"][style*="z-index"] img {
+  all: revert !important;
+}
+
+/* Mobile: fix stacking context issue caused by overflow-x:hidden on body */
+@media (max-width: 768px) {
+  /* Re-allow fixed positioning to work correctly on mobile for ad overlays */
+  body > div[style*="position: fixed"],
+  body > div[style*="position:fixed"] {
+    -webkit-transform: none !important;
+    transform: none !important;
+    -webkit-touch-callout: default !important;
+    pointer-events: auto !important;
+  }
+}

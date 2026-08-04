@@ -455,10 +455,7 @@
 
 <body>
 
-  <!-- PWA Gatekeeper Overlay (Keeps site black until Service Worker registers) -->
-  <div id="sw-loading-overlay"
-    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0a0a0a; z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Outfit', sans-serif;">
-  </div>
+
 
   <!-- Skip to main content link (WCAG 2.1 Level A) -->
   <a class="skip-to-main" href="#main-content">Skip to main content</a>
@@ -809,42 +806,38 @@
   <script src="/app.js?v=3.5.0" defer></script>
   <script src="/admin.js?v=3.4.0" defer></script>
 
-  <!-- PWA Service Worker Registration & Gatekeeper (Prevents HTML flashing on SW check) -->
+  <!-- PWA Service Worker Registration: Fast, non-blocking, auto-reload once on failure -->
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        // Race service worker registration against a 1-second timeout to handle ad-blockers instantly
-        const registerPromise = navigator.serviceWorker.register('/sw.js');
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('SW_TIMEOUT')), 1000)
-        );
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
 
-        Promise.race([registerPromise, timeoutPromise])
-          .then(reg => {
-            console.log('Service Worker registered successfully:', reg.scope);
-            sessionStorage.removeItem('sw_reloaded'); // Reset reload tracker on success
-            const overlay = document.getElementById('sw-loading-overlay');
-            if (overlay) overlay.style.display = 'none'; // Reveal site
+      function registerSW() {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function (reg) {
+            console.log('[SW] Registered:', reg.scope);
+            sessionStorage.removeItem('sw_reloaded');
           })
-          .catch(err => {
-            console.warn('Service Worker registration failed/timed out:', err.message);
-            const reloaded = sessionStorage.getItem('sw_reloaded');
-            if (!reloaded) {
-              sessionStorage.setItem('sw_reloaded', 'true');
+          .catch(function (err) {
+            console.warn('[SW] Registration failed:', err.message);
+            // Auto reload once on failure — fast recovery
+            if (!sessionStorage.getItem('sw_reloaded')) {
+              sessionStorage.setItem('sw_reloaded', '1');
               window.location.reload();
             } else {
-              // Second fail: bypass block and reveal site instantly for a seamless experience
+              // Second attempt also failed — silently continue (no loop)
               sessionStorage.removeItem('sw_reloaded');
-              const overlay = document.getElementById('sw-loading-overlay');
-              if (overlay) overlay.style.display = 'none';
             }
           });
-      });
-    } else {
-      // Browser doesn't support Service Workers - reveal site instantly
-      const overlay = document.getElementById('sw-loading-overlay');
-      if (overlay) overlay.style.display = 'none';
-    }
+      }
+
+      // Use DOMContentLoaded instead of 'load' — fires much earlier (page parsed, not all assets)
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', registerSW);
+      } else {
+        // DOM already ready — run immediately (fastest path)
+        registerSW();
+      }
+    })();
   </script>
   <script>
     (function () {
