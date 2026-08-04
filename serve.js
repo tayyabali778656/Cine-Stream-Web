@@ -74,7 +74,7 @@ const COMPRESSIBLE = new Set([
 
 // Cache-Control values per file type
 const CACHE_CONTROL = {
-  '.html': 'public, max-age=0, s-maxage=86400, stale-while-revalidate=3600',
+  '.html': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
   '.css': 'public, max-age=31536000, immutable',
   '.js': 'public, max-age=31536000, immutable',
   '.json': 'no-store', // catalog JSONs should NOT be cached by browser
@@ -1885,7 +1885,7 @@ const requestHandler = async (req, res) => {
           .replace('<div id="seo-content-area"></div>', `<div id="seo-content-area">${collectionContent}</div>`)
           .replace('<script id="ld-collection-dynamic" type="application/ld+json"></script>', `<script id="ld-collection-dynamic" type="application/ld+json">${JSON.stringify(collectionSchema)}</script>`);
 
-        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400' });
+        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' });
         logger.request(req, 200, Date.now() - startMs);
         return;
       } catch (err) {
@@ -2323,7 +2323,7 @@ const requestHandler = async (req, res) => {
 
 
 
-        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400' });
+        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' });
         logger.request(req, 200, Date.now() - startMs);
         return;
       } catch (seoErr) {
@@ -2411,7 +2411,7 @@ const requestHandler = async (req, res) => {
             `<script id="ld-dynamic" type="application/ld+json">${jsonLd}</script>`
           );
 
-        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400' });
+        compressAndSend(req, res, injected, 'text/html; charset=utf-8', { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' });
         logger.request(req, 200, Date.now() - startMs);
         return;
       } catch (seoErr) {
