@@ -17,26 +17,16 @@ const STREAMING_SOURCES = [
   'https://9xmovielive.com',
 ].join(' ');
 
-// Ad domains are blocked by default until explicitly added here.
-// Example: add 'https://omg10.com' to ALLOWED_EXTERNAL_SCRIPT_HOSTS
-// when you want that domain to be allowed to load scripts.
-const ALLOWED_EXTERNAL_SCRIPT_HOSTS = [
-  // 'https://omg10.com',
-  // 'https://al5sm.com',
-  // 'https://n6wxm.com',
-  // 'https://5gvci.com',
-].join(' ');
-
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net ${ALLOWED_EXTERNAL_SCRIPT_HOSTS} 'unsafe-inline' 'unsafe-eval'`,
-  `worker-src 'self' blob:`,
+  `script-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://*.adtrafficquality.google https://cdn.jsdelivr.net https://*.effectivecpmnetwork.com https://*.highperformanceformat.com https://*.al5sm.com https://al5sm.com https://*.n6wxm.com https://n6wxm.com https://*.5gvci.com https://5gvci.com 'unsafe-inline' 'unsafe-eval'`,
+  `worker-src 'self' https://*.5gvci.com https://5gvci.com blob:`,
 
   `style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com 'unsafe-inline'`,
   `font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:`,
   `img-src 'self' https: http: data: blob:`,
   `frame-src 'self' https: http:`,
-  `connect-src 'self' https: http: https://vitals.vercel-insights.com ${ALLOWED_EXTERNAL_SCRIPT_HOSTS}`,
+  `connect-src 'self' https: http: https://vitals.vercel-insights.com`,
   `media-src 'self' blob: https: http:`,
   "object-src 'none'",
   "base-uri 'self'",
