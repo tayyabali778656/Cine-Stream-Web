@@ -97,6 +97,22 @@ const App = {
     }, 4000);
   },
 
+  renderSmartAdCards() {
+    const container = document.getElementById('modal-smart-ad-container');
+    if (!container) return;
+
+    container.innerHTML = this.smartAdLinks.map((link, index) => `
+      <a href="${link.url}" target="_blank" rel="noopener noreferrer" referrerpolicy="origin" class="smart-ad-card smart-ad-inline-card" aria-label="${link.title}" onclick="window.open('${link.url}', '_blank', 'noopener,noreferrer'); return false;">
+        <span class="smart-ad-card-index">0${index + 1}</span>
+        <div class="smart-ad-card-copy">
+          <strong>${link.title}</strong>
+          <span>Open offer</span>
+        </div>
+        <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+      </a>
+    `).join('');
+  },
+
   showSmartAdModal() {
     return new Promise((resolve) => {
       const modal = document.getElementById('smart-ad-modal');
@@ -110,7 +126,7 @@ const App = {
       }
 
       grid.innerHTML = this.smartAdLinks.map((link, index) => `
-        <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="smart-ad-card" aria-label="${link.title}">
+        <a href="${link.url}" target="_blank" rel="noopener noreferrer" referrerpolicy="origin" class="smart-ad-card" aria-label="${link.title}" onclick="window.open('${link.url}', '_blank', 'noopener,noreferrer'); return false;">
           <span class="smart-ad-card-index">0${index + 1}</span>
           <div class="smart-ad-card-copy">
             <strong>${link.title}</strong>
@@ -1845,6 +1861,8 @@ const App = {
         if (modalContent) modalContent.scrollTo({ top: 0, behavior: 'smooth' });
       };
     }
+
+    this.renderSmartAdCards();
 
     // Populate Modal SEO & FAQ Area — only shown in details mode (not while watching)
     const modalSeo = document.getElementById('modal-seo-content');

@@ -1019,6 +1019,13 @@ nav.scrolled {
   gap: 14px;
 }
 
+.smart-ad-inline-container {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 1.5rem;
+}
+
 .smart-ad-card {
   display: flex;
   align-items: center;
@@ -1075,8 +1082,17 @@ nav.scrolled {
   font-size: 0.8rem;
 }
 
+.smart-ad-inline-card {
+  padding: 12px 10px;
+  border-radius: 14px;
+}
+
 @media (max-width: 700px) {
   .smart-ad-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-ad-inline-container {
     grid-template-columns: 1fr;
   }
 }
