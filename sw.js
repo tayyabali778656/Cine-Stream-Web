@@ -2,16 +2,8 @@
  * CineStream Service Worker
  * 
  * Properly handles fetch events so that API requests and PWA resources
- * are NEVER intercepted or blocked. Third-party ad script is loaded
- * ONLY after we pass through all critical site requests.
+ * are NEVER intercepted or blocked.
  */
-
-// ── Ad network config ─────────────────────────────────────────────────────────
-self.options = {
-  "domain": "5gvci.com",
-  "zoneId": 11462725
-};
-self.lary = "";
 
 // ── Critical paths that must NEVER be intercepted ─────────────────────────────
 const PASSTHROUGH_PREFIXES = [
@@ -52,12 +44,5 @@ self.addEventListener('fetch', function (event) {
     }
   }
 
-  // For all other requests, fall through to browser default (no interception)
-  // The ad script is loaded below but does not get a chance to intercept
-  // same-origin API calls because we already handled them above.
+  // For all other requests, fall through to browser default (no interception).
 });
-
-// ── Load the ad network service worker script ─────────────────────────────────
-// This runs AFTER our fetch listener is registered, so our listener
-// takes priority over any fetch listeners registered by the ad script.
-importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');

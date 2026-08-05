@@ -76,6 +76,12 @@ const App = {
     if (!this.hiddenCache) this.hiddenCache = new Set();
   },
 
+  smartAdLinks: [
+    { title: 'OMG10 Offer 1', url: 'https://omg10.com/4/11503004' },
+    { title: 'OMG10 Offer 2', url: 'https://omg10.com/4/11503020' },
+    { title: 'OMG10 Offer 3', url: 'https://omg10.com/4/11503019' }
+  ],
+
   showToast(message) {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -89,6 +95,62 @@ const App = {
       toast.style.transition = 'all 0.5s ease';
       setTimeout(() => toast.remove(), 500);
     }, 4000);
+  },
+
+  showSmartAdModal() {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('smart-ad-modal');
+      const grid = document.getElementById('smart-ad-grid');
+      const timer = document.getElementById('smart-ad-timer');
+      const closeBtn = document.getElementById('smart-ad-close');
+
+      if (!modal || !grid || !timer || !closeBtn) {
+        resolve();
+        return;
+      }
+
+      grid.innerHTML = this.smartAdLinks.map((link, index) => `
+        <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="smart-ad-card" aria-label="${link.title}">
+          <span class="smart-ad-card-index">0${index + 1}</span>
+          <div class="smart-ad-card-copy">
+            <strong>${link.title}</strong>
+            <span>Open offer</span>
+          </div>
+          <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+        </a>
+      `).join('');
+
+      const cleanup = () => {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        clearInterval(countdownInterval);
+        resolve();
+      };
+
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+
+      let remaining = 5;
+      timer.textContent = `${remaining}s`;
+      closeBtn.disabled = true;
+      closeBtn.textContent = 'Wait...';
+      closeBtn.style.opacity = '0.5';
+
+      const countdownInterval = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          timer.textContent = '0s';
+          closeBtn.disabled = false;
+          closeBtn.textContent = 'Close';
+          closeBtn.style.opacity = '1';
+          return;
+        }
+        timer.textContent = `${remaining}s`;
+      }, 1000);
+
+      closeBtn.onclick = cleanup;
+    });
   },
 
   showNoTrailer(noTrailerEl, text = null) {
@@ -2034,6 +2096,8 @@ const App = {
       if (noTrailer) this.hideNoTrailer(noTrailer);
 
       if (isWatching) {
+        await this.showSmartAdModal();
+
         this.modal.classList.add('watching');
         this.addToRecentlyViewed(movie, type);
         this.renderRecentlyViewed();
