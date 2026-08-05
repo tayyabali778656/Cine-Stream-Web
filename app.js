@@ -1892,6 +1892,23 @@ const App = {
    */
   async openModal(movieId, type, updateHistory = true, isWatching = false, isNetMirror = false) {
 
+    const fetchAnimeDetails = async (id) => {
+      try {
+        const res = await fetch(`/api/v1/anime/details?id=${encodeURIComponent(id)}`);
+        if (!res.ok) {
+          console.warn('[App] Anime details fetch not found:', res.status, id);
+          return null;
+        }
+        const data = await res.json();
+        if (!data || (!data.id && !data.slug && !data.title)) {
+          return null;
+        }
+        return data;
+      } catch (err) {
+        console.warn('[App] Anime details fetch failed:', err.message);
+        return null;
+      }
+    };
 
     if (updateHistory) {
       const newPath = isWatching ? `/watch/${type}/${movieId}` : `/media/${type}/${movieId}`;
@@ -1989,12 +2006,12 @@ const App = {
       // 2. Fetch full details from server
       if (!localMovie || (!localMovie.description && !localMovie.overview) || !this.animeDetailsCache[movieId]) {
         try {
-          const fetchPromise = fetch(`/api/v1/anime/details?id=${encodeURIComponent(movieId)}`).then(r => r.json());
+          const fetchPromise = fetchAnimeDetails(movieId);
 
           if (!localMovie) {
             // Blocking fetch if we have absolutely no local data
             const detailsRes = await fetchPromise;
-            if (detailsRes && detailsRes.id) {
+            if (detailsRes && (detailsRes.id || detailsRes.slug || detailsRes.title)) {
               movie = {
                 id: detailsRes.id,
                 title: detailsRes.title,
@@ -2029,13 +2046,18 @@ const App = {
                   modalContent.style.overflowY = '';
                 }
               }
+            } else if (localMovie) {
+              movie = localMovie;
+              this.populateModalUI(movie, type, isNetMirror, movieId);
             } else {
-              throw new Error('Anime not found in database.');
+              this.showToast('Details not available for this title right now.');
+              this.closeModal(true);
+              return;
             }
           } else {
             // Asynchronous fetch in the background to update detail fields (like episodes) smoothly
             fetchPromise.then(detailsRes => {
-              if (detailsRes && detailsRes.id && this.activeMovieId === movieId) {
+              if (detailsRes && (detailsRes.id || detailsRes.slug || detailsRes.title) && this.activeMovieId === movieId) {
                 const updatedMovie = {
                   id: detailsRes.id,
                   title: detailsRes.title,
