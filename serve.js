@@ -549,7 +549,20 @@ async function handleApiV1(req, res, pathname) {
     const animeSlug = url.searchParams.get('animeSlug') || '';
     const season = parseInt(url.searchParams.get('season') || '1', 10);
     const episode = parseInt(url.searchParams.get('episode') || '1', 10);
-    const slug = animeSlug || (animeId ? animeId.replace('toon_', '') : '');
+    let slug = animeSlug || (animeId ? animeId.replace('toon_', '') : '');
+    slug = decodeURIComponent(slug).replace(/:/g, '').replace(/%3A/gi, '');
+
+    const SLUG_ALIASES = {
+      'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade',
+      're-zero-starting-life-in-another-world': 'rezero-starting-life-in-another-world',
+      'daemons-of-the-shadow': 'daemons-of-the-shadow-realm',
+      'nippon-sangoku': 'nippon-sangoku-the-three-nations-of-the-crimson-sun',
+      'tamons-b-side': "tamon's-b-side",
+      'tamon-s-b-side': "tamon's-b-side"
+    };
+    if (SLUG_ALIASES[slug]) {
+      slug = SLUG_ALIASES[slug];
+    }
 
     try {
       // Parallelize admin lookup + details + DB episodes lookup
@@ -646,6 +659,31 @@ async function handleApiV1(req, res, pathname) {
         }
 
         if (!Array.isArray(episodes)) episodes = [];
+
+        // Fallback: if no series episodes found, this might be a movie misclassified as a series in the DB
+        if (episodes.length === 0) {
+          try {
+            const freshDetails = await liveSvc.getLiveAnimeDetails(animeId, slug, 'movie');
+            if (freshDetails && freshDetails.type === 'movie') {
+              const animeCollection = getCollection('anime');
+              await animeCollection.updateOne(
+                { id: `toon_${slug}` },
+                { $set: { type: 'movie', movieSources: freshDetails.movieSources, updatedAt: new Date() } }
+              );
+              episodes = [{
+                id: `ep_${slug}_1x1`,
+                animeId: animeId || `toon_${slug}`,
+                animeSlug: slug,
+                season: 1,
+                episode: 1,
+                title: freshDetails.title,
+                sources: freshDetails.movieSources || []
+              }];
+            }
+          } catch (fallbackErr) {
+            logger.warn(`Movie fallback check failed for ${slug}:`, fallbackErr.message);
+          }
+        }
 
         // Save scraped episodes to MongoDB with timestamp
         if (episodes.length > 0) {
@@ -1319,24 +1357,26 @@ const requestHandler = async (req, res) => {
       const filename = pathname.slice(1); // strip leading /
       const staticPath = path.join(PUBLIC_DIR, filename);
 
-      if (fs.existsSync(staticPath)) {
-        // Serve the pre-generated static file — fastest path, no API calls needed
-        res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+      // Serve the static sitemap file ONLY on local environments.
+      // On Vercel, bypass this to allow real-time database-driven sitemap updates with memory caching.
+      if (fs.existsSync(staticPath) && !process.env.VERCEL) {
+        // Serve the pre-generated static file — fast loading, refreshed edge cache
+        res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=600, stale-while-revalidate=3600');
         res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
         fs.createReadStream(staticPath).pipe(res);
         logger.request(req, 200, Date.now() - startMs);
         return;
       }
 
-      // Fallback: if sitemap.xml is missing, build it dynamically (first-run scenario)
+      // Fallback: if sitemap.xml is missing (or on Vercel), build it dynamically from MongoDB
       if (filename === 'sitemap.xml') {
         const cached = cache.get('sitemap_xml');
         let xml = cached;
         if (!xml) {
           xml = await buildSitemap();
-          cache.set('sitemap_xml', xml, 60 * 60 * 1000);
+          cache.set('sitemap_xml', xml, 24 * 60 * 60 * 1000); // Cache in memory for 24 hours
         }
-        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=600, stale-while-revalidate=3600');
         res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
         res.end(xml);
         logger.request(req, 200, Date.now() - startMs);
@@ -1348,7 +1388,7 @@ const requestHandler = async (req, res) => {
         const SITE = 'https://cinestream.watch';
         const today = new Date().toISOString().split('T')[0];
         const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap>\n    <loc>${SITE}/sitemap.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>\n</sitemapindex>`;
-        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=600, stale-while-revalidate=3600');
         res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
         res.end(xml);
         logger.request(req, 200, Date.now() - startMs);
@@ -1869,9 +1909,9 @@ const requestHandler = async (req, res) => {
           limit: 40
         }).toArray();
 
-        const seoTitle = `Watch Best ${genreName} Anime Hindi Dubbed Online Free | CineStream`;
-        const seoDesc = `Stream the best ${genreName} anime series and movies with Hindi dubbed dual audio free in HD. Check our full list of ${genreName} anime now!`;
-        const seoKeywords = `${genreName} anime, ${genreName} anime in hindi, watch ${genreName} dubbed, hindi dubbed ${genreName} anime list, CineStream`;
+        const seoTitle = `Watch Best ${genreName} Anime in Hindi Dubbed Online Free | CineStream`;
+        const seoDesc = `Stream the best ${genreName} anime series and movies with in Hindi Dubbed dual audio free in HD. Check our full list of ${genreName} anime now!`;
+        const seoKeywords = `${genreName} anime, ${genreName} anime in hindi, watch ${genreName} dubbed, in Hindi Dubbed ${genreName} anime list, CineStream`;
         const canonical = `https://cinestream.watch/genre/${rawGenre}`;
 
         const gridHtml = genreItems.map(item => {
@@ -2032,13 +2072,13 @@ const requestHandler = async (req, res) => {
         let seoTitle = '';
         let seoDesc = '';
         if (mediaType === 'movie') {
-          seoTitle = `Watch ${animeTitle} Full Movie Hindi Dubbed Online Free HD | CineStream`;
+          seoTitle = `Watch ${animeTitle} Full Movie in Hindi Dubbed Online Free HD | CineStream`;
           seoDesc = animeDesc.slice(0, 155) || buildDesc(animeTitle, 'movie', animeGenres, animeYear, animeRating);
         } else if (isWatch && season && episode) {
-          seoTitle = `Watch ${animeTitle} Season ${season} Episode ${episode} Hindi Dubbed (S${season}E${episode}) HD | CineStream`;
-          seoDesc = `Stream ${animeTitle} S${season}E${episode} Hindi Dubbed online free in 1080p HD on CineStream. Watch all episodes of ${animeTitle} in Hindi — fast, free, no login required.`;
+          seoTitle = `Watch ${animeTitle} Season ${season} Episode ${episode} in Hindi Dubbed (S${season}E${episode}) HD | CineStream`;
+          seoDesc = `Stream ${animeTitle} S${season}E${episode} in Hindi Dubbed online free in 1080p HD on CineStream. Watch all episodes of ${animeTitle} in Hindi — fast, free, no login required.`;
         } else {
-          seoTitle = `Watch ${animeTitle} Hindi Dubbed All Episodes Free HD | CineStream`;
+          seoTitle = `Watch ${animeTitle} in Hindi Dubbed All Episodes Free HD | CineStream`;
           seoDesc = animeDesc.slice(0, 155) || buildDesc(animeTitle, 'tv', animeGenres, animeYear, animeRating);
         }
 
@@ -2047,8 +2087,8 @@ const requestHandler = async (req, res) => {
 
         const genreKeywords = animeGenres.map(g => `${g} anime in hindi`).join(', ');
         // Target Hinglish, Urdu, & regional searches: Urdu, reviews, cast, story, trailer, release date, watch online
-        const intentKeywords = `${animeTitle} ep 1 hindi dubbed, ${animeTitle} season 1, where to watch ${animeTitle} in hindi, ${animeTitle} hindi dubbed kahan dekhen, is ${animeTitle} available in hindi, ${animeTitle} urdu dubbed, ${animeTitle} watch online, ${animeTitle} free streaming, ${animeTitle} full details, ${animeTitle} trailer, ${animeTitle} release date, ${animeTitle} story review cast`;
-        const seoKeywords = `${animeTitle} in hindi, ${animeTitle} hindi dubbed, watch ${animeTitle} online free, ${animeTitle} hindi dubbed episodes, ${animeTitle} ${animeYear || ''}, ${genreKeywords}, ${intentKeywords}, anime in hindi, CineStream, cinestream.watch`.replace(/,\s*,/g, ',');
+        const intentKeywords = `${animeTitle} ep 1 in Hindi Dubbed, ${animeTitle} season 1, where to watch ${animeTitle} in hindi, ${animeTitle} in Hindi Dubbed kahan dekhen, is ${animeTitle} available in hindi, ${animeTitle} urdu dubbed, ${animeTitle} watch online, ${animeTitle} free streaming, ${animeTitle} full details, ${animeTitle} trailer, ${animeTitle} release date, ${animeTitle} story review cast`;
+        const seoKeywords = `${animeTitle} in hindi, ${animeTitle} in Hindi Dubbed, watch ${animeTitle} online free, ${animeTitle} in Hindi Dubbed episodes, ${animeTitle} ${animeYear || ''}, ${genreKeywords}, ${intentKeywords}, anime in hindi, CineStream, cinestream.watch`.replace(/,\s*,/g, ',');
 
         let canonical = `https://cinestream.watch/${action}/${mediaType}/${toonId}`;
         if (isWatch && season && episode && mediaType === 'tv') {
@@ -2083,7 +2123,7 @@ const requestHandler = async (req, res) => {
 
         // 2. Main media schema
         const commonMediaFields = {
-          'name': `${animeTitle} Hindi Dubbed`,
+          'name': `${animeTitle} in Hindi Dubbed`,
           'alternateName': [`${animeTitle} in Hindi`, `${animeTitle} Hindi`, `Watch ${animeTitle} Online`],
           'url': canonical,
           'image': { '@type': 'ImageObject', 'url': posterUrl, 'width': 500, 'height': 750 },
@@ -2137,7 +2177,7 @@ const requestHandler = async (req, res) => {
           const movieEmbedUrl = `https://cinestream.watch/iframe-proxy?id=${toonId}`;
           schemas.push({
             '@context': 'https://schema.org', '@type': 'VideoObject',
-            'name': `Watch ${animeTitle} Full Movie Hindi Dubbed Online Free`,
+            'name': `Watch ${animeTitle} Full Movie in Hindi Dubbed Online Free`,
             'description': seoDesc,
             'thumbnailUrl': [posterUrl],
             'uploadDate': datePublished,
@@ -2148,7 +2188,7 @@ const requestHandler = async (req, res) => {
             'isAccessibleForFree': true,
             'isFamilyFriendly': true,
             'inLanguage': 'hi',
-            'keywords': `${animeTitle} hindi dubbed, watch ${animeTitle} online free, ${animeTitle} full movie hindi`,
+            'keywords': `${animeTitle} in Hindi Dubbed, watch ${animeTitle} online free, ${animeTitle} full movie hindi`,
             'potentialAction': { '@type': 'WatchAction', 'target': [canonical] },
             'publisher': publisherSchema,
             'interactionStatistic': { '@type': 'InteractionCounter', 'interactionType': { '@type': 'WatchAction' }, 'userInteractionCount': 85000 }
@@ -2156,10 +2196,10 @@ const requestHandler = async (req, res) => {
         } else if (isWatch && season && episode) {
           schemas.push({
             '@context': 'https://schema.org', '@type': 'Episode',
-            'name': `${animeTitle} Season ${season} Episode ${episode} Hindi Dubbed`,
+            'name': `${animeTitle} Season ${season} Episode ${episode} in Hindi Dubbed`,
             'episodeNumber': episode,
             'partOfSeason': { '@type': 'CreativeWorkSeason', 'seasonNumber': season, 'name': `Season ${season}` },
-            'partOfSeries': { '@type': 'TVSeries', 'name': `${animeTitle} Hindi Dubbed`, 'url': `https://cinestream.watch/media/tv/${toonId}` },
+            'partOfSeries': { '@type': 'TVSeries', 'name': `${animeTitle} in Hindi Dubbed`, 'url': `https://cinestream.watch/media/tv/${toonId}` },
             'url': canonical,
             'image': { '@type': 'ImageObject', 'url': posterUrl, 'width': 500, 'height': 750 },
             'description': seoDesc,
@@ -2171,7 +2211,7 @@ const requestHandler = async (req, res) => {
           const epEmbedUrl = `https://cinestream.watch/iframe-proxy?id=${toonId}&s=${season}&e=${episode}`;
           schemas.push({
             '@context': 'https://schema.org', '@type': 'VideoObject',
-            'name': `Watch ${animeTitle} S${season}E${episode} Hindi Dubbed Online Free`,
+            'name': `Watch ${animeTitle} S${season}E${episode} in Hindi Dubbed Online Free`,
             'description': seoDesc,
             'thumbnailUrl': [posterUrl],
             'uploadDate': datePublished,
@@ -2182,7 +2222,7 @@ const requestHandler = async (req, res) => {
             'isAccessibleForFree': true,
             'isFamilyFriendly': true,
             'inLanguage': 'hi',
-            'keywords': `${animeTitle} episode ${episode} hindi dubbed, watch ${animeTitle} S${season}E${episode} online free, ${animeTitle} season ${season} hindi`,
+            'keywords': `${animeTitle} episode ${episode} in Hindi Dubbed, watch ${animeTitle} S${season}E${episode} online free, ${animeTitle} season ${season} hindi`,
             'potentialAction': { '@type': 'WatchAction', 'target': [canonical] },
             'publisher': publisherSchema,
             'interactionStatistic': { '@type': 'InteractionCounter', 'interactionType': { '@type': 'WatchAction' }, 'userInteractionCount': 50000 }
@@ -2221,7 +2261,7 @@ const requestHandler = async (req, res) => {
             'name': `Is ${animeTitle} available in Hindi on CineStream?`,
             'acceptedAnswer': {
               '@type': 'Answer',
-              'text': `Yes! ${animeTitle} is available with Hindi dubbed audio track on CineStream. You can watch all seasons and full episodes free.`
+              'text': `Yes! ${animeTitle} is available with in Hindi Dubbed audio track on CineStream. You can watch all seasons and full episodes free.`
             }
           }
         ];
@@ -2259,7 +2299,7 @@ const requestHandler = async (req, res) => {
               ${animePoster ? `<div style="flex:0 0 150px;"><img src="${posterUrl}" alt="${animeTitle} Poster" width="150" height="225" style="border-radius:8px;object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,0.5);max-width:100%;height:auto;"></div>` : ''}
               <div style="flex:1;min-width:280px;">
                 <p style="font-size:1rem;line-height:1.6;color:var(--text-muted);margin:0 0 1rem 0;">
-                  Looking for <strong>${animeTitle} Hindi Dubbed</strong> episodes? CineStream provides high-quality streaming links to watch the entire series online for free. Read full reviews, synopsis, story release updates, and casting insights below.
+                  Looking for <strong>${animeTitle} in Hindi Dubbed</strong> episodes? CineStream provides high-quality streaming links to watch the entire series online for free. Read full reviews, synopsis, story release updates, and casting insights below.
                 </p>
                 <div style="margin-bottom:1rem;">
                   <strong>Release Year:</strong> ${animeYear || 'N/A'} | 
@@ -2273,19 +2313,19 @@ const requestHandler = async (req, res) => {
             </div>
             
             <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Synopsis and Story Details</h2>
-            <p style="line-height:1.8;color:var(--text-muted);font-size:1rem;">${animeDesc || `Watch ${animeTitle} Hindi Dubbed full series online free on CineStream. Enjoy all episodes in high quality HD with multi-audio options. CineStream offers the best anime streaming experience in India with Hindi, English and Japanese audio tracks.`}</p>
+            <p style="line-height:1.8;color:var(--text-muted);font-size:1rem;">${animeDesc || `Watch ${animeTitle} in Hindi Dubbed full series online free on CineStream. Enjoy all episodes in high quality HD with multi-audio options. CineStream offers the best anime streaming experience in India with Hindi, English and Japanese audio tracks.`}</p>
 
             <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">About ${animeTitle}</h2>
             <p style="line-height:1.8;color:var(--text-muted);font-size:1rem;">
               <strong>${animeTitle}</strong>${animeYear ? ` (${animeYear})` : ''} is ${mediaType === 'movie' ? 'an anime movie' : 'an anime series'}${animeGenres.length > 0 ? ` in the ${animeGenres.slice(0, 3).join(', ')} genre` : ''}${animeRating ? ` with a rating of ${animeRating}/10` : ''}.
-              Available on CineStream with Hindi Dubbed audio, English subtitles, and original Japanese track.
+              Available on CineStream with in Hindi Dubbed audio, English subtitles, and original Japanese track.
               Stream all ${mediaType === 'movie' ? 'parts' : 'seasons and episodes'} of ${animeTitle} for free — no subscription, no login required.
             </p>
 
             <h2 style="font-size:1.4rem;font-weight:700;margin:1.5rem 0 0.5rem;color:var(--primary);">Where to Watch ${animeTitle} in Hindi on CineStream</h2>
             <p style="line-height:1.8;color:var(--text-muted);font-size:1rem;">
-              You can watch <strong>${animeTitle} Hindi Dubbed</strong> online free at <a href="https://cinestream.watch/media/${mediaType}/${toonId}" style="color:var(--primary);text-decoration:underline;">cinestream.watch</a>.
-              CineStream provides multiple streaming servers so you can always find a working mirror. Select your preferred audio: Hindi Dubbed, English Subtitles, or Japanese Original.
+              You can watch <strong>${animeTitle} in Hindi Dubbed</strong> online free at <a href="https://cinestream.watch/media/${mediaType}/${toonId}" style="color:var(--primary);text-decoration:underline;">cinestream.watch</a>.
+              CineStream provides multiple streaming servers so you can always find a working mirror. Select your preferred audio: in Hindi Dubbed, English Subtitles, or Japanese Original.
               Video quality options include 1080p FHD, 720p HD, and 480p SD. No ads overlay the video player. No popups or redirects.
             </p>
 
@@ -2333,7 +2373,7 @@ const requestHandler = async (req, res) => {
         injected = injected.replace(/<html lang="en"/, '<html lang="hi"');
         injected = injected.replace(
           new RegExp('<h1 id="seo-h1"[^>]*>[^<]*</h1>'),
-          `<h1 id="seo-h1" style="font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; color: var(--text); margin: 0 0 0.5rem; line-height: 1.2;">Watch ${animeTitle}${isWatch && season && episode ? ` Season ${season} Episode ${episode} (S${season} EP${episode})` : ''} Hindi Dubbed Online Free HD</h1>`
+          `<h1 id="seo-h1" style="font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; color: var(--text); margin: 0 0 0.5rem; line-height: 1.2;">Watch ${animeTitle}${isWatch && season && episode ? ` Season ${season} Episode ${episode} (S${season} EP${episode})` : ''} in Hindi Dubbed Online Free HD</h1>`
         );
         injected = injected
           .replace(new RegExp('<title id="seo-title">[^<]*</title>'), `<title id="seo-title">${seoTitle}</title>`)
@@ -2347,12 +2387,12 @@ const requestHandler = async (req, res) => {
           .replace(new RegExp('<meta id="og-image"[^>]*>'), `<meta id="og-image" property="og:image" content="${posterUrl}">`)
           .replace(new RegExp('<meta property="og:image:width"[^>]*>'), `<meta property="og:image:width" content="500">`)
           .replace(new RegExp('<meta property="og:image:height"[^>]*>'), `<meta property="og:image:height" content="750">`)
-          .replace(new RegExp('<meta property="og:image:alt"[^>]*>'), `<meta property="og:image:alt" content="Watch ${animeTitle} Hindi Dubbed on CineStream">`)
+          .replace(new RegExp('<meta property="og:image:alt"[^>]*>'), `<meta property="og:image:alt" content="Watch ${animeTitle} in Hindi Dubbed on CineStream">`)
           .replace(new RegExp('<meta property="og:type"[^>]*>'), `<meta property="og:type" content="${mediaType === 'movie' ? 'video.movie' : 'video.tv_show'}">`)
           .replace(new RegExp('<meta id="tw-title"[^>]*>'), `<meta id="tw-title" name="twitter:title" content="${seoTitle}">`)
           .replace(new RegExp('<meta id="tw-desc"[^>]*>'), `<meta id="tw-desc" name="twitter:description" content="${seoDesc}">`)
           .replace(new RegExp('<meta id="tw-image"[^>]*>'), `<meta id="tw-image" name="twitter:image" content="${posterUrl}">`)
-          .replace(new RegExp('<meta id="tw-image-alt"[^>]*>'), `<meta id="tw-image-alt" name="twitter:image:alt" content="Watch ${animeTitle} Hindi Dubbed Free on CineStream">`)
+          .replace(new RegExp('<meta id="tw-image-alt"[^>]*>'), `<meta id="tw-image-alt" name="twitter:image:alt" content="Watch ${animeTitle} in Hindi Dubbed Free on CineStream">`)
           .replace('<script id="ld-dynamic" type="application/ld+json"></script>', `<script id="ld-dynamic" type="application/ld+json">${jsonLd}</script>`)
           .replace('<script id="ld-faq-dynamic" type="application/ld+json"></script>', `<script id="ld-faq-dynamic" type="application/ld+json">${faqJsonLd}</script>`)
           .replace('<div id="seo-content-area"></div>', `<div id="seo-content-area">${visibleSeoContent}</div>`);
@@ -2394,7 +2434,7 @@ const requestHandler = async (req, res) => {
       try {
         const htmlRaw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
         const seoTitle = `${seoQ} Anime Search Results | CineStream`;
-        const seoDesc = `Find ${seoQ} episodes, seasons, Hindi dubbed content, related anime and more on CineStream.`;
+        const seoDesc = `Find ${seoQ} episodes, seasons, in Hindi Dubbed content, related anime and more on CineStream.`;
         const seoKeywords = `${seoQ}, search ${seoQ}, watch ${seoQ} hindi, ${seoQ} dubbed, CineStream`;
         const canonical = `https://cinestream.watch/?q=${encodeURIComponent(seoQ)}`;
 

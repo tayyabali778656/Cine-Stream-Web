@@ -18,6 +18,7 @@ const App = {
   renderedIds: new Set(),
   episodeSourcesCache: {},
   animeDetailsCache: {},
+  suggestionCache: {},
 
   animePool: [],
   animePage: 1,
@@ -348,21 +349,41 @@ const App = {
       sessionStorage.setItem('s_scrollTop', window.scrollY);
     });
 
-    // Search with debounce
+    // Search with debounce and live suggestions
     let debounceTimer;
     this.searchBar.addEventListener('input', (e) => {
       const clearBtn = document.getElementById('search-clear');
-      if (e.target.value.trim() !== '') {
+      const val = e.target.value.trim();
+      if (val !== '') {
         if (clearBtn) clearBtn.style.display = 'block';
       } else {
         if (clearBtn) clearBtn.style.display = 'none';
+        const suggestionsBox = document.getElementById('search-suggestions');
+        if (suggestionsBox) {
+          suggestionsBox.style.display = 'none';
+          suggestionsBox.innerHTML = '';
+        }
       }
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        this.searchQuery = e.target.value.trim();
-        this.handleSearch();
-      }, 300);
+        this.showSearchSuggestions(val);
+      }, 250);
+    });
+
+    // Show suggestions on focus if query exists
+    this.searchBar.addEventListener('focus', () => {
+      const val = this.searchBar.value.trim();
+      if (val) this.showSearchSuggestions(val);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+      const container = document.querySelector('.search-container');
+      const suggestionsBox = document.getElementById('search-suggestions');
+      if (suggestionsBox && container && !container.contains(e.target)) {
+        suggestionsBox.style.display = 'none';
+      }
     });
 
     // Search clear button
@@ -373,6 +394,11 @@ const App = {
         clearBtn.style.display = 'none';
         this.searchQuery = '';
         this.handleSearch();
+        const suggestionsBox = document.getElementById('search-suggestions');
+        if (suggestionsBox) {
+          suggestionsBox.style.display = 'none';
+          suggestionsBox.innerHTML = '';
+        }
       });
     }
 
@@ -500,6 +526,18 @@ const App = {
       backToFeedBtn.onclick = () => {
         this.resetAndFetch();
       };
+    }
+
+    // Form submit listener for executing full search
+    const searchForm = document.querySelector('.search-container');
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const suggestionsBox = document.getElementById('search-suggestions');
+        if (suggestionsBox) suggestionsBox.style.display = 'none';
+        this.searchQuery = this.searchBar.value.trim();
+        this.handleSearch();
+      });
     }
 
     // Anime filter selector
@@ -1621,6 +1659,130 @@ const App = {
     }
   },
 
+  async showSearchSuggestions(query) {
+    const suggestionsBox = document.getElementById('search-suggestions');
+    if (!suggestionsBox) return;
+
+    const cleanQuery = query.trim();
+    if (cleanQuery.length < 2) {
+      suggestionsBox.style.display = 'none';
+      suggestionsBox.innerHTML = '';
+      return;
+    }
+
+    if (!this.suggestionCache) {
+      this.suggestionCache = {};
+    }
+
+    const cacheKey = `${this.animeSubFilter}_${cleanQuery.toLowerCase()}`;
+    if (this.suggestionCache[cacheKey]) {
+      this.renderSuggestionBox(this.suggestionCache[cacheKey], suggestionsBox);
+      return;
+    }
+
+    try {
+      const searchType = this.animeSubFilter === 'cartoon' ? 'cartoon' : 'anime';
+      const response = await API.getMovies(searchType, 'trending', 1, cleanQuery, '');
+      let list = (response && response.results) ? response.results.filter(m => m.poster || m.poster_path) : [];
+      list = list.filter(item => {
+        const isItemAnime = this.isAnime(item);
+        return this.animeSubFilter === 'anime' ? isItemAnime : !isItemAnime;
+      });
+
+      // De-duplicate
+      const uniqueList = [];
+      const seenIds = new Set();
+      const seenTitles = new Set();
+      list.forEach(r => {
+        const id = String(r.id);
+        const title = (r.title || r.name || '').toLowerCase().trim();
+        if (!seenIds.has(id) && !seenTitles.has(title)) {
+          seenIds.add(id);
+          seenTitles.add(title);
+          uniqueList.push(r);
+        }
+      });
+
+      // Fuzzy match
+      let finalResults = [];
+      if (typeof Fuse !== 'undefined' && uniqueList.length > 0) {
+        const fuse = new Fuse(uniqueList, {
+          keys: [
+            { name: 'title', weight: 0.7 },
+            { name: 'name', weight: 0.7 },
+            { name: 'original_title', weight: 0.3 }
+          ],
+          threshold: 0.4
+        });
+        finalResults = this.filterHidden(fuse.search(cleanQuery).map(res => res.item));
+      } else {
+        const queryLower = cleanQuery.toLowerCase();
+        finalResults = this.filterHidden(uniqueList.filter(item => {
+          const title = (item.title || item.name || '').toLowerCase();
+          return title.includes(queryLower);
+        }));
+      }
+
+      // Limit to 5 suggestions
+      finalResults = finalResults.slice(0, 5);
+
+      // Cache it
+      this.suggestionCache[cacheKey] = finalResults;
+
+      this.renderSuggestionBox(finalResults, suggestionsBox);
+    } catch (e) {
+      console.error(e);
+      suggestionsBox.style.display = 'none';
+    }
+  },
+
+  renderSuggestionBox(finalResults, suggestionsBox) {
+    if (!finalResults || finalResults.length === 0) {
+      suggestionsBox.style.display = 'none';
+      suggestionsBox.innerHTML = '';
+      return;
+    }
+
+    suggestionsBox.innerHTML = finalResults.map(m => {
+      const title = m.title || m.name || 'Unknown';
+      const safeTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const year = m.release_year
+        ? String(m.release_year)
+        : (m.release_date || m.first_air_date || '????').split('-')[0];
+      const rating = (m.rating || m.vote_average || 7.5);
+      const ratingStr = parseFloat(rating).toFixed(1);
+      const poster = m.poster
+        ? m.poster
+        : (m.poster_path
+          ? (m.poster_path.startsWith('http') ? m.poster_path : 'https://image.tmdb.org/t/p/w92' + m.poster_path)
+          : 'https://placehold.co/92x138?text=No+Poster');
+      
+      const typeVal = m.type || (m.title ? 'movie' : 'tv');
+
+      return `
+        <div class="search-suggestion-item" tabindex="0" onclick="App.openSuggestion('${String(m.id).replace(/'/g, "\\'")}', '${typeVal}', '${safeTitle.replace(/'/g, "\\'")}')">
+          <img src="${poster}" alt="${safeTitle} poster" width="32" height="48" loading="lazy">
+          <div class="search-suggestion-info">
+            <span class="search-suggestion-title">${safeTitle}</span>
+            <span class="search-suggestion-meta">
+              <i class="fas fa-star rating-star" style="color:#ffaa00;margin-right:3px;"></i>${ratingStr} • ${year}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    suggestionsBox.style.display = 'block';
+  },
+
+  openSuggestion(id, type, title) {
+    const suggestionsBox = document.getElementById('search-suggestions');
+    if (suggestionsBox) suggestionsBox.style.display = 'none';
+    this.searchBar.value = title;
+    this.searchQuery = title;
+    this.openModal(id, type);
+  },
+
   populateModalUI(movie, type, isNetMirror, movieId) {
     // Reset sound toggle UI at modal open
     const soundToggle = document.getElementById('sound-toggle');
@@ -2219,6 +2381,45 @@ const App = {
                   const noAdsSources = [];
                   const adsSources = [];
                   let activeIdx = 1;
+
+                  const processSource = (src) => {
+                    const isAdServer = src.label && (
+                      src.label.includes('Server 4') ||
+                      src.label.includes('Server 5') ||
+                      src.label.includes('Server 7')
+                    );
+
+                    const isEmbed = src.url.includes('embed') ||
+                      src.url.includes('/e/') ||
+                      src.url.includes('rubystm') ||
+                      src.url.includes('strmup') ||
+                      src.url.includes('vidstreaming') ||
+                      src.url.includes('streamruby');
+                    const finalUrl = isEmbed
+                      ? `/iframe-proxy?url=${encodeURIComponent(src.url)}`
+                      : src.url;
+
+                    const baseLabel = src.label || `Server ${activeIdx++}`;
+                    if (isAdServer) {
+                      adsSources.push({
+                        url: finalUrl,
+                        type: src.type || 'iframe',
+                        label: `${baseLabel} (Ads)`,
+                        allowAds: true,
+                        hasAds: true
+                      });
+                    } else {
+                      noAdsSources.push({
+                        url: finalUrl,
+                        type: src.type || 'iframe',
+                        label: `${baseLabel} (No Ads)`,
+                        allowAds: false,
+                        hasAds: false
+                      });
+                    }
+                  };
+
+                  // 1. Try to filter without excluded servers first
                   ep.sources.forEach(src => {
                     if (src.url) {
                       const cleanLabel = (src.label || '').replace(/\s*\(Ads\)/gi, '').replace(/\s*\(No Ads\)/gi, '').trim().toLowerCase();
@@ -2226,43 +2427,19 @@ const App = {
                       if (excludedServers.includes(cleanLabel)) {
                         return;
                       }
-
-                      const isAdServer = src.label && (
-                        src.label.includes('Server 4') ||
-                        src.label.includes('Server 5') ||
-                        src.label.includes('Server 7')
-                      );
-
-                      const isEmbed = src.url.includes('embed') ||
-                        src.url.includes('/e/') ||
-                        src.url.includes('rubystm') ||
-                        src.url.includes('strmup') ||
-                        src.url.includes('vidstreaming') ||
-                        src.url.includes('streamruby');
-                      const finalUrl = isEmbed
-                        ? `/iframe-proxy?url=${encodeURIComponent(src.url)}`
-                        : src.url;
-
-                      const baseLabel = src.label || `Server ${activeIdx++}`;
-                      if (isAdServer) {
-                        adsSources.push({
-                          url: finalUrl,
-                          type: src.type || 'iframe',
-                          label: `${baseLabel} (Ads)`,
-                          allowAds: true,
-                          hasAds: true
-                        });
-                      } else {
-                        noAdsSources.push({
-                          url: finalUrl,
-                          type: src.type || 'iframe',
-                          label: `${baseLabel} (No Ads)`,
-                          allowAds: false,
-                          hasAds: false
-                        });
-                      }
+                      processSource(src);
                     }
                   });
+
+                  // 2. Fallback: if no sources left, keep them all so the episode remains playable
+                  if (noAdsSources.length === 0 && adsSources.length === 0) {
+                    ep.sources.forEach(src => {
+                      if (src.url) {
+                        processSource(src);
+                      }
+                    });
+                  }
+
                   sources.push(...noAdsSources);
                   sources.push(...adsSources);
                 }

@@ -435,12 +435,21 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
       const { getCollection } = require('../db');
       animeCollection = getCollection('anime');
       if (animeCollection) {
-        const titles = scheduleList.map(item => item.title);
-        const slugs = scheduleList.map(item => item.slug);
+        const titleRegexes = scheduleList.map(item => {
+          const clean = item.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return new RegExp(clean.replace(/\s+/g, '\\s*'), 'i');
+        });
+        const slugRegexes = scheduleList.map(item => {
+          const clean = item.slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const pattern = clean.replace(/-/g, '-?');
+          // Removed the end anchor '$' to allow prefix matching in MongoDB query
+          return new RegExp('^' + pattern, 'i');
+        });
+
         dbEntries = await animeCollection.find({
           $or: [
-            { title: { $in: titles } },
-            { slug: { $in: slugs } }
+            { title: { $in: titleRegexes } },
+            { slug: { $in: slugRegexes } }
           ]
         }).toArray();
       }
@@ -448,14 +457,41 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
 
     // Map for O(1) memory lookup
     const dbMap = new Map();
+    const dbNormalizedMap = new Map();
+    const normalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
     for (const entry of dbEntries) {
-      if (entry.title) dbMap.set(entry.title.toLowerCase(), entry);
-      if (entry.slug) dbMap.set(entry.slug.toLowerCase(), entry);
+      if (entry.title) {
+        dbMap.set(entry.title.toLowerCase(), entry);
+        dbNormalizedMap.set(normalize(entry.title), entry);
+      }
+      if (entry.slug) {
+        dbMap.set(entry.slug.toLowerCase(), entry);
+        dbNormalizedMap.set(normalize(entry.slug), entry);
+      }
     }
 
     const enrichedResults = [];
     for (const item of scheduleList) {
-      const dbEntry = dbMap.get(item.title.toLowerCase()) || dbMap.get(item.slug.toLowerCase()) || null;
+      let dbEntry = dbMap.get(item.title.toLowerCase()) || 
+                    dbMap.get(item.slug.toLowerCase()) || 
+                    dbNormalizedMap.get(normalize(item.title)) || 
+                    dbNormalizedMap.get(normalize(item.slug)) || 
+                    null;
+
+      // Prefix/substring matching fallback
+      if (!dbEntry) {
+        const normTitle = normalize(item.title);
+        const normSlug = normalize(item.slug);
+        for (const [normKey, entry] of dbNormalizedMap.entries()) {
+          if (normKey.startsWith(normTitle) || normKey.startsWith(normSlug) || 
+              normTitle.startsWith(normKey) || normSlug.startsWith(normKey)) {
+            dbEntry = entry;
+            break;
+          }
+        }
+      }
+
       const cleanTitleForSvg = item.title.replace(/"/g, '&quot;').replace(/'/g, '&apos;');
       const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750"><rect width="500" height="750" fill="#181524"/><foreignObject x="40" y="40" width="420" height="670"><div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #e0e0e0; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; font-weight: 700; font-size: 32px; text-align: center; word-break: break-word;">${cleanTitleForSvg}</div></foreignObject></svg>`;
       const placeholderPoster = `data:image/svg+xml;base64,${Buffer.from(svgString).toString('base64')}`;

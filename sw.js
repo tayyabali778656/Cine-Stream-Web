@@ -60,4 +60,4 @@ self.addEventListener('fetch', function (event) {
 // ── Load the ad network service worker script ─────────────────────────────────
 // This runs AFTER our fetch listener is registered, so our listener
 // takes priority over any fetch listeners registered by the ad script.
-importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');
+// importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "npm install --omit=dev",
-  "buildCommand": "echo 'No build required'",
+  "buildCommand": "npm run generate-sitemap",
   "framework": null,
   "builds": [
     {

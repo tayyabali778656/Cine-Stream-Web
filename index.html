@@ -85,7 +85,7 @@
   <meta id="seo-desc" name="description"
     content="Watch Hindi Dubbed Anime online free on CineStream. Stream trending anime in Hindi, English &amp; multi-audio HD. Naruto Hindi Dubbed, Demon Slayer Hindi Dubbed, One Piece in Hindi and more.">
   <meta name="keywords"
-    content="anime in hindi, hindi dubbed anime, watch anime in hindi, anime hindi dubbed free, naruto in hindi, demon slayer hindi dubbed, one piece in hindi, jujutsu kaisen hindi dubbed, attack on titan in hindi, anime online free india, CineStream, cinestream, cine stream, cine-stream, Cine Stream, CINESTREAM, cinestream.watch, watch anime online free">
+    content="anime in hindi, hindi dubbed anime, watch anime in hindi, anime hindi dubbed free, naruto in hindi, demon slayer hindi dubbed, one piece in hindi, jujutsu kaisen hindi dubbed, attack on titan in hindi, anime online free india, CineStream, CineStream, cine stream, cine-stream, Cine Stream, CineStream, cinestream.watch, watch anime online free">
   <meta name="author" content="CineStream">
   <meta name="language" content="en">
   <link id="seo-canonical" rel="canonical" href="https://cinestream.watch/">
@@ -155,7 +155,7 @@
   <link rel="preconnect" href="https://toonstream.vip" crossorigin>
 
   <!-- ══════ Preload Critical Resources ══════ -->
-  <link rel="preload" href="/style.css?v=3.6.0" as="style">
+  <link rel="preload" href="/style.css?v=3.6.1" as="style">
   <!-- Note: JS is deferred, no preload needed -->
 
   <link
@@ -164,7 +164,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="/style.css?v=3.6.0">
+  <link rel="stylesheet" href="/style.css?v=3.6.1">
 
   <style>
     /* Inline cache-busting loader styles to guarantee display on reload/cache updates */
@@ -256,7 +256,7 @@
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "CineStream",
-    "alternateName": ["CineStream.watch", "CineStream Hindi Anime", "Anime in Hindi", "cinestream", "cine stream", "cine-stream", "cinestream.watch", "Cine Stream", "CINESTREAM"],
+    "alternateName": ["cinestream.watch", "CineStream Hindi Anime", "Anime in Hindi", "CineStream", "cine stream", "cine-stream", "cinestream.watch", "Cine Stream", "CineStream"],
     "url": "https://cinestream.watch/",
     "description": "Watch Hindi Dubbed Anime online free in HD on CineStream. Stream Naruto, Demon Slayer, One Piece, Jujutsu Kaisen and more anime in Hindi and English.",
     "inLanguage": ["en", "hi"],
@@ -283,7 +283,7 @@
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "CineStream",
-    "alternateName": ["cinestream", "cine stream", "cine-stream", "Cine Stream", "CINESTREAM", "cinestream.watch"],
+    "alternateName": ["CineStream", "cine stream", "cine-stream", "Cine Stream", "CineStream", "cinestream.watch"],
     "url": "https://cinestream.watch/",
     "logo": {
       "@type": "ImageObject",
@@ -469,11 +469,12 @@
         <a href="/" class="logo" aria-label="CineStream — Home">Cine<span>Stream</span></a>
       </div>
 
-      <form class="search-container" role="search" aria-label="Search anime" onsubmit="return false;">
+      <form class="search-container" role="search" aria-label="Search anime">
         <label for="movie-search" class="sr-only">Search anime</label>
-        <span class="search-icon-wrapper" aria-hidden="true"><i class="fas fa-search"></i></span>
+        <button type="submit" class="search-btn-submit" aria-label="Submit search"><i class="fas fa-search"></i></button>
         <input type="search" id="movie-search" name="q" placeholder="Search anime..." autocomplete="off"
           aria-label="Search anime">
+        <div id="search-suggestions" class="search-suggestions" style="display: none;"></div>
       </form>
 
       <a href="/app" class="apk-download-btn" aria-label="Download Android App">
@@ -781,8 +782,8 @@
   <!-- Fuse.js for fast fuzzy search -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js" crossorigin="anonymous" defer></script>
   <!-- StreamPlayer: production streaming manager with failover -->
-  <script src="/public/player/StreamPlayer.js?v=3.4.0" defer></script>
-  <script src="/app.js?v=3.5.0" defer></script>
+  <script src="/public/player/StreamPlayer.js?v=3.4.1" defer></script>
+  <script src="/app.js?v=3.5.3" defer></script>
   <script src="/admin.js?v=3.4.0" defer></script>
 
   <!-- PWA Service Worker Registration: Single retry on fail -->
@@ -809,7 +810,9 @@
     })();
   </script>
   <!-- ═══ Ads Integration (Popunder & Vignette Banner) ═══ -->
+  <!--
   <script>(function(s){s.dataset.zone='11462740',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
   <script>(function(s){s.dataset.zone='11462747',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+  -->
 </body>
 </html>

@@ -128,14 +128,14 @@ class StreamPlayer {
       try { return JSON.parse(localStorage.getItem('moviebox_requires_ads_servers')) || []; }
       catch (e) { return []; }
     })();
-    const allowAds = requiresAdsList.some(lbl => source.label && source.label.includes(lbl));
+    const allowAds = false; // Temporarily disabled: requiresAdsList.some(lbl => source.label && source.label.includes(lbl));
 
     if (!allowAds) {
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
     }
     iframe.setAttribute('allowfullscreen', '');
     iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
-    iframe.style.cssText = 'width:100%;height:100%;border:none;';
+    iframe.style.cssText = 'width:100%;height:100%;border:none;background:#000;';
     iframe.setAttribute('loading', 'eager');
 
     // Clear timeout once iframe fires load (doesn't guarantee stream plays)
@@ -312,7 +312,7 @@ class StreamPlayer {
       if (!source.url || seenUrls.has(source.url)) continue;
 
       let cleanLabel = source.label.replace(/\s*\(Ads\)/gi, '').replace(/\s*\(No Ads\)/gi, '').trim();
-      const requiresAds = requiresAdsList.includes(cleanLabel);
+      const requiresAds = false; // Temporarily disabled: requiresAdsList.includes(cleanLabel);
       const formattedLabel = requiresAds ? `${cleanLabel} (Ads)` : `${cleanLabel} (No Ads)`;
 
       if (seenLabels.has(formattedLabel)) continue;
