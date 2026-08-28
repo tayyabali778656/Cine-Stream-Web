@@ -1,129 +1,124 @@
 {
-  "version": 2,
-  "installCommand": "npm install --omit=dev",
-  "buildCommand": "echo \"Sitemap already built locally\"",
-  "framework": null,
-  "builds": [
-    {
-      "src": "serve.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "*.html",
-          "*.css",
-          "*.js",
-          "*.json",
-          "*.xml",
-          "*.txt",
-          "*.png",
-          "*.ico",
-          "*.webmanifest",
-          "images/**",
-          "public/**",
-          "middleware/**",
-          "services/**",
-          "utils/**",
-          "scripts/**",
-          "tayyab/**",
-          "db.js",
-          "config.js",
-          "api.js",
-          "admin.js",
-          "app.js"
-        ]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/_vercel/(.*)",
-      "dest": "/_vercel/$1"
-    },
-    {
-      "src": "/(.*)\\.env(.*)",
-      "status": 404
-    },
-    {
-      "src": "/\\.git(.*)",
-      "status": 404
-    },
-    {
-      "src": "/(.*)\\.php(.*)",
-      "status": 404
-    },
-    {
-      "src": "/wp-(.*)",
-      "status": 404
-    },
-    {
-      "src": "/xmlrpc(.*)",
-      "status": 404
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/proxy",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/iframe-proxy",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/health",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/watch/(.*)",
-      "dest": "serve.js"
-    },
-
-    {
-      "src": "/media/(.*)",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/sitemap(.*)",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/(index\\.html)?",
-      "has": [
-        {
-          "type": "query",
-          "key": "q"
-        }
-      ],
-      "dest": "serve.js"
-    },
-    {
-      "src": "/site.webmanifest",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/browserconfig.xml",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/sw.js",
-      "dest": "serve.js"
-    },
-    {
-      "src": "/service-worker.js",
-      "dest": "serve.js"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "serve.js"
-    }
-  ]
+    "version":  2,
+    "installCommand":  "npm install --omit=dev",
+    "buildCommand":  "echo \"Sitemap already built locally\"",
+    "framework":  null,
+    "builds":  [
+                   {
+                       "src":  "serve.js",
+                       "use":  "@vercel/node",
+                       "config":  {
+                                      "includeFiles":  [
+                                                           "*.html",
+                                                           "*.css",
+                                                           "*.js",
+                                                           "*.json",
+                                                           "*.xml",
+                                                           "*.txt",
+                                                           "*.png",
+                                                           "*.ico",
+                                                           "*.webmanifest",
+                                                           "images/**",
+                                                           "public/**",
+                                                           "middleware/**",
+                                                           "services/**",
+                                                           "utils/**",
+                                                           "scripts/**",
+                                                           "tayyab/**",
+                                                           "db.js",
+                                                           "config.js",
+                                                           "api.js",
+                                                           "admin.js",
+                                                           "app.js"
+                                                       ]
+                                  }
+                   }
+               ],
+    "routes":  [
+                   {
+                       "src":  "/_vercel/(.*)",
+                       "dest":  "/_vercel/$1"
+                   },
+                   {
+                       "src":  "/(.*)\\.env(.*)",
+                       "status":  404
+                   },
+                   {
+                       "src":  "/\\.git(.*)",
+                       "status":  404
+                   },
+                   {
+                       "src":  "/(.*)\\.php(.*)",
+                       "status":  404
+                   },
+                   {
+                       "src":  "/wp-(.*)",
+                       "status":  404
+                   },
+                   {
+                       "src":  "/xmlrpc(.*)",
+                       "status":  404
+                   },
+                   {
+                       "src":  "/api/(.*)",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/proxy",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/iframe-proxy",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/health",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/watch/(.*)",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/media/(.*)",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/(index\\.html)?",
+                       "has":  [
+                                   {
+                                       "type":  "query",
+                                       "key":  "q"
+                                   }
+                               ],
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/site.webmanifest",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/manifest.json",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/browserconfig.xml",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/sw.js",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "src":  "/service-worker.js",
+                       "dest":  "serve.js"
+                   },
+                   {
+                       "handle":  "filesystem"
+                   },
+                   {
+                       "src":  "/(.*)",
+                       "dest":  "serve.js"
+                   }
+               ]
 }

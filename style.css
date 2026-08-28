@@ -2299,8 +2299,8 @@ body > div[style*="position: fixed"][style*="z-index"] img {
 
 @media (max-width: 768px) {
   #ad-webview-container {
-    height: 75% !important;
-    max-height: 500px !important;
+    height: 55% !important;
+    max-height: 400px !important;
   }
 }
 
