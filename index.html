@@ -498,7 +498,7 @@
 
     <!-- ══════ SEO Hero — Visible to Google crawlers, hidden visually ══════ -->
     <section id="seo-hero" aria-label="CineStream — Free HD Anime Streaming"
-      style="padding: 1.5rem 0 0.5rem; margin-bottom: 0.5rem;">
+      style="padding: 1.5rem 0 0.5rem; margin-bottom: 0.5rem; margin-top: 0.5rem;">
       <h1 id="seo-h1"
         style="font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; color: var(--text); margin: 0 0 0.5rem; line-height: 1.2;">
         CineStream — Watch Anime Online Free in Hindi
@@ -541,9 +541,9 @@
 
     <!-- Main Feed Section -->
     <div id="main-feed-section">
-      <button id="back-to-feed-btn" class="btn-secondary" style="display: none; margin-bottom: 1.5rem;"
+      <button id="back-to-feed-btn" class="btn-secondary" style="display: none; margin-bottom: 1.5rem; margin-top: 1.5rem; padding: 6px 14px; font-size: 0.85rem;"
         aria-label="Back to homepage feed">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Homepage
+        <i class="fas fa-arrow-left" aria-hidden="true" style="margin-right: 5px;"></i> Back
       </button>
       <div id="category-view-heading" class="fade-in"
         style="display: none; margin-top: 1rem; margin-bottom: 1.5rem; justify-content: space-between; align-items: center; width: 100%;">
@@ -611,6 +611,20 @@
           aria-label="Save server ads settings">Save Server Ads Settings</button>
       </div>
 
+      <!-- Rescrape / Fix Links Configuration -->
+      <div id="admin-rescrape-config"
+        style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+        <h3 style="margin-bottom: 0.5rem;"><i class="fas fa-sync-alt" aria-hidden="true"></i> Rescrape / Fix Links</h3>
+        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 1rem;">If anime links are dead, force a refresh from Toonstream. Leave season/episode blank to rescrape the entire anime.</p>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+           <input type="text" id="rescrape-anime-id" placeholder="Anime ID (e.g. toon_tomb-raider)" class="filter-chip glass" style="width: 250px;">
+           <input type="number" id="rescrape-season" placeholder="Season (Optional)" class="filter-chip glass" style="width: 150px;">
+           <input type="number" id="rescrape-episode" placeholder="Episode (Optional)" class="filter-chip glass" style="width: 150px;">
+           <button id="rescrape-btn" class="btn-primary" style="padding: 10px 20px;">Rescrape Now</button>
+        </div>
+        <div id="rescrape-status" style="margin-top: 1rem; color: #4caf50;" role="status" aria-live="polite"></div>
+      </div>
+
       <div id="admin-list" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
         <!-- List of managed movies -->
       </div>
@@ -624,10 +638,6 @@
   <div id="movie-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title"
     aria-describedby="modal-description">
     <div class="modal-content">
-      <!-- Loading Screen -->
-      <div id="modal-loading-screen" class="modal-loading-screen">
-        <div class="loading-spinner"></div>
-      </div>
 
       <div class="modal-hero" style="position: relative;">
         <div id="trailer-container" style="width: 100%; height: 100%;" aria-label="Video player">
@@ -643,7 +653,23 @@
         </button>
       </div>
 
+      <!-- Rewarded Smartlink Ad Overlay (WebView) -->
+      <div id="player-ad-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:999999; background:rgba(0,0,0,0.85); backdrop-filter:blur(5px); justify-content:center; align-items:center; opacity:0; transition:opacity 0.4s ease;">
+        <div id="ad-webview-container" style="position:relative; width:95%; max-width:1200px; height:90%; max-height:800px; background:#111; border-radius:12px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.8); transform:scale(0.95); transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+          <iframe id="ad-webview-iframe" src="" style="width:100%; height:100%; border:none;" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+          
+          <!-- Close button overlay (Top Right) -->
+          <div id="ad-close-container" style="position:absolute; top:15px; right:15px; z-index:100000;">
+            <button id="ad-close-btn" disabled
+              style="background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.2); color:#ccc; font-size:13px; font-weight:600; padding:8px 16px; border-radius:20px; cursor:not-allowed; transition:all 0.3s; backdrop-filter:blur(4px);">
+              <span id="ad-close-label">Wait <span id="ad-countdown-text">5</span>s</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Ad Banner (between hero and content) -->
+
       <div id="no-trailer"
         style="display: none; width: 100%; flex-direction: column; justify-content: center; align-items: center; background: #111; flex-shrink: 0; padding: 12px 0; overflow: visible; box-sizing: border-box;"
         aria-live="polite">
@@ -814,5 +840,30 @@
   <script>(function(s){s.dataset.zone='11462740',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
   <script>(function(s){s.dataset.zone='11462747',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
   -->
+  <nav class="mobile-bottom-nav">
+    <a href="#" class="nav-item active" onclick="App.switchToCategory('combined'); updateMobileNav(this); return false;">
+      <i class="fa-solid fa-house"></i>
+      <span>Home</span>
+    </a>
+    <a href="#" class="nav-item" onclick="App.switchToCategory('anime'); updateMobileNav(this); return false;">
+      <i class="fa-solid fa-fire"></i>
+      <span>Anime</span>
+    </a>
+    <a href="#" class="nav-item" onclick="App.switchToCategory('cartoon'); updateMobileNav(this); return false;">
+      <i class="fa-solid fa-tv"></i>
+      <span>Cartoon</span>
+    </a>
+    <a href="#" class="nav-item" onclick="App.switchToCategory('movie'); updateMobileNav(this); return false;">
+      <i class="fa-solid fa-film"></i>
+      <span>Movies</span>
+    </a>
+  </nav>
+
+  <script>
+    function updateMobileNav(clickedElement) {
+      document.querySelectorAll('.mobile-bottom-nav .nav-item').forEach(el => el.classList.remove('active'));
+      clickedElement.classList.add('active');
+    }
+  </script>
 </body>
 </html>

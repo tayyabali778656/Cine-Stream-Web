@@ -464,6 +464,17 @@ const App = {
         if (filterType === 'combined') {
           if (seoHero) seoHero.style.display = '';
           this.renderRecentlyViewed();
+          // Hide category view heading and back button when returning to Home
+          const backToFeedBtn = document.getElementById('back-to-feed-btn');
+          if (backToFeedBtn) backToFeedBtn.style.display = 'none';
+          const categoryHeading = document.getElementById('category-view-heading');
+          if (categoryHeading) categoryHeading.style.display = 'none';
+          // Highlight Home in mobile nav
+          const mobileNavHome = document.querySelector('.mobile-bottom-nav .nav-item');
+          if (mobileNavHome) {
+            document.querySelectorAll('.mobile-bottom-nav .nav-item').forEach(el => el.classList.remove('active'));
+            mobileNavHome.classList.add('active');
+          }
         } else {
           if (seoHero) seoHero.style.display = 'none';
         }
@@ -524,6 +535,22 @@ const App = {
     const backToFeedBtn = document.getElementById('back-to-feed-btn');
     if (backToFeedBtn) {
       backToFeedBtn.onclick = () => {
+        // Highlight Home in top filter bar
+        document.querySelectorAll('.category-filter-btn').forEach(btn => {
+          if (btn.dataset.filterType === 'combined') {
+            btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
+          } else {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-pressed', 'false');
+          }
+        });
+        // Highlight Home in mobile bottom nav
+        const mobileNavHome = document.querySelector('.mobile-bottom-nav .nav-item');
+        if (mobileNavHome) {
+          document.querySelectorAll('.mobile-bottom-nav .nav-item').forEach(el => el.classList.remove('active'));
+          mobileNavHome.classList.add('active');
+        }
         this.resetAndFetch();
       };
     }
@@ -696,6 +723,24 @@ const App = {
     if (seoHero) seoHero.style.display = '';
     this.renderRecentlyViewed(); // will show the section if history exists
 
+    // Highlight Home in top filter bar
+    document.querySelectorAll('.category-filter-btn').forEach(btn => {
+      if (btn.dataset.filterType === 'combined') {
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    });
+
+    // Highlight Home in mobile bottom nav
+    const mobileNavHome = document.querySelector('.mobile-bottom-nav .nav-item');
+    if (mobileNavHome) {
+      document.querySelectorAll('.mobile-bottom-nav .nav-item').forEach(el => el.classList.remove('active'));
+      mobileNavHome.classList.add('active');
+    }
+
     this.animeSubFilter = 'anime';
     const animeSelect = document.getElementById('anime-filter-select');
     if (animeSelect) {
@@ -715,13 +760,19 @@ const App = {
     const paginationContainer = document.getElementById('pagination-container');
     if (paginationContainer) paginationContainer.style.display = 'none';
 
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     await this.fetchAndRenderBatch();
   },
 
   /**
    * Switch into a single category view mode (resets feed to render 30 cards per page)
    */
-  async switchToCategory(category) {
+  async switchToCategory(category, isManual = false) {
+    if (category === 'combined') {
+      this.resetAndFetch();
+      return;
+    }
+
     document.querySelectorAll('.category-filter-btn').forEach(btn => {
       if (btn.dataset.filterType === category) {
         btn.classList.add('active');
@@ -732,9 +783,12 @@ const App = {
       }
     });
 
-    // Hide SEO hero only on single category pages (recently-viewed stays visible)
+    // Hide SEO hero and recently-viewed on single category pages
     const seoHero = document.getElementById('seo-hero');
     if (seoHero) seoHero.style.display = 'none';
+    
+    const recentlyViewed = document.getElementById('recently-viewed-section');
+    if (recentlyViewed) recentlyViewed.style.display = 'none';
 
     this.singleCategoryMode = category;
     this.singleCategoryPage = 1;
@@ -748,13 +802,8 @@ const App = {
     this.renderedIds.clear();
     this.showSkeletons();
 
-    // Scroll to the start of the movie-container grid (with offset for fixed header)
-    const movieContainer = document.getElementById('movie-container');
-    if (movieContainer) {
-      const yOffset = -90;
-      const y = movieContainer.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: y, behavior: 'smooth' });
-    }
+    // Scroll to the top of the page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // Show back to feed button & heading
     const backToFeedBtn = document.getElementById('back-to-feed-btn');
@@ -1915,9 +1964,6 @@ const App = {
         if (backBtn) backBtn.style.display = 'none';
         if (modalSeoEl) modalSeoEl.style.display = 'block';
 
-        const playerAd = document.getElementById('player-ad-overlay');
-        if (playerAd) playerAd.style.display = 'none';
-
         // Restore trailer or show no-trailer ad smoothly
         const hasTrailer = !!movie._trailerUrl;
         if (hasTrailer) {
@@ -1990,9 +2036,94 @@ const App = {
   /**
    * Modal Logic
    */
+  showSmartlinkWebViewAd(triggerType = 'any') {
+    const playerAd = document.getElementById('player-ad-overlay');
+    const iframe = document.getElementById('ad-webview-iframe');
+    const closeBtn = document.getElementById('ad-close-btn');
+    const countdownText = document.getElementById('ad-countdown-text');
+    const closeLabel = document.getElementById('ad-close-label');
+
+    if (!playerAd || !iframe) return;
+
+    // Smartlinks array
+    const links = [
+      'https://omg10.com/4/11503004',
+      'https://omg10.com/4/11503020',
+      'https://omg10.com/4/11503019'
+    ];
+
+    // Initialize counter if not exists to cycle through links sequentially
+    if (typeof this.adLinkIndex === 'undefined') {
+      this.adLinkIndex = 0;
+    }
+    
+    // Pick the next link in the array
+    const link = links[this.adLinkIndex];
+    
+    // Increment and wrap around
+    this.adLinkIndex = (this.adLinkIndex + 1) % links.length;
+    
+    // Load link in iframe
+    iframe.src = link;
+
+    // Reset UI
+    if (closeBtn) {
+      closeBtn.disabled = true;
+      closeBtn.style.cursor = 'not-allowed';
+      closeBtn.style.background = 'rgba(0,0,0,0.7)';
+      closeBtn.style.color = '#ccc';
+    }
+    if (countdownText) countdownText.textContent = '5';
+    if (closeLabel) closeLabel.innerHTML = 'Wait <span id="ad-countdown-text">5</span>s';
+
+    // Apply display:flex then animate in
+    playerAd.style.display = 'flex';
+    // Small delay to allow display:flex to apply before CSS transition
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        playerAd.style.opacity = '1';
+        const container = document.getElementById('ad-webview-container');
+        if (container) container.style.transform = 'scale(1)';
+      });
+    });
+
+    let remaining = 5;
+    if (window._adCountdownTimer) clearInterval(window._adCountdownTimer);
+    window._adCountdownTimer = setInterval(() => {
+      remaining--;
+      const ct = document.getElementById('ad-countdown-text');
+      if (ct) ct.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(window._adCountdownTimer);
+        const cb = document.getElementById('ad-close-btn');
+        const cl = document.getElementById('ad-close-label');
+        if (cb) {
+          cb.disabled = false;
+          cb.style.cursor = 'pointer';
+          cb.style.background = '#e50914'; // Red active color
+          cb.style.color = '#fff';
+        }
+        if (cl) cl.innerHTML = '✕ Close';
+        
+        if (cb) {
+          cb.onclick = () => {
+            // Animate out
+            playerAd.style.opacity = '0';
+            const container = document.getElementById('ad-webview-container');
+            if (container) container.style.transform = 'scale(0.95)';
+            
+            // Wait for transition before hiding completely
+            setTimeout(() => {
+              playerAd.style.display = 'none';
+              iframe.src = ''; // clear iframe to stop media/requests
+            }, 400);
+          };
+        }
+      }
+    }, 1000);
+  },
+
   async openModal(movieId, type, updateHistory = true, isWatching = false, isNetMirror = false) {
-
-
     if (updateHistory) {
       const newPath = isWatching ? `/watch/${type}/${movieId}` : `/media/${type}/${movieId}`;
       if (window.location.pathname !== newPath) {
@@ -2003,6 +2134,10 @@ const App = {
 
     document.getElementById('modal-title').textContent = 'Loading...';
     this.modal.classList.add('active');
+    
+    // Show ad after modal is active with appropriate trigger
+    this.showSmartlinkWebViewAd(isWatching ? 'watchNow' : 'cardClick');
+
     document.body.style.overflow = 'hidden';
 
     // Show loading screen with scroll reset and CSS class trigger
@@ -2320,11 +2455,10 @@ const App = {
           };
 
 
-          const playWithFailover = async (s = 1, e = 1) => {
-            // Show player ad overlay on episode/source change
-            const playerAd = document.getElementById('player-ad-overlay');
-            if (playerAd) {
-              playerAd.style.display = 'flex';
+          const playWithFailover = async (s = 1, e = 1, isInitialPlay = false) => {
+            // ── Rewarded Smartlink Ad Overlay (WebView) ──────────
+            if (!isInitialPlay) {
+              this.showSmartlinkWebViewAd('episodeChange');
             }
 
             if (isWatching) {
@@ -2383,18 +2517,13 @@ const App = {
                   let activeIdx = 1;
 
                   const processSource = (src) => {
-                    const isAdServer = src.label && (
-                      src.label.includes('Server 4') ||
-                      src.label.includes('Server 5') ||
-                      src.label.includes('Server 7')
+                    const adServerLabels = ['short', 'cloudy', 'watch', 'dl']; // matches 'watch', 'watch/dl', 'dl', 'watchdl'
+                    const isAdServer = adServerLabels.some(lbl => 
+                      (src.label && src.label.toLowerCase().includes(lbl)) || 
+                      (src.url && src.url.toLowerCase().includes(lbl))
                     );
 
-                    const isEmbed = src.url.includes('embed') ||
-                      src.url.includes('/e/') ||
-                      src.url.includes('rubystm') ||
-                      src.url.includes('strmup') ||
-                      src.url.includes('vidstreaming') ||
-                      src.url.includes('streamruby');
+                    const isEmbed = src.url.includes('toon-stream.site/embed');
                     const finalUrl = isEmbed
                       ? `/iframe-proxy?url=${encodeURIComponent(src.url)}`
                       : src.url;
@@ -2423,8 +2552,8 @@ const App = {
                   ep.sources.forEach(src => {
                     if (src.url) {
                       const cleanLabel = (src.label || '').replace(/\s*\(Ads\)/gi, '').replace(/\s*\(No Ads\)/gi, '').trim().toLowerCase();
-                      const excludedServers = ['cloudy', 'multiq', 'short', 'sd', 'hd', 'fhd', 'watch/dl', 'gdmirrorbot', 'vidstream', 'vidstreaming'];
-                      if (excludedServers.includes(cleanLabel)) {
+                      const excludedServers = ['multiq', 'sd', 'hd', 'fhd', 'gdmirrorbot', 'vidstream', 'vidstreaming', 'strmup'];
+                      if (excludedServers.some(ex => cleanLabel.includes(ex))) {
                         return;
                       }
                       processSource(src);
@@ -2493,6 +2622,13 @@ const App = {
                 const [defaultSrc] = sources.splice(defaultIdx, 1);
                 sources.unshift(defaultSrc);
               }
+            }
+
+            // Pin "Short" server to position 3 (index 2) AFTER all reordering
+            const finalShortIdx = sources.findIndex(src => src.label.toLowerCase().includes('short'));
+            if (finalShortIdx > -1 && finalShortIdx !== 2 && sources.length >= 3) {
+              const [shortSrc] = sources.splice(finalShortIdx, 1);
+              sources.splice(2, 0, shortSrc);
             }
 
             if (this.activePlayer) {
@@ -2634,18 +2770,18 @@ const App = {
                     episodeSelect.value = defaultEpisodeVal;
                   }
 
-                  await playWithFailover(defaultSeason, defaultEpisodeVal);
+                  await playWithFailover(defaultSeason, defaultEpisodeVal, true);
                 } catch (err) {
                   console.error('Failed to load episode list:', err);
-                  playWithFailover(1, 1);
+                  playWithFailover(1, 1, true);
                 }
               })();
             } else {
-              playWithFailover(1, 1);
+              playWithFailover(1, 1, true);
             }
           } else {
             if (customSelectorContainer) customSelectorContainer.style.display = 'none';
-            playWithFailover(1, 1);
+            playWithFailover(1, 1, true);
           }
 
           // Inject Download & "Report Broken" buttons cleanly
@@ -2682,8 +2818,6 @@ const App = {
         if (this.modal) this.modal.classList.remove('watching');
         if (backBtn) backBtn.style.display = 'none';
         if (heroOverlay) heroOverlay.style.display = 'block';
-        const playerAd = document.getElementById('player-ad-overlay');
-        if (playerAd) playerAd.style.display = 'none';
 
         let trailerUrl = movie._trailerUrl;
         if (typeof trailerUrl === 'undefined') {

@@ -4,6 +4,7 @@ const https = require('https');
 const logger = require('../utils/logger');
 
 const BASE_URL = 'https://toon-stream.site';
+const DISABLE_SCRAPING = process.env.DISABLE_TOONSTREAM === 'true';
 
 let upcomingCache = null;
 let upcomingCacheTime = 0;
@@ -101,29 +102,51 @@ async function scrapeEpisodePlayer(epUrl, _depth = 0) {
     }
 
     // Step 3: Build final server list using real names if available, fallback to position
-    const servers = [];
+    let servers = [];
     const optionIds = Object.keys(embedMap).sort((a, b) => {
       const na = parseInt(a.replace('options-', ''), 10);
       const nb = parseInt(b.replace('options-', ''), 10);
       return na - nb;
     });
 
-    for (const optId of optionIds) {
-      const embedUrl = embedMap[optId];
+    // We fetch the real iframe URLs in parallel if they are hidden behind ToonStream's embed proxy
+    const resolvedServers = await Promise.all(optionIds.map(async (optId) => {
+      let embedUrl = embedMap[optId];
       // Filter out tracking/ads iframes
       if (
         embedUrl.includes('google') || embedUrl.includes('doubleclick') ||
         embedUrl.includes('facebook') || embedUrl.includes('analytics') ||
         embedUrl.includes('youtube.com')
-      ) continue;
+      ) return null;
+
+      // Extract real URL if it's ToonStream's internal embed
+      if (embedUrl.includes(BASE_URL) || embedUrl.startsWith('/')) {
+        try {
+          const { html: embedHtml } = await fetchPage(embedUrl);
+          if (embedHtml) {
+            const iframeMatch = embedHtml.match(/<iframe[^>]+src=["']([^"']+)["']/i) || embedHtml.match(/<iframe[^>]+data-src=["']([^"']+)["']/i);
+            if (iframeMatch) {
+              let realUrl = iframeMatch[1];
+              if (realUrl.startsWith('//')) realUrl = 'https:' + realUrl;
+              if (realUrl.startsWith('/')) realUrl = `${BASE_URL}${realUrl}`;
+              embedUrl = realUrl;
+            }
+          }
+        } catch (err) {
+          logger.warn(`Failed to extract real URL from embed: ${embedUrl}`);
+        }
+      }
 
       const serverInfo = serverMap[optId];
-      const label = serverInfo
-        ? `${serverInfo.name}`  // Use ToonStream's real name: Ruby, cloudy, Moly...
-        : `Server ${servers.length + 1}`; // Fallback if not in switcher list
+      const label = serverInfo ? `${serverInfo.name}` : `Server`;
+      return { url: embedUrl, type: 'iframe', label };
+    }));
 
-      servers.push({ url: embedUrl, type: 'iframe', label });
-    }
+    servers = resolvedServers.filter(Boolean);
+    // Fix labels if fallback was used
+    servers.forEach((s, idx) => {
+      if (s.label === 'Server') s.label = `Server ${idx + 1}`;
+    });
 
     // ── Cross-series redirect fix ────────────────────────────────────────────────
     // Some episodes (e.g. /episode/one-piece-2x62/) have no player in their static
@@ -142,9 +165,9 @@ async function scrapeEpisodePlayer(epUrl, _depth = 0) {
       // Extract slug/season/ep from the original URL: /episode/one-piece-2x62/
       const origNumMatch = epUrl.match(/\/([^/]+)-(\d+)x(\d+)\//);
       if (origNumMatch) {
-        const origSlug   = origNumMatch[1];              // e.g. 'one-piece'
+        const origSlug = origNumMatch[1];              // e.g. 'one-piece'
         const origSeason = parseInt(origNumMatch[2], 10); // e.g. 2
-        const origEpNum  = parseInt(origNumMatch[3], 10); // e.g. 62
+        const origEpNum = parseInt(origNumMatch[3], 10); // e.g. 62
 
         // Only proceed if page links to a DIFFERENT real series
         const dataUrlMatch = html.match(/data-url="\/series\/([^/"]+)\/season\/\d+"/);
@@ -331,6 +354,7 @@ function parseCardsFromHtml(html, isCartoon = false) {
 
 // Fetch lists live
 async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query = '') {
+  if (DISABLE_SCRAPING) return { results: [], page, total_pages: 1 };
   if (type === 'upcoming') {
     const now = Date.now();
     if (upcomingCache && (now - upcomingCacheTime < 1800000)) {
@@ -346,8 +370,10 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
 
   if (query) {
     targetUrl = `/s?q=${encodeURIComponent(query)}`;
-  } else if (type === 'anime-movies' || type === 'movie') {
+  } else if (type === 'anime-movies') {
     targetUrl = `/category/anime?type=movies&page=${page}`;
+  } else if (type === 'movie' || type === 'movies') {
+    targetUrl = `/category/movies/?page=${page}`;
   } else if (type === 'cartoon-series' || type === 'cartoon') {
     targetUrl = `/category/cartoon/?page=${page}`;
   } else if (type === 'cartoon-movies') {
@@ -453,7 +479,7 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
           ]
         }).toArray();
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // Map for O(1) memory lookup
     const dbMap = new Map();
@@ -473,19 +499,19 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
 
     const enrichedResults = [];
     for (const item of scheduleList) {
-      let dbEntry = dbMap.get(item.title.toLowerCase()) || 
-                    dbMap.get(item.slug.toLowerCase()) || 
-                    dbNormalizedMap.get(normalize(item.title)) || 
-                    dbNormalizedMap.get(normalize(item.slug)) || 
-                    null;
+      let dbEntry = dbMap.get(item.title.toLowerCase()) ||
+        dbMap.get(item.slug.toLowerCase()) ||
+        dbNormalizedMap.get(normalize(item.title)) ||
+        dbNormalizedMap.get(normalize(item.slug)) ||
+        null;
 
       // Prefix/substring matching fallback
       if (!dbEntry) {
         const normTitle = normalize(item.title);
         const normSlug = normalize(item.slug);
         for (const [normKey, entry] of dbNormalizedMap.entries()) {
-          if (normKey.startsWith(normTitle) || normKey.startsWith(normSlug) || 
-              normTitle.startsWith(normKey) || normSlug.startsWith(normKey)) {
+          if (normKey.startsWith(normTitle) || normKey.startsWith(normSlug) ||
+            normTitle.startsWith(normKey) || normSlug.startsWith(normKey)) {
             dbEntry = entry;
             break;
           }
@@ -569,6 +595,7 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
 
 // Fetch details live
 async function getLiveAnimeDetails(id, slug, hintType = '') {
+  if (DISABLE_SCRAPING) return null;
   const cleanSlug = slug || id.replace('toon_', '');
 
   const pathsToTry = [];
@@ -662,9 +689,22 @@ async function getLiveAnimeDetails(id, slug, hintType = '') {
 
 // Fetch episodes and player sources live
 async function getLiveEpisodes(slug, targetSeason = 1, targetEpisode = 1) {
+  if (DISABLE_SCRAPING) return [];
   const targetUrl = `/series/${slug}`;
-  const { html, status } = await fetchPage(targetUrl);
-  if (status === 404 || !html) return [];
+  let { html, status } = await fetchPage(targetUrl);
+  
+  // Fallback: Some animes on Toonstream do not have a /series/ page, only /episode/ pages.
+  // Their episode pages still contain the full sidebar of all episodes.
+  if (status !== 200 || !html) {
+    const fallbackUrl = `/episode/${slug}-1x1/`;
+    const fbRes = await fetchPage(fallbackUrl);
+    if (fbRes.status === 200 && fbRes.html) {
+      html = fbRes.html;
+      status = 200;
+    } else {
+      return [];
+    }
+  }
 
   // Helper to parse episodes from HTML
   const parseEpisodes = (content) => {
@@ -780,7 +820,7 @@ async function getLiveEpisodes(slug, targetSeason = 1, targetEpisode = 1) {
   await Promise.all(deduped.map(async (ep) => {
     if (ep.season === targetSeason && ep.episode === targetEpisode) {
       let sources = await scrapeEpisodePlayer(ep.url);
-      
+
       const hasPlayServer = sources.some(s => s.label && s.label.toLowerCase() === 'play');
       if (sources.length === 0 || !hasPlayServer) {
         logger.info(`no_play_server_on_toonstream_trying_fallback_site_for_${slug}`);
@@ -794,7 +834,7 @@ async function getLiveEpisodes(slug, targetSeason = 1, targetEpisode = 1) {
           }
         }
       }
-      
+
       ep.sources = sources;
     } else {
       ep.sources = [];
@@ -809,7 +849,7 @@ async function getPlayServerFromFallback(animeSlug, season, episode) {
   try {
     const fallbackBase = 'https://watchanimeworld.net';
     const epUrl = `${fallbackBase}/episode/${animeSlug}-${season}x${episode}/`;
-    
+
     // Fetch using watchanimeworld URL
     const { html } = await fetchPage(epUrl);
     if (!html) return [];

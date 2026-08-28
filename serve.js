@@ -509,7 +509,7 @@ async function handleApiV1(req, res, pathname) {
         logger.warn('Failed to query anime details from MongoDB:', dbErr.message);
       }
 
-      if (anime) {
+      if (anime && anime.description && anime.description !== 'No description available.') {
         const responseData = { ...anime, related: [], recommendations: [] };
         sendJson(res, 200, responseData, 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
         return;
@@ -517,6 +517,12 @@ async function handleApiV1(req, res, pathname) {
 
       const freshAnime = await liveSvc.getLiveAnimeDetails(cleanId, cleanSlug);
       if (!freshAnime) {
+        if (anime) {
+          logger.info(`Live scrape empty for anime details ${cleanId}, falling back to basic anime from DB`);
+          const responseData = { ...anime, related: [], recommendations: [] };
+          sendJson(res, 200, responseData, 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
+          return;
+        }
         sendJson(res, 404, { error: 'Anime not found' });
         return;
       }
@@ -594,9 +600,10 @@ async function handleApiV1(req, res, pathname) {
                 { slug: slug }
               ]
             });
-            if (!det) {
-              det = await liveSvc.getLiveAnimeDetails(animeId, slug);
-              if (det) {
+            if (!det || !det.description || det.description === 'No description available.') {
+              const liveDet = await liveSvc.getLiveAnimeDetails(animeId, slug);
+              if (liveDet) {
+                det = liveDet;
                 await animeCollection.updateOne(
                   { id: det.id },
                   { $set: { ...det, updatedAt: new Date() } },
@@ -619,7 +626,7 @@ async function handleApiV1(req, res, pathname) {
                 { animeId: `toon_${slug}` },
                 { animeSlug: slug }
               ]
-            }).toArray();
+            }).sort({ season: 1, episode: 1 }).toArray();
           } catch (dbErr) {
             logger.warn('Failed to query episodes from MongoDB:', dbErr.message);
             return [];
@@ -628,6 +635,25 @@ async function handleApiV1(req, res, pathname) {
       ]);
 
       if (details && details.type === 'movie') {
+        let sources = details.movieSources || [];
+        
+        // If movieSources are missing from DB, fetch them live!
+        if (sources.length === 0) {
+          try {
+            const freshDetails = await liveSvc.getLiveAnimeDetails(animeId, slug, 'movie');
+            if (freshDetails && freshDetails.movieSources) {
+              sources = freshDetails.movieSources;
+              const animeCollection = getCollection('anime');
+              await animeCollection.updateOne(
+                { id: animeId },
+                { $set: { movieSources: sources, updatedAt: new Date() } }
+              );
+            }
+          } catch (err) {
+            logger.warn('Failed to fetch live movie sources:', err.message);
+          }
+        }
+
         const movieEpisodes = [{
           id: `ep_${slug}_1x1`,
           animeId: animeId,
@@ -635,7 +661,7 @@ async function handleApiV1(req, res, pathname) {
           season: 1,
           episode: 1,
           title: details.title,
-          sources: details.movieSources || []
+          sources: sources
         }];
         sendJson(res, 200, movieEpisodes, 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
         return;
@@ -644,9 +670,10 @@ async function handleApiV1(req, res, pathname) {
       let episodes = [];
       const targetEp = dbEpisodes.find(ep => ep.season === season && ep.episode === episode);
       
-      // Expire cached stream links after 6 hours since third-party embeds (strmup, streamruby, etc.) invalidate their URLs
-      const isFresh = targetEp && targetEp.updatedAt && (Date.now() - new Date(targetEp.updatedAt).getTime() < 6 * 60 * 60 * 1000);
+      // Expire cached stream links after 48 hours (2 days) to ensure third-party embeds stay fresh
+      const isFresh = targetEp && targetEp.updatedAt && (Date.now() - new Date(targetEp.updatedAt).getTime() < 48 * 60 * 60 * 1000);
 
+      // Serve from DB if sources exist and are fresh
       if (dbEpisodes.length > 0 && targetEp && targetEp.sources && targetEp.sources.length > 0 && isFresh) {
         // Serve from DB directly
         episodes = dbEpisodes.map(ep => ({ ...ep }));
@@ -683,23 +710,47 @@ async function handleApiV1(req, res, pathname) {
           } catch (fallbackErr) {
             logger.warn(`Movie fallback check failed for ${slug}:`, fallbackErr.message);
           }
+
+          // CRITICAL FALLBACK: If live scrape totally failed (security checkpoint) and we have old DB episodes, serve them instead of breaking the player!
+          if (episodes.length === 0 && dbEpisodes && dbEpisodes.length > 0) {
+            logger.info(`Live scrape blocked for episodes ${slug}, falling back to stale dbEpisodes to prevent player crash`);
+            episodes = dbEpisodes.map(ep => ({ ...ep }));
+          }
         }
 
         // Save scraped episodes to MongoDB with timestamp
         if (episodes.length > 0) {
           try {
             const episodesCol = getCollection('episodes');
-            const bulkOps = episodes.map(ep => ({
-              updateOne: {
-                filter: { id: ep.id },
-                update: { $set: { ...ep, updatedAt: new Date() } },
-                upsert: true
+            const bulkOps = episodes.map(ep => {
+              const updateDoc = { ...ep, updatedAt: new Date() };
+              // Critical Fix: Do not overwrite existing DB sources with empty arrays for other episodes
+              if (!ep.sources || ep.sources.length === 0) {
+                delete updateDoc.sources;
               }
-            }));
+              return {
+                updateOne: {
+                  filter: { id: ep.id },
+                  update: { $set: updateDoc },
+                  upsert: true
+                }
+              };
+            });
             await episodesCol.bulkWrite(bulkOps);
           } catch (dbErr) {
             logger.warn('Failed to save episodes to MongoDB:', dbErr.message);
           }
+        }
+
+        // Critical Fix: Merge DB sources into the live scraped episodes so the frontend playlist has ALL previously saved links
+        if (dbEpisodes && dbEpisodes.length > 0) {
+          episodes = episodes.map(ep => {
+            const dbEp = dbEpisodes.find(d => d.season === ep.season && d.episode === ep.episode);
+            if (dbEp && dbEp.sources && dbEp.sources.length > 0 && (!ep.sources || ep.sources.length === 0)) {
+               ep.sources = dbEp.sources;
+            }
+            return ep;
+          });
         }
       }
 
@@ -754,10 +805,11 @@ async function handleApiV1(req, res, pathname) {
     }
 
     // Try MongoDB persistent cache to avoid ToonStream scraping latency on new sessions/cold starts
+    let dbCached = null;
     try {
       if (isConnected()) {
-        const dbCached = await getCollection('listings_cache').findOne({ id: cacheKey });
-        if (dbCached && (Date.now() - dbCached.timestamp) < 60 * 60 * 1000) {
+        dbCached = await getCollection('listings_cache').findOne({ id: cacheKey });
+        if (dbCached && dbCached.data && dbCached.data.results && dbCached.data.results.length > 0 && (Date.now() - dbCached.timestamp) < 60 * 60 * 1000) {
           cache.set(cacheKey, dbCached.data, 60 * 60 * 1000);
           sendJson(res, 200, dbCached.data, 'public, max-age=120, s-maxage=3600, stale-while-revalidate=7200');
           return;
@@ -768,17 +820,50 @@ async function handleApiV1(req, res, pathname) {
     }
 
     try {
-      const data = await liveSvc.getLiveAnimeList(filter, page, type, genre);
-      // Cache lists for 60 minutes for fast repeat loads
-      cache.set(cacheKey, data, 60 * 60 * 1000);
+      let data = await liveSvc.getLiveAnimeList(filter, page, type, genre);
 
-      // Save to MongoDB in background
-      if (isConnected()) {
-        getCollection('listings_cache').updateOne(
-          { id: cacheKey },
-          { $set: { id: cacheKey, data, timestamp: Date.now() } },
-          { upsert: true }
-        ).catch(e => logger.warn('Failed to save listing to MongoDB cache:', e.message));
+      // Fallback logic: if live scraping returned nothing (likely security checkpoint)
+      if (!data || !data.results || data.results.length === 0) {
+        if (dbCached && dbCached.data && dbCached.data.results && dbCached.data.results.length > 0) {
+          logger.info(`Live scrape empty for ${cacheKey}, falling back to stale listings_cache`);
+          data = dbCached.data;
+        } else if (isConnected()) {
+          logger.info(`Live scrape empty and no cache for ${cacheKey}, falling back to anime collection`);
+          const animeCol = getCollection('anime');
+          const fallbackType = (type && type.includes('movie')) ? 'movie' : 'tv';
+          const fallbackResults = await animeCol.find({ type: fallbackType }).sort({ rating: -1 }).skip((page - 1) * 30).limit(30).toArray();
+          data = { results: fallbackResults, page, total_pages: 50 };
+        }
+      }
+
+      // Cache lists for 60 minutes for fast repeat loads
+      if (data && data.results && data.results.length > 0) {
+        cache.set(cacheKey, data, 60 * 60 * 1000);
+
+        // Save to MongoDB in background
+        if (isConnected()) {
+          getCollection('listings_cache').updateOne(
+            { id: cacheKey },
+            { $set: { id: cacheKey, data, timestamp: Date.now() } },
+            { upsert: true }
+          ).catch(e => logger.warn('Failed to save listing to MongoDB cache:', e.message));
+
+          // Save individual anime cards to the database for fallback
+          try {
+            const animeCol = getCollection('anime');
+            const bulkOps = data.results.map(item => ({
+              updateOne: {
+                filter: { id: item.id },
+                update: { $set: { ...item, updatedAt: new Date() } },
+                upsert: true
+              }
+            }));
+            animeCol.bulkWrite(bulkOps, { ordered: false })
+              .catch(e => logger.warn('Failed to bulk save anime cards:', e.message));
+          } catch (e) {
+             logger.warn('Error constructing bulkWrite for anime cards:', e.message);
+          }
+        }
       }
 
       sendJson(res, 200, data, 'public, max-age=120, s-maxage=3600, stale-while-revalidate=7200');
@@ -819,6 +904,48 @@ async function handleApiV1(req, res, pathname) {
       sendJson(res, 200, { authenticated: true, sub: payload.sub });
     } else {
       sendJson(res, 401, { authenticated: false });
+    }
+    return;
+  }
+
+  if (pathname === '/api/v1/admin/rescrape' && req.method === 'POST') {
+    // Optionally check admin auth: if (!requireAuth(req, res)) return;
+    try {
+      const body = JSON.parse(await readBody(req));
+      const { animeId, season, episode } = body;
+      if (!animeId) { sendJson(res, 400, { error: 'Anime ID is required' }); return; }
+
+      const epCollection = getCollection('episodes');
+      const query = { animeId };
+      let msg = `Rescraped entire anime: ${animeId}`;
+
+      if (season) query.season = Number(season);
+      if (episode) {
+        query.episode = Number(episode);
+        msg = `Rescraped ${animeId} S${season} E${episode}`;
+      }
+
+      // Delete existing episodes matching query
+      await epCollection.deleteMany(query);
+      
+      // Clear caches
+      cache.deleteByPrefix('eps_');
+      cache.deleteByPrefix('details_');
+
+      // Trigger rescrape by fetching them live again
+      // We need original slug. Usually animeId is "toon_slug".
+      const slug = animeId.replace('toon_', '');
+      
+      if (season && episode) {
+        await liveSvc.getLiveEpisodes(slug, Number(season), Number(episode));
+      } else {
+        await liveSvc.getLiveEpisodes(slug);
+      }
+
+      sendJson(res, 200, { success: true, message: msg });
+    } catch (err) {
+      logger.error('Rescrape failed:', err.message);
+      sendJson(res, 500, { error: err.message });
     }
     return;
   }

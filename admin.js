@@ -197,6 +197,53 @@ const Admin = {
          });
       }
 
+      const rescrapeBtn = document.getElementById('rescrape-btn');
+      if (rescrapeBtn) {
+         rescrapeBtn.addEventListener('click', async () => {
+            const animeIdInput = document.getElementById('rescrape-anime-id');
+            const seasonInput = document.getElementById('rescrape-season');
+            const episodeInput = document.getElementById('rescrape-episode');
+            const statusDiv = document.getElementById('rescrape-status');
+            
+            const animeId = animeIdInput ? animeIdInput.value.trim() : '';
+            const season = seasonInput ? seasonInput.value.trim() : '';
+            const episode = episodeInput ? episodeInput.value.trim() : '';
+
+            if (!animeId) {
+               if (statusDiv) { statusDiv.textContent = 'Please enter an Anime ID'; statusDiv.style.color = '#f44336'; }
+               return;
+            }
+
+            rescrapeBtn.disabled = true;
+            rescrapeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rescraping...';
+            if (statusDiv) { statusDiv.textContent = 'Processing request... this may take a moment.'; statusDiv.style.color = '#4caf50'; }
+
+            try {
+               const res = await fetch('/api/v1/admin/rescrape', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ animeId, season, episode })
+               });
+               const data = await res.json();
+
+               if (res.ok) {
+                  if (statusDiv) { statusDiv.textContent = data.message || 'Rescrape successful!'; statusDiv.style.color = '#4caf50'; }
+                  if (animeIdInput) animeIdInput.value = '';
+                  if (seasonInput) seasonInput.value = '';
+                  if (episodeInput) episodeInput.value = '';
+               } else {
+                  throw new Error(data.error || 'Failed to rescrape');
+               }
+            } catch (err) {
+               if (statusDiv) { statusDiv.textContent = 'Error: ' + err.message; statusDiv.style.color = '#f44336'; }
+            } finally {
+               rescrapeBtn.disabled = false;
+               rescrapeBtn.innerHTML = 'Rescrape Now';
+               setTimeout(() => { if (statusDiv && statusDiv.textContent.includes('successful')) statusDiv.textContent = ''; }, 5000);
+            }
+         });
+      }
+
       this.updateAdminList();
       this.loadGlobalSettings();
    },

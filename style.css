@@ -772,6 +772,12 @@ nav.scrolled {
   }
 }
 
+@media (max-width: 768px) {
+  .filters-section {
+    display: none !important;
+  }
+}
+
 .category-filter-btn {
   display: inline-flex;
   align-items: center;
@@ -2227,5 +2233,59 @@ body > div[style*="position: fixed"][style*="z-index"] img {
   font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 2px;
+}
+
+/* Mobile Bottom Nav */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  top: auto;
+  left: 0;
+  width: 100%;
+  background: rgba(20, 20, 25, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+  padding: 6px 0;
+  padding-bottom: env(safe-area-inset-bottom, 6px);
+  justify-content: space-around;
+  align-items: center;
+}
+
+.mobile-bottom-nav .nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.7rem;
+  font-weight: 500;
+  gap: 3px;
+  transition: all 0.3s ease;
+}
+
+.mobile-bottom-nav .nav-item i {
+  font-size: 1.05rem;
+}
+
+.mobile-bottom-nav .nav-item.active {
+  color: var(--primary);
+}
+
+.mobile-bottom-nav .nav-item:active {
+  transform: scale(0.9);
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+  
+  /* Add padding to body so content isn't hidden behind the nav */
+  body {
+    padding-bottom: 50px;
+  }
 }
 

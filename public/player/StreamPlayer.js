@@ -116,22 +116,25 @@ class StreamPlayer {
   _loadIframe(source) {
     const iframe = document.createElement('iframe');
     iframe.id = 'main-player';
-    
+
     let playUrl = source.url;
-    if (playUrl && !playUrl.startsWith('/') && !playUrl.startsWith('http://localhost') && !playUrl.includes('youtube.com') && !playUrl.includes('youtu.be') && !playUrl.includes('netmirror.global')) {
+    if (playUrl && playUrl.includes('toon-stream.site/embed')) {
       playUrl = `/iframe-proxy?url=${encodeURIComponent(playUrl)}`;
     }
     iframe.src = playUrl;
 
-    // Load admin allowed-ads settings from localStorage (synced on load from MongoDB)
-    const requiresAdsList = (() => {
-      try { return JSON.parse(localStorage.getItem('moviebox_requires_ads_servers')) || []; }
-      catch (e) { return []; }
-    })();
-    const allowAds = false; // Temporarily disabled: requiresAdsList.some(lbl => source.label && source.label.includes(lbl));
+    // Enable ads (popups) only for specific servers that strictly require them
+    const adServers = ['short', 'watch/dl', 'cloudy', 'ads'];
+    const labelLower = (source.label || '').toLowerCase();
+    const allowAds = adServers.some(lbl => labelLower.includes(lbl));
 
     if (!allowAds) {
+      // Block popups/redirects for clean servers
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
+    } else {
+      // CRITICAL: Completely remove sandbox for strict ad-requiring servers.
+      // These servers (AbyssPlayer, Cloudy, etc.) detect sandbox via JS and refuse to play.
+      iframe.removeAttribute('sandbox');
     }
     iframe.setAttribute('allowfullscreen', '');
     iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
@@ -311,10 +314,7 @@ class StreamPlayer {
     for (const source of newSources) {
       if (!source.url || seenUrls.has(source.url)) continue;
 
-      let cleanLabel = source.label.replace(/\s*\(Ads\)/gi, '').replace(/\s*\(No Ads\)/gi, '').trim();
-      const requiresAds = false; // Temporarily disabled: requiresAdsList.includes(cleanLabel);
-      const formattedLabel = requiresAds ? `${cleanLabel} (Ads)` : `${cleanLabel} (No Ads)`;
-
+      let formattedLabel = source.label;
       if (seenLabels.has(formattedLabel)) continue;
 
       seenUrls.add(source.url);
