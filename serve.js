@@ -1483,14 +1483,15 @@ const requestHandler = async (req, res) => {
     if (sitemapMatch) {
       const filename = pathname.slice(1); // strip leading /
       const staticPath = path.join(PUBLIC_DIR, filename);
+      const cwdPath = path.join(process.cwd(), filename);
 
       // Serve the static sitemap file ONLY on local environments.
       // On Vercel, bypass this to allow real-time database-driven sitemap updates with memory caching.
-      if (fs.existsSync(staticPath)) {
+      if (fs.existsSync(staticPath) || fs.existsSync(cwdPath)) {`n        const finalPath = fs.existsSync(staticPath) ? staticPath : cwdPath;
         // Serve the pre-generated static file — fast loading, refreshed edge cache
         res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=600, stale-while-revalidate=3600');
         res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
-        fs.createReadStream(staticPath).pipe(res);
+        fs.createReadStream(finalPath).pipe(res);
         logger.request(req, 200, Date.now() - startMs);
         return;
       }
@@ -2689,4 +2690,5 @@ ensureInit().then(() => {
 
 // Export the handler function (not the server) for Vercel's @vercel/node runtime
 module.exports = requestHandler;
+
 
