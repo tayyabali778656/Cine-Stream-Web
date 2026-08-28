@@ -1486,7 +1486,7 @@ const requestHandler = async (req, res) => {
 
       // Serve the static sitemap file ONLY on local environments.
       // On Vercel, bypass this to allow real-time database-driven sitemap updates with memory caching.
-      if (fs.existsSync(staticPath) && !process.env.VERCEL) {
+      if (fs.existsSync(staticPath)) {
         // Serve the pre-generated static file — fast loading, refreshed edge cache
         res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=600, stale-while-revalidate=3600');
         res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
@@ -2689,3 +2689,4 @@ ensureInit().then(() => {
 
 // Export the handler function (not the server) for Vercel's @vercel/node runtime
 module.exports = requestHandler;
+
