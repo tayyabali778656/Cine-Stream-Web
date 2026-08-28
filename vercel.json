@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "npm install --omit=dev",
-  "buildCommand": "npm run generate-sitemap",
+  "buildCommand": "echo \"Sitemap already built locally\"",
   "framework": null,
   "builds": [
     {
