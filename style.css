@@ -1301,6 +1301,9 @@ nav.scrolled {
   }
 
   /* Buttons row */
+  .modal-details h2 { order: -4 !important; }
+  .modal-meta { order: -3 !important; }
+  #modal-dubbed-languages { order: -2 !important; }
   .modal-action-buttons {
     order: -1;
     flex-wrap: wrap;
@@ -2290,5 +2293,6 @@ body > div[style*="position: fixed"][style*="z-index"] img {
     padding-bottom: 50px;
   }
 }
+
 
 
