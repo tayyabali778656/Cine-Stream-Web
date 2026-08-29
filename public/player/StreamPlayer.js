@@ -138,6 +138,11 @@ class StreamPlayer {
     }
     iframe.setAttribute('allowfullscreen', '');
     iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+    // Block push notifications, geolocation, and other intrusive permissions from the player iframe
+    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+    iframe.setAttribute('permissions-policy', 'notifications=(), push=(), geolocation=(), camera=(), microphone=(), payment=()');
+    // Also use Permissions-Policy header equivalent via allow attribute
+    iframe.referrerPolicy = 'no-referrer';
     iframe.style.cssText = 'width:100%;height:100%;border:none;background:#000;';
     iframe.setAttribute('loading', 'eager');
 
