@@ -79,19 +79,20 @@ async function scrapeEpisodePlayer(epUrl, _depth = 0) {
     while ((liMatch = liRegex.exec(html)) !== null) {
       const liHtml = liMatch[1];
       const hrefMatch = liHtml.match(/href="#(options-\d+)"/);
-      const nameMatch = liHtml.match(/<span class="server">([\s\S]*?)<\/span>/);
-      const numMatch = liHtml.match(/<span>\s*(\d+)\s*<\/span>/);
+      const nameMatch = liHtml.match(/<span[^>]*>([\s\S]*?)<\/span>/);
+      const numMatch = liHtml.match(/<\/span>\s*-\s*<span[^>]*>\s*(\d+)\s*<\/span>|<span>\s*(\d+)\s*<\/span>/);
       if (hrefMatch && nameMatch) {
         const optionId = hrefMatch[1];
         const serverName = nameMatch[1].trim();
-        const serverNum = numMatch ? parseInt(numMatch[1].trim(), 10) : Object.keys(serverMap).length + 1;
+        const serverNumMatch = numMatch ? (numMatch[1] || numMatch[2]) : null;
+        const serverNum = serverNumMatch ? parseInt(serverNumMatch.trim(), 10) : Object.keys(serverMap).length + 1;
         serverMap[optionId] = { name: serverName, num: serverNum };
       }
     }
 
-    // Step 2: Parse all option divs and map options-N -> embed URL (supports both src and data-src)
+    // Step 2: Parse all option divs and map options-N -> embed URL (supports both src and data-src, and single/double quotes)
     const embedMap = {}; // 'options-0' -> 'https://toon-stream.site/embed/xxx'
-    const optionDivRegex = /id="(options-\d+)"[\s\S]*?(?:\bsrc\b|\bdata-src\b)="([^"]+)"/gi;
+    const optionDivRegex = /id=["']?(options-\d+)["']?[\s\S]*?(?:\bsrc\b|\bdata-src\b)=["']([^"']+)["']/gi;
     let optMatch;
     while ((optMatch = optionDivRegex.exec(html)) !== null) {
       let embedUrl = optMatch[2];

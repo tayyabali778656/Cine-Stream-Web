@@ -126,23 +126,23 @@ class StreamPlayer {
     // Enable ads (popups) only for specific servers that strictly require them
     const adServers = ['short', 'watch/dl', 'cloudy', 'ads'];
     const labelLower = (source.label || '').toLowerCase();
-    const allowAds = adServers.some(lbl => labelLower.includes(lbl));
+    let allowAds = adServers.some(lbl => labelLower.includes(lbl));
+
+    // Force strict sandbox for specific servers to permanently block their popunders
+    if (labelLower.includes('ruby') || labelLower.includes('moly') || labelLower.includes('play') || labelLower.includes('turbo')) {
+      allowAds = false;
+    }
 
     if (!allowAds) {
       // Block popups/redirects for clean servers
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
     } else {
-      // CRITICAL: Completely remove sandbox for strict ad-requiring servers.
-      // These servers (AbyssPlayer, Cloudy, etc.) detect sandbox via JS and refuse to play.
+      // Allow popunders and ads for monetized servers
       iframe.removeAttribute('sandbox');
     }
     iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
-    // Block push notifications, geolocation, and other intrusive permissions from the player iframe
-    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
-    iframe.setAttribute('permissions-policy', 'notifications=(), push=(), geolocation=(), camera=(), microphone=(), payment=()');
-    // Also use Permissions-Policy header equivalent via allow attribute
-    iframe.referrerPolicy = 'no-referrer';
+    // Explicitly block push notifications via Permissions-Policy
+    iframe.setAttribute('allow', "autoplay; encrypted-media; picture-in-picture; notifications 'none'; push 'none'");
     iframe.style.cssText = 'width:100%;height:100%;border:none;background:#000;';
     iframe.setAttribute('loading', 'eager');
 
