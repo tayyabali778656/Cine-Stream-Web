@@ -2306,5 +2306,17 @@ body > div[style*="position: fixed"][style*="z-index"] img {
     height: 75% !important;
     max-height: 500px !important;
   }
+  
+  #custom-episode-selectors select,
+  #player-server-select,
+  .episode-selector {
+    padding: 2px 6px !important;
+    font-size: 0.75rem !important;
+    height: 26px !important;
+  }
+  
+  #custom-episode-selectors {
+    gap: 4px !important;
+  }
 }
 
