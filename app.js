@@ -2675,11 +2675,16 @@ const App = {
                     seasonOptions += `<option value="${s}">Season ${s}</option>`;
                   });
 
+                  const isMobile = window.innerWidth <= 768;
+                  const selectStyle = isMobile
+                    ? 'outline: none; border: 1px solid var(--glass-border); padding: 2px 6px; border-radius: 4px; color: white; background: #222; cursor: pointer; font-size: 0.72rem; font-family: Outfit, sans-serif; font-weight: 600; height: 26px; max-width: 100px;'
+                    : 'outline: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 20px; color: white; background: #222; cursor: pointer; font-size: 0.85rem; font-family: Outfit, sans-serif; font-weight: 600;';
+
                   customSelectorContainer.innerHTML = `
-                    <select id="player-season-select" class="filter-dropdown-select glass" style="outline: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 20px; color: white; background: #222; cursor: pointer; font-size: 0.85rem; font-family: 'Outfit', sans-serif; font-weight: 600;">
+                    <select id="player-season-select" class="filter-dropdown-select glass" style="${selectStyle}">
                       ${seasonOptions}
                     </select>
-                    <select id="player-episode-select" class="filter-dropdown-select glass" style="outline: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 20px; color: white; background: #222; cursor: pointer; font-size: 0.85rem; font-family: 'Outfit', sans-serif; font-weight: 600;">
+                    <select id="player-episode-select" class="filter-dropdown-select glass" style="${selectStyle}">
                     </select>
                   `;
 
@@ -2793,7 +2798,7 @@ const App = {
                 <i class="fas fa-mobile-alt"></i> Download App
               </a>
               <select id="player-server-select" class="glass" 
-                style="outline: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 4px; color: white; background: #222; cursor: pointer; font-size: 0.85rem; font-family: 'Outfit', sans-serif; font-weight: 600; margin-left: 8px; display: none;">
+                style="outline: none; border: 1px solid var(--glass-border); padding: ${window.innerWidth <= 768 ? '2px 4px' : '6px 12px'}; border-radius: 4px; color: white; background: #222; cursor: pointer; font-size: ${window.innerWidth <= 768 ? '0.72rem' : '0.85rem'}; font-family: 'Outfit', sans-serif; font-weight: 600; margin-left: 8px; display: none; ${window.innerWidth <= 768 ? 'max-width: 90px; height: 26px;' : ''}">
               </select>
             `;
 
