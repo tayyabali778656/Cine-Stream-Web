@@ -92,6 +92,186 @@ const App = {
     }, 4000);
   },
 
+  /**
+   * Creates a custom CineStream-styled dropdown (replaces native <select>)
+   * @param {string}   id       - unique wrapper element id
+   * @param {Array}    options  - [{value, label}]
+   * @param {Function} onChange - called with (value) on selection
+   * @param {string}   prefix  - optional label prefix e.g. "S" "Ep"
+   * @returns {{ el, getValue, setValue, setOptions }}
+   */
+  createCustomSelect(id, options, onChange, prefix = '') {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'cs-select';
+    wrapper.id = id;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cs-select-btn';
+    btn.innerHTML = `<span class="cs-label">${prefix}${options[0] ? options[0].label : ''}</span><i class="fas fa-chevron-down cs-arrow"></i>`;
+    wrapper.appendChild(btn);
+
+    // List appended to body so no parent overflow:hidden clips it
+    // Using <section> instead of <div> to avoid the aggressive ad-isolation 
+    // CSS rule: body > div[style*="position: fixed"] { all: revert !important; }
+    const list = document.createElement('section');
+    list.className = 'cs-select-list';
+    list.style.cssText = [
+      'display:none',
+      'position:fixed',
+      'z-index:999999',
+      'min-width:120px',
+      'max-width:290px',
+      'max-height:260px',
+      'overflow-y:auto',
+      '-webkit-overflow-scrolling:touch',
+      'overscroll-behavior:contain',
+      'touch-action:pan-y',
+      'background:rgba(15,15,15,0.99)',
+      'border:1.5px solid rgba(229,9,20,0.55)',
+      'border-radius:12px',
+      'box-shadow:0 -16px 48px rgba(0,0,0,0.9)',
+      'scrollbar-width:thin',
+    ].join(';');
+    document.body.appendChild(list);
+
+    let currentValue = options[0] ? String(options[0].value) : '';
+    let isOpen = false;
+    let outsideHandler = null;
+
+    // ── Position: always opens ABOVE the button ──────────────
+    const positionList = () => {
+      const r = btn.getBoundingClientRect();
+      const listH = Math.min(list.scrollHeight || 260, 260);
+      list.style.left = Math.max(4, r.left) + 'px';
+      if (r.top > listH + 16) {
+        // Enough space above → open upward
+        list.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+        list.style.top = 'auto';
+      } else {
+        // Not enough space above → open downward
+        list.style.top = (r.bottom + 6) + 'px';
+        list.style.bottom = 'auto';
+      }
+    };
+
+    // ── Render option items ────────────────────────────────────
+    const buildItems = (opts) => {
+      list.innerHTML = '';
+      opts.forEach(opt => {
+        const item = document.createElement('div');
+        const isCurrent = String(opt.value) === currentValue;
+        item.dataset.value = String(opt.value);
+        item.style.cssText = [
+          'display:flex','align-items:center','padding:12px 18px',
+          'font-family:Outfit,sans-serif','font-size:0.9rem','font-weight:' + (isCurrent ? '700' : '500'),
+          'color:' + (isCurrent ? '#e50914' : 'rgba(255,255,255,0.85)'),
+          'background:' + (isCurrent ? 'rgba(229,9,20,0.2)' : 'transparent'),
+          'cursor:pointer','white-space:nowrap','min-height:46px','gap:10px',
+          'border-top:1px solid rgba(255,255,255,0.05)',
+          '-webkit-tap-highlight-color:transparent',
+        ].join(';');
+
+        item.textContent = opt.label;
+
+        const select = () => {
+          currentValue = String(opt.value);
+          btn.querySelector('.cs-label').textContent = prefix + opt.label;
+          // Highlight selected
+          list.querySelectorAll('[data-value]').forEach(el => {
+            el.style.background = 'transparent';
+            el.style.color = 'rgba(255,255,255,0.85)';
+            el.style.fontWeight = '500';
+          });
+          item.style.background = 'rgba(229,9,20,0.2)';
+          item.style.color = '#e50914';
+          item.style.fontWeight = '700';
+          closeList();
+          onChange(opt.value);
+        };
+        item.addEventListener('click', select);
+        list.appendChild(item);
+      });
+    };
+
+    const openList = () => {
+      // Close any other open dropdown first
+      document.querySelectorAll('.cs-select-list').forEach(l => {
+        if (l !== list) l.style.display = 'none';
+      });
+      document.querySelectorAll('.cs-select.open').forEach(el => {
+        if (el !== wrapper) el.classList.remove('open');
+      });
+
+      isOpen = true;
+      wrapper.classList.add('open');
+      list.style.display = 'block';
+      positionList();
+
+      // Attach outside-click handler AFTER current event finishes
+      if (outsideHandler) document.removeEventListener('click', outsideHandler);
+      outsideHandler = (e) => {
+        if (!wrapper.contains(e.target) && !list.contains(e.target)) {
+          closeList();
+        }
+      };
+      setTimeout(() => document.addEventListener('click', outsideHandler), 0);
+    };
+
+    const closeList = () => {
+      isOpen = false;
+      wrapper.classList.remove('open');
+      list.style.display = 'none';
+      if (outsideHandler) {
+        document.removeEventListener('click', outsideHandler);
+        outsideHandler = null;
+      }
+    };
+
+    buildItems(options);
+
+    // Button click/touch handler (robust for mobile)
+    const toggleList = (e) => {
+      e.stopPropagation();
+      if (e.type === 'touchstart') e.preventDefault(); // Prevent double-firing click
+      if (isOpen) { closeList(); } else { openList(); }
+    };
+    btn.addEventListener('click', toggleList);
+    btn.addEventListener('touchstart', toggleList, { passive: false });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeList();
+    });
+
+    return {
+      el: wrapper,
+      list: list,
+      getValue: () => currentValue,
+      setValue(val) {
+        const v = String(val);
+        currentValue = v;
+        const opt = options.find(o => String(o.value) === v);
+        if (opt) btn.querySelector('.cs-label').textContent = prefix + opt.label;
+        list.querySelectorAll('[data-value]').forEach(item => {
+          const active = item.dataset.value === v;
+          item.style.background = active ? 'rgba(229,9,20,0.2)' : 'transparent';
+          item.style.color = active ? '#e50914' : 'rgba(255,255,255,0.85)';
+          item.style.fontWeight = active ? '700' : '500';
+        });
+      },
+      setOptions(newOpts, newVal) {
+        options = newOpts;
+        if (newVal !== undefined) currentValue = String(newVal);
+        buildItems(newOpts);
+        const active = newOpts.find(o => String(o.value) === currentValue) || newOpts[0];
+        if (active) {
+          currentValue = String(active.value);
+          btn.querySelector('.cs-label').textContent = prefix + active.label;
+        }
+      }
+    };
+  },
+
   showNoTrailer(noTrailerEl, text = null) {
     if (!noTrailerEl) return;
     if (text) {
@@ -786,7 +966,7 @@ const App = {
     // Hide SEO hero and recently-viewed on single category pages
     const seoHero = document.getElementById('seo-hero');
     if (seoHero) seoHero.style.display = 'none';
-    
+
     const recentlyViewed = document.getElementById('recently-viewed-section');
     if (recentlyViewed) recentlyViewed.style.display = 'none';
 
@@ -1805,7 +1985,7 @@ const App = {
         : (m.poster_path
           ? (m.poster_path.startsWith('http') ? m.poster_path : 'https://image.tmdb.org/t/p/w92' + m.poster_path)
           : 'https://placehold.co/92x138?text=No+Poster');
-      
+
       const typeVal = m.type || (m.title ? 'movie' : 'tv');
 
       return `
@@ -2056,13 +2236,13 @@ const App = {
     if (typeof this.adLinkIndex === 'undefined') {
       this.adLinkIndex = 0;
     }
-    
+
     // Pick the next link in the array
     const link = links[this.adLinkIndex];
-    
+
     // Increment and wrap around
     this.adLinkIndex = (this.adLinkIndex + 1) % links.length;
-    
+
     // Load link in iframe
     iframe.src = link;
 
@@ -2104,14 +2284,14 @@ const App = {
           cb.style.color = '#fff';
         }
         if (cl) cl.innerHTML = '✕ Close';
-        
+
         if (cb) {
           cb.onclick = () => {
             // Animate out
             playerAd.style.opacity = '0';
             const container = document.getElementById('ad-webview-container');
             if (container) container.style.transform = 'scale(0.95)';
-            
+
             // Wait for transition before hiding completely
             setTimeout(() => {
               playerAd.style.display = 'none';
@@ -2134,7 +2314,7 @@ const App = {
 
     document.getElementById('modal-title').textContent = 'Loading...';
     this.modal.classList.add('active');
-    
+
     // Show ad after modal is active with appropriate trigger
     this.showSmartlinkWebViewAd(isWatching ? 'watchNow' : 'cardClick');
 
@@ -2387,9 +2567,9 @@ const App = {
               this.reportBrokenVideo(movieId, type, title, movie.poster_path, movie.release_date || movie.first_air_date, currentS, currentE);
             },
             onReady: (index, label) => {
-              const serverSelect = document.getElementById('player-server-select');
-              if (serverSelect) {
-                serverSelect.value = index;
+              const csServer = document.getElementById('cs-server');
+              if (csServer && csServer._csInstance) {
+                csServer._csInstance.setValue(index);
               }
             },
             onRefreshSource: async (source, playerInstance) => {
@@ -2518,8 +2698,8 @@ const App = {
 
                   const processSource = (src) => {
                     const adServerLabels = ['short', 'cloudy', 'watch', 'dl']; // matches 'watch', 'watch/dl', 'dl', 'watchdl'
-                    const isAdServer = adServerLabels.some(lbl => 
-                      (src.label && src.label.toLowerCase().includes(lbl)) || 
+                    const isAdServer = adServerLabels.some(lbl =>
+                      (src.label && src.label.toLowerCase().includes(lbl)) ||
                       (src.url && src.url.toLowerCase().includes(lbl))
                     );
 
@@ -2528,8 +2708,12 @@ const App = {
                       ? `/iframe-proxy?url=${encodeURIComponent(src.url)}`
                       : src.url;
 
-                    const baseLabel = src.label || `Server ${activeIdx++}`;
+                    let baseLabel = src.label || `Server ${activeIdx++}`;
                     if (isAdServer) {
+                      const lowerLabel = baseLabel.toLowerCase();
+                      if ((lowerLabel.includes('watch') || lowerLabel.includes('dl')) && !lowerLabel.includes('cloudy') && !lowerLabel.includes('short')) {
+                        baseLabel = 'Watch/DL';
+                      }
                       adsSources.push({
                         url: finalUrl,
                         type: src.type || 'iframe',
@@ -2638,6 +2822,11 @@ const App = {
               if (sources.length === 0) {
                 this.reportBrokenVideo(movieId, type, title, movie.poster_path, movie.release_date || movie.first_air_date, s, e);
               }
+              // Update custom server dropdown with real server labels
+              const dlC = document.getElementById('player-download-container');
+              if (dlC && typeof dlC._updateServerOptions === 'function') {
+                dlC._updateServerOptions(this.activePlayer.sources);
+              }
             }
           };
 
@@ -2670,73 +2859,51 @@ const App = {
                     availableSeasons.push(1);
                   }
 
-                  let seasonOptions = '';
-                  availableSeasons.forEach(s => {
-                    seasonOptions += `<option value="${s}">Season ${s}</option>`;
-                  });
+                  // ── Custom Season & Episode dropdowns ──────────────────
+                  customSelectorContainer.innerHTML = '';
 
-                  const isMobile = window.innerWidth <= 768;
-                  const selectStyle = isMobile
-                    ? 'outline: none; border: 1px solid var(--glass-border); padding: 2px 6px; border-radius: 4px; color: white; background: #222; cursor: pointer; font-size: 0.72rem; font-family: Outfit, sans-serif; font-weight: 600; height: 26px; max-width: 100px;'
-                    : 'outline: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 20px; color: white; background: #222; cursor: pointer; font-size: 0.85rem; font-family: Outfit, sans-serif; font-weight: 600;';
+                  const seasonOpts = availableSeasons.map(s => ({ value: s, label: `Season ${s}` }));
+                  const seasonCS = this.createCustomSelect('cs-season', seasonOpts, async (val) => {
+                    if (isStale()) return;
+                    const sNum = parseInt(val, 10);
+                    if (!seasonMap[sNum] || seasonMap[sNum].length === 0) {
+                      try {
+                        const freshRes = await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(movieId)}&season=${sNum}&episode=1`).then(r => r.json());
+                        if (!isStale() && Array.isArray(freshRes)) {
+                          freshRes.forEach(ep => {
+                            const epS = ep.season || sNum;
+                            if (!seasonMap[epS]) seasonMap[epS] = [];
+                            if (!seasonMap[epS].find(e => e.episode === ep.episode)) seasonMap[epS].push(ep);
+                          });
+                          const allSeasons = Object.keys(seasonMap).map(Number).sort((a, b) => a - b);
+                          seasonCS.setOptions(allSeasons.map(s => ({ value: s, label: `Season ${s}` })), sNum);
+                        }
+                      } catch (e) { console.warn('Could not fetch season episodes:', e); }
+                    }
+                    await updateEpisodesList(sNum);
+                    if (isStale()) return;
+                    const firstEp = seasonMap[sNum] && seasonMap[sNum][0] ? seasonMap[sNum][0].episode : 1;
+                    episodeCS.setValue(firstEp);
+                    await playWithFailover(sNum, firstEp);
+                  }, '');
 
-                  customSelectorContainer.innerHTML = `
-                    <select id="player-season-select" class="filter-dropdown-select glass" style="${selectStyle}">
-                      ${seasonOptions}
-                    </select>
-                    <select id="player-episode-select" class="filter-dropdown-select glass" style="${selectStyle}">
-                    </select>
-                  `;
+                  const episodeCS = this.createCustomSelect('cs-episode', [{ value: 1, label: 'Episode 1' }], async (val) => {
+                    if (isStale()) return;
+                    await playWithFailover(parseInt(seasonCS.getValue(), 10), parseInt(val, 10));
+                  }, '');
+                  episodeCS.list.style.minWidth = '160px'; // Increase episode list width
 
-                  const seasonSelect = document.getElementById('player-season-select');
-                  const episodeSelect = document.getElementById('player-episode-select');
+                  customSelectorContainer.appendChild(seasonCS.el);
+                  customSelectorContainer.appendChild(episodeCS.el);
 
                   updateEpisodesList = async (seasonNum) => {
                     if (isStale()) return;
                     const sNum = parseInt(seasonNum, 10);
                     const eps = seasonMap[sNum] || [];
-                    episodeSelect.innerHTML = eps.length > 0
-                      ? eps.map(ep => `<option value="${ep.episode}">Episode ${ep.episode}</option>`).join('')
-                      : '<option value="1">Episode 1</option>';
-                  };
-
-                  seasonSelect.onchange = async () => {
-                    if (isStale()) return;
-                    const sNum = parseInt(seasonSelect.value, 10);
-
-                    // If this season's episodes aren't loaded yet, fetch them from API
-                    if (!seasonMap[sNum] || seasonMap[sNum].length === 0) {
-                      try {
-                        const freshRes = await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(movieId)}&season=${sNum}&episode=1`).then(r => r.json());
-                        if (!isStale() && Array.isArray(freshRes)) {
-                          // Merge new season episodes into seasonMap
-                          freshRes.forEach(ep => {
-                            const epS = ep.season || sNum;
-                            if (!seasonMap[epS]) seasonMap[epS] = [];
-                            if (!seasonMap[epS].find(e => e.episode === ep.episode)) {
-                              seasonMap[epS].push(ep);
-                            }
-                          });
-                          // Also ensure new season appears in the dropdown
-                          const allSeasons = Object.keys(seasonMap).map(Number).sort((a, b) => a - b);
-                          seasonSelect.innerHTML = allSeasons.map(s => `<option value="${s}"${s === sNum ? ' selected' : ''}>Season ${s}</option>`).join('');
-                        }
-                      } catch (e) {
-                        console.warn('Could not fetch season episodes:', e);
-                      }
-                    }
-
-                    await updateEpisodesList(sNum);
-                    if (isStale()) return;
-
-                    const firstEpOfSeason = seasonMap[sNum] && seasonMap[sNum][0] ? seasonMap[sNum][0].episode : 1;
-                    episodeSelect.value = firstEpOfSeason;
-                    await playWithFailover(sNum, firstEpOfSeason);
-                  };
-
-                  episodeSelect.onchange = async () => {
-                    if (isStale()) return;
-                    await playWithFailover(parseInt(seasonSelect.value, 10), parseInt(episodeSelect.value, 10));
+                    const epOpts = eps.length > 0
+                      ? eps.map(ep => ({ value: ep.episode, label: `Episode ${ep.episode}` }))
+                      : [{ value: 1, label: 'Episode 1' }];
+                    episodeCS.setOptions(epOpts);
                   };
 
                   const urlParams = new URLSearchParams(window.location.search);
@@ -2744,17 +2911,11 @@ const App = {
                   const paramE = parseInt(urlParams.get('e'), 10);
 
                   let defaultSeason = availableSeasons[0] || 1;
-                  if (!isNaN(paramS) && availableSeasons.includes(paramS)) {
-                    defaultSeason = paramS;
-                  }
+                  if (!isNaN(paramS) && availableSeasons.includes(paramS)) defaultSeason = paramS;
 
-                  if (seasonSelect) {
-                    seasonSelect.value = defaultSeason;
-                  }
-
+                  seasonCS.setValue(defaultSeason);
                   await updateEpisodesList(defaultSeason);
 
-                  // Restore watch button
                   if (this._watchBtnLoadTimeout) {
                     clearTimeout(this._watchBtnLoadTimeout);
                     this._watchBtnLoadTimeout = null;
@@ -2762,19 +2923,13 @@ const App = {
                   const wb = document.getElementById('modal-watch-btn');
                   if (wb) { wb.disabled = false; wb.innerHTML = '<i class="fas fa-play"></i> Watch Now'; }
 
-                  // Default episode option check
-                  let defaultEpisodeVal = episodeSelect && episodeSelect.value ? parseInt(episodeSelect.value, 10) : 1;
+                  let defaultEpisodeVal = parseInt(episodeCS.getValue(), 10) || 1;
                   if (!isNaN(paramE)) {
                     const eps = seasonMap[defaultSeason] || [];
-                    if (eps.some(ep => ep.episode === paramE)) {
-                      defaultEpisodeVal = paramE;
-                    }
+                    if (eps.some(ep => ep.episode === paramE)) defaultEpisodeVal = paramE;
                   }
 
-                  if (episodeSelect) {
-                    episodeSelect.value = defaultEpisodeVal;
-                  }
-
+                  episodeCS.setValue(defaultEpisodeVal);
                   await playWithFailover(defaultSeason, defaultEpisodeVal, true);
                 } catch (err) {
                   console.error('Failed to load episode list:', err);
@@ -2789,30 +2944,46 @@ const App = {
             playWithFailover(1, 1, true);
           }
 
-          // Inject Download & "Report Broken" buttons cleanly
+          // Inject Download button + custom Server dropdown
           const dlContainer = document.getElementById('player-download-container');
           if (dlContainer) {
             const downloadUrl = 'https://github.com/tayyabali778656/Cine-Stream-Web/releases/download/v1.0/CineStream.apk';
-            dlContainer.innerHTML = `
-              <a href="${downloadUrl}" download class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); border: none; cursor: pointer; color: white;">
-                <i class="fas fa-mobile-alt"></i> Download App
-              </a>
-              <select id="player-server-select" class="glass" 
-                style="outline: none; border: 1px solid var(--glass-border); padding: ${window.innerWidth <= 768 ? '2px 4px' : '6px 12px'}; border-radius: 4px; color: white; background: #222; cursor: pointer; font-size: ${window.innerWidth <= 768 ? '0.72rem' : '0.85rem'}; font-family: 'Outfit', sans-serif; font-weight: 600; margin-left: 8px; display: none; ${window.innerWidth <= 768 ? 'max-width: 90px; height: 26px;' : ''}">
-              </select>
-            `;
 
+            // Clear old content
+            dlContainer.innerHTML = '';
 
+            // Download App button
+            const dlBtn = document.createElement('a');
+            dlBtn.href = downloadUrl;
+            dlBtn.download = '';
+            dlBtn.className = 'btn-primary';
+            dlBtn.style.cssText = 'padding:6px 12px;font-size:0.85rem;border-radius:4px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600;box-shadow:0 4px 12px rgba(229,9,20,0.4);border:none;cursor:pointer;color:white;margin-right:12px;';
+            dlBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Download App';
+            dlContainer.appendChild(dlBtn);
 
-            const serverSelect = document.getElementById('player-server-select');
-            if (serverSelect) {
-              serverSelect.onchange = () => {
-                const idx = parseInt(serverSelect.value, 10);
-                if (this.activePlayer && this.activePlayer.sources[idx]) {
-                  this.activePlayer._trySource(idx);
-                }
-              };
-            }
+            // Custom Server dropdown (starts hidden, populated when sources arrive)
+            const serverCS = this.createCustomSelect('cs-server', [{ value: 0, label: 'Server 1' }], (val) => {
+              const idx = parseInt(val, 10);
+              if (this.activePlayer && this.activePlayer.sources && this.activePlayer.sources[idx]) {
+                this.activePlayer.switchTo(idx);
+              }
+            }, '');
+
+            // Store ref for onReady callback
+            serverCS.el._csInstance = serverCS;
+            serverCS.el.style.display = 'none';
+            dlContainer.appendChild(serverCS.el);
+
+            // Called by playWithFailover after sources are ordered
+            dlContainer._updateServerOptions = (sources) => {
+              if (!sources || sources.length === 0) {
+                serverCS.el.style.display = 'none';
+                return;
+              }
+              const opts = sources.map((src, i) => ({ value: i, label: src.label || `Server ${i + 1}` }));
+              serverCS.setOptions(opts, 0);
+              serverCS.el.style.display = '';
+            };
           }
         } else {
           if (noTrailer) {

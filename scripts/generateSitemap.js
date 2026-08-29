@@ -266,7 +266,6 @@ async function run() {
 
       const filterItems = (items) => {
         return items.filter(item => {
-          // Check all possible year/date fields in DB
           const rawYear = item.release_year
             || (item.first_air_date ? String(item.first_air_date).slice(0, 4) : null)
             || (item.release_date   ? String(item.release_date).slice(0, 4)   : null)
@@ -274,8 +273,8 @@ async function run() {
             || '0';
           const yearVal   = parseInt(rawYear, 10);
           const ratingVal = parseFloat(item.rating || item.vote_average || 0);
-          // Include if: anime rating >= 6.0 OR year >= 2023
-          return ratingVal >= 6.0 || yearVal >= 2023;
+          // Include if: newly released (2025 or newer) OR rating >= 7.0
+          return yearVal >= 2025 || ratingVal >= 7.0;
         });
       };
 
@@ -290,6 +289,7 @@ async function run() {
           continue;
         }
         const type = item.type === 'movie' ? 'movie' : 'tv';
+        
         addEntry({
           loc:          `${BASE_URL}/media/${type}/${item.id}`,
           priority:     '0.9',
@@ -310,6 +310,7 @@ async function run() {
           continue;
         }
         const type = item.type === 'movie' ? 'movie' : 'tv';
+
         const posterUrl = item.poster || null;
         const title     = item.title || '';
         const desc      = (item.description || '').slice(0, 200);
@@ -333,8 +334,6 @@ async function run() {
           } : null,
         });
         animeAdded++;
-
-
 
         // Episode pages — add first 3 episodes for TV series
         if (type === 'tv') {
@@ -364,7 +363,8 @@ async function run() {
           }
         }
       }
-      console.log(`      → ${adminAdded}/${adminItems.length} admin items & ${animeAdded}/${animeItems.length} anime items added from DB`);
+      console.log(`      → ${adminAdded}/${filteredAdmin.length} admin items added from DB`);
+      console.log(`      → ${animeAdded}/${filteredAnime.length} anime items added from DB`);
       console.log(`      → ${episodeAdded} episode pages added`);
   } catch (err) {
     console.warn(`      ⚠ MongoDB unavailable: ${err.message}`);

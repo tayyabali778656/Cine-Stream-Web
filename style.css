@@ -2345,3 +2345,98 @@ body>div[style*="position: fixed"][style*="z-index"] img {
     gap: 6px !important;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   CineStream Custom Dropdown  (.cs-select)
+   List is positioned by JS (position:fixed), only button needs CSS here
+   ═══════════════════════════════════════════════════════════ */
+
+.cs-select {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
+}
+
+/* ── Trigger button ── */
+.cs-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(22, 22, 22, 0.97);
+  border: 1.5px solid rgba(229, 9, 20, 0.5);
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 9px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 120px;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  letter-spacing: 0.01em;
+}
+
+.cs-select-btn .cs-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.cs-select-btn .cs-arrow {
+  font-size: 0.7rem;
+  color: #e50914;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* ── Open state ── */
+.cs-select.open .cs-select-btn {
+  border-color: #e50914;
+  background: rgba(229, 9, 20, 0.12);
+  box-shadow: 0 0 0 2px rgba(229,9,20,0.2);
+}
+
+.cs-select.open .cs-arrow {
+  transform: rotate(180deg);
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .cs-select-btn {
+    font-size: 0.82rem;
+    padding: 8px 12px;
+    min-width: 105px;
+  }
+}
+
+/* ── Custom Scrollbar for Dropdown (All Devices) ── */
+.cs-select-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(229, 9, 20, 0.7) transparent;
+}
+.cs-select-list::-webkit-scrollbar {
+  width: 5px;
+  background: transparent;
+}
+.cs-select-list::-webkit-scrollbar-track {
+  background: rgba(15, 15, 15, 0.5);
+  border-radius: 10px;
+  margin: 6px 0;
+}
+.cs-select-list::-webkit-scrollbar-thumb {
+  background: rgba(229, 9, 20, 0.7);
+  border-radius: 10px;
+}
+.cs-select-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(229, 9, 20, 1);
+}
