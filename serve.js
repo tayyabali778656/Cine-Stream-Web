@@ -1874,115 +1874,130 @@ const requestHandler = async (req, res) => {
         let html = await response.text();
         const originUrl = new URL(targetUrl);
         const originBase = originUrl.origin;
+        
+        const isWhitelistedAd = targetUrl.includes('omg10.com') || targetUrl.includes('monetag');
 
-        // Block popups, clickjacking, push notifications & redirects inside proxied iframe
-        const adBlockScript = `
-          <script>
-            // Deep freeze/override window.open to completely block popups
-            const noop = function() { return null; };
-            window.open = noop;
-            Object.defineProperty(window, 'open', { value: noop, writable: false, configurable: false });
-            window.alert = noop;
-            window.confirm = function() { return false; };
-            window.prompt = noop;
-            
-            // Prevent frame-busting (redirection of parent page)
-            if (window.self !== window.top) {
-              try {
-                Object.defineProperty(window, 'top', { get: function() { return window.self; } });
-                Object.defineProperty(window, 'parent', { get: function() { return window.self; } });
-              } catch (e) {}
-            }
-            
-            // Block Notification prompts
-            if (window.Notification) {
-              window.Notification.requestPermission = function() {
-                return Promise.resolve('denied');
-              };
-              Object.defineProperty(window.Notification, 'permission', {
-                get: function() { return 'denied'; }
-              });
-            }
-            
-            // Block Service Worker registrations
-            if (navigator.serviceWorker) {
-              Object.defineProperty(navigator, 'serviceWorker', {
-                get: function() { return null; }
-              });
-            }
-
-            // Block dynamic element creation of pop-under anchor tags
-            const originalCreateElement = document.createElement;
-            document.createElement = function(tagName, options) {
-              const el = originalCreateElement.call(document, tagName, options);
-              if (tagName.toLowerCase() === 'a') {
-                const originalClick = el.click;
-                el.click = function() {
-                  const href = el.href || '';
-                  const target = el.target || '';
-                  if (target === '_blank' || href.includes('ad') || href.includes('pop') || href.includes('click') || href.includes('syndication')) {
-                    console.log('[AdBlock] Blocked dynamic anchor navigation:', href);
-                    return;
-                  }
-                  return originalClick.apply(el, arguments);
-                };
-              }
-              return el;
-            };
-
-            // Capture and block click event propagation for popup/pop-under triggers
-            document.addEventListener('click', function(e) {
-              const tag = e.target.closest('a');
-              if (tag) {
-                const href = tag.getAttribute('href') || '';
-                const target = tag.getAttribute('target') || '';
-                if (target === '_blank' || href.includes('ad') || href.includes('pop') || href.includes('click') || href.includes('syndication') || (!href.startsWith('/') && !href.includes(window.location.hostname))) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  return false;
+        if (!isWhitelistedAd) {
+          // Block popups, clickjacking, push notifications & redirects inside proxied iframe
+          const adBlockScript = `
+            <script>
+              // Override window.open to block popups, except for whitelisted ad networks
+              const originalOpen = window.open;
+              window.open = function(url, name, specs) {
+                if (url && (url.includes('omg10.com') || url.includes('monetag'))) {
+                  return originalOpen.call(window, url, name, specs);
                 }
+                console.log('[AdBlock] Blocked window.open:', arguments);
+                return null;
+              };
+              window.alert = function() { return null; };
+              window.confirm = function() { return false; };
+              window.prompt = function() { return null; };
+              
+              // Prevent frame-busting (redirection of parent page)
+              if (window.self !== window.top) {
+                try {
+                  Object.defineProperty(window, 'top', { get: function() { return window.self; } });
+                  Object.defineProperty(window, 'parent', { get: function() { return window.self; } });
+                } catch (e) {}
               }
               
-              // Block invisible ads overlay click catchers
-              const rect = e.target.getBoundingClientRect();
-              const style = window.getComputedStyle(e.target);
-              if (style.position === 'absolute' || style.position === 'fixed') {
-                if (rect.width > window.innerWidth * 0.9 && rect.height > window.innerHeight * 0.9 && (parseFloat(style.opacity) === 0 || style.zIndex > 10)) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  try { e.target.remove(); } catch(err) {}
-                  return false;
-                }
+              // Block Notification prompts
+              if (window.Notification) {
+                window.Notification.requestPermission = function() {
+                  return Promise.resolve('denied');
+                };
+                Object.defineProperty(window.Notification, 'permission', {
+                  get: function() { return 'denied'; }
+                });
               }
-            }, true);
-          </script>
-          <style>
-            /* Hide fake play buttons, ads overlays, and click redirection overlays */
-            .play-btn, .play-button, .play_button, .play_icon, .play-icon, 
-            #play-btn, #play-button, .playicon, .playbutton, .play-wrapper, 
-            .play-overlay, .fake-play, .player-poster, .poster-image, 
-            .click-to-play, #click-to-play, [class*="play-overlay"], 
-            [class*="fake-play"], .play-button-overlay, .play-btn-overlay,
-            
-            /* Hide fake notification alerts, message popups, and ad overlays */
-            .notification, .toast, .alert, .popup, .dialog, .modal-ads, .message-box, 
-            .ad-overlay, .pop-notification, .notify, .notify-ads, .push-notify,
-            [id*="notification"], [class*="notification"], [class*="message-box"], 
-            [class*="popup-ads"], [class*="ad-box"], [id*="ad-box"], 
-            [class*="toast-ad"], [id*="toast-ad"] {
-              display: none !important;
-              opacity: 0 !important;
-              pointer-events: none !important;
-            }
-          </style>
-        `;
+              
+              // Block Service Worker registrations
+              if (navigator.serviceWorker) {
+                Object.defineProperty(navigator, 'serviceWorker', {
+                  get: function() { return null; }
+                });
+              }
 
-        // Strip tracking/advertising scripts
-        html = html.replace(/<script[^>]*src="[^"]*(adsterra|exoclick|onclick|ad|pop|redirect|propeller|juicyads|onclickads|yandex|adnxs|doubleclick|taboola|outbrain|google-analytics|traffic|optadig360|syndication|exdynsrv|popads|popcash|admaven|propellerads)[^"]*"[^>]*><\/script>/gi, '');
-        html = html.replace(/<script[^>]*>([\s\S]*?(adsterra|exoclick|onclick|popunder|redirect|propeller|juicyads|onclickads|adnxs|optadig360|syndication|popads|popcash|admaven|propellerads)[\s\S]*?)<\/script>/gi, '');
+              // Block dynamic element creation of pop-under anchor tags
+              const originalCreateElement = document.createElement;
+              document.createElement = function(tagName, options) {
+                const el = originalCreateElement.call(document, tagName, options);
+                if (tagName.toLowerCase() === 'a') {
+                  const originalClick = el.click;
+                  el.click = function() {
+                    const href = el.href || '';
+                    if (href.includes('omg10.com') || href.includes('monetag')) {
+                      return originalClick.apply(el, arguments);
+                    }
+                    const target = el.target || '';
+                    if (target === '_blank' || href.includes('ad') || href.includes('pop') || href.includes('click') || href.includes('syndication')) {
+                      console.log('[AdBlock] Blocked dynamic anchor navigation:', href);
+                      return;
+                    }
+                    return originalClick.apply(el, arguments);
+                  };
+                }
+                return el;
+              };
 
-// Inject popup blocker at start of head
-        html = html.replace(/<head>/i, '<head>' + adBlockScript);
+              // Capture and block click event propagation for popup/pop-under triggers
+              document.addEventListener('click', function(e) {
+                const tag = e.target.closest('a');
+                if (tag) {
+                  const href = tag.getAttribute('href') || '';
+                  if (href.includes('omg10.com') || href.includes('monetag')) {
+                    return; // Whitelist
+                  }
+                  const target = tag.getAttribute('target') || '';
+                  if (target === '_blank' || href.includes('ad') || href.includes('pop') || href.includes('click') || href.includes('syndication') || (!href.startsWith('/') && !href.includes(window.location.hostname))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                  }
+                }
+                
+                // Block invisible ads overlay click catchers
+                const rect = e.target.getBoundingClientRect();
+                const style = window.getComputedStyle(e.target);
+                if (style.position === 'absolute' || style.position === 'fixed') {
+                  if (rect.width > window.innerWidth * 0.9 && rect.height > window.innerHeight * 0.9 && (parseFloat(style.opacity) === 0 || style.zIndex > 10)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try { e.target.remove(); } catch(err) {}
+                    return false;
+                  }
+                }
+              }, true);
+            </script>
+            <style>
+              /* Hide fake play buttons, ads overlays, and click redirection overlays */
+              .play-btn, .play-button, .play_button, .play_icon, .play-icon, 
+              #play-btn, #play-button, .playicon, .playbutton, .play-wrapper, 
+              .play-overlay, .fake-play, .player-poster, .poster-image, 
+              .click-to-play, #click-to-play, [class*="play-overlay"], 
+              [class*="fake-play"], .play-button-overlay, .play-btn-overlay,
+              
+              /* Hide fake notification alerts, message popups, and ad overlays */
+              .notification, .toast, .alert, .popup, .dialog, .modal-ads, .message-box, 
+              .ad-overlay, .pop-notification, .notify, .notify-ads, .push-notify,
+              [id*="notification"], [class*="notification"], [class*="message-box"], 
+              [class*="popup-ads"], [class*="ad-box"], [id*="ad-box"], 
+              [class*="toast-ad"], [id*="toast-ad"] {
+                display: none !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+              }
+            </style>
+          `;
+
+          // Strip tracking/advertising scripts
+          html = html.replace(/<script[^>]*src="[^"]*(adsterra|exoclick|onclick|ad|pop|redirect|propeller|juicyads|onclickads|yandex|adnxs|doubleclick|taboola|outbrain|google-analytics|traffic|optadig360|syndication|exdynsrv|popads|popcash|admaven|propellerads)[^"]*"[^>]*><\/script>/gi, '');
+          html = html.replace(/<script[^>]*>([\s\S]*?(adsterra|exoclick|onclick|popunder|redirect|propeller|juicyads|onclickads|adnxs|optadig360|syndication|popads|popcash|admaven|propellerads)[\s\S]*?)<\/script>/gi, '');
+
+          // Inject popup blocker at start of head
+          html = html.replace(/<head>/i, '<head>' + adBlockScript);
+        }
 
         // Rewrite relative URLs to absolute URLs
         html = html.replace(/(href|src|action)\s*=\s*["']\/([^"']+)["']/gi, (match, attr, path) => {

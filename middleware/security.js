@@ -30,7 +30,7 @@ const CSP = [
   `media-src 'self' blob: https: http:`,
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  `form-action 'self' https://omg10.com https://*.omg10.com https://*.monetag.com`,
 ].join('; ');
 
 // ── Security headers applied to every response ────────────────────────────────
