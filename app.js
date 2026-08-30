@@ -2243,7 +2243,7 @@ const App = {
     // Increment and wrap around
     this.adLinkIndex = (this.adLinkIndex + 1) % links.length;
 
-    // Load link in iframe
+    // Load link in iframe directly
     iframe.src = link;
 
     // Reset UI
@@ -2253,8 +2253,8 @@ const App = {
       closeBtn.style.background = 'rgba(0,0,0,0.7)';
       closeBtn.style.color = '#ccc';
     }
-    if (countdownText) countdownText.textContent = '5';
-    if (closeLabel) closeLabel.innerHTML = 'Wait <span id="ad-countdown-text">5</span>s';
+    if (countdownText) countdownText.textContent = '2';
+    if (closeLabel) closeLabel.innerHTML = 'Wait <span id="ad-countdown-text">2</span>s';
 
     // Apply display:flex then animate in
     playerAd.style.display = 'flex';
@@ -2267,7 +2267,7 @@ const App = {
       });
     });
 
-    let remaining = 5;
+    let remaining = 2;
     if (window._adCountdownTimer) clearInterval(window._adCountdownTimer);
     window._adCountdownTimer = setInterval(() => {
       remaining--;
@@ -2287,6 +2287,9 @@ const App = {
 
         if (cb) {
           cb.onclick = () => {
+            // Open the smartlink ad in a new tab, acting as the captcha click
+            window.open(link, '_blank');
+
             // Animate out
             playerAd.style.opacity = '0';
             const container = document.getElementById('ad-webview-container');
@@ -2315,8 +2318,10 @@ const App = {
     document.getElementById('modal-title').textContent = 'Loading...';
     this.modal.classList.add('active');
 
-    // Show ad after modal is active with appropriate trigger
-    this.showSmartlinkWebViewAd(isWatching ? 'watchNow' : 'cardClick');
+    // Show ad after modal is active ONLY when actually watching (not on card click)
+    if (isWatching) {
+      this.showSmartlinkWebViewAd('watchNow');
+    }
 
     document.body.style.overflow = 'hidden';
 

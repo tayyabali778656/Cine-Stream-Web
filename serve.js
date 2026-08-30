@@ -637,8 +637,9 @@ async function handleApiV1(req, res, pathname) {
       if (details && details.type === 'movie') {
         let sources = details.movieSources || [];
 
-        // If movieSources are missing from DB, fetch them live!
-        if (sources.length === 0) {
+        // If movieSources are missing from DB, OR if stored labels are purely numeric (old format without real names), fetch them live!
+        const hasNumericOnlyLabels = sources.length > 0 && sources.every(s => /^\d+$/.test((s.label || '').trim()));
+        if (sources.length === 0 || hasNumericOnlyLabels) {
           try {
             const freshDetails = await liveSvc.getLiveAnimeDetails(animeId, slug, 'movie');
             if (freshDetails && freshDetails.movieSources) {
@@ -673,8 +674,12 @@ async function handleApiV1(req, res, pathname) {
       // Expire cached stream links after 48 hours (2 days) to ensure third-party embeds stay fresh
       const isFresh = targetEp && targetEp.updatedAt && (Date.now() - new Date(targetEp.updatedAt).getTime() < 48 * 60 * 60 * 1000);
 
-      // Serve from DB if sources exist and are fresh
-      if (dbEpisodes.length > 0 && targetEp && targetEp.sources && targetEp.sources.length > 0 && isFresh) {
+      // Also re-scrape if stored sources have numeric-only labels (old format without real server names like Ruby, Moly, etc.)
+      const targetEpHasNumericLabels = targetEp && targetEp.sources && targetEp.sources.length > 0 &&
+        targetEp.sources.every(s => /^\d+$/.test((s.label || '').trim()));
+
+      // Serve from DB if sources exist and are fresh and have real server name labels
+      if (dbEpisodes.length > 0 && targetEp && targetEp.sources && targetEp.sources.length > 0 && isFresh && !targetEpHasNumericLabels) {
         // Serve from DB directly
         episodes = dbEpisodes.map(ep => ({ ...ep }));
       } else {
@@ -1862,7 +1867,6 @@ const requestHandler = async (req, res) => {
           `);
           return;
         }
-
         // Fallback to normal proxy
         const response = await fetch(targetUrl, {
           headers: {
@@ -1885,7 +1889,8 @@ const requestHandler = async (req, res) => {
               const originalOpen = window.open;
               window.open = function(url, name, specs) {
                 if (url && (url.includes('omg10.com') || url.includes('monetag'))) {
-                  return originalOpen.call(window, url, name, specs);
+                  window.location.href = url;
+                  return null;
                 }
                 console.log('[AdBlock] Blocked window.open:', arguments);
                 return null;
@@ -1928,7 +1933,8 @@ const requestHandler = async (req, res) => {
                   el.click = function() {
                     const href = el.href || '';
                     if (href.includes('omg10.com') || href.includes('monetag')) {
-                      return originalClick.apply(el, arguments);
+                      window.location.href = href;
+                      return;
                     }
                     const target = el.target || '';
                     if (target === '_blank' || href.includes('ad') || href.includes('pop') || href.includes('click') || href.includes('syndication')) {
@@ -1947,7 +1953,8 @@ const requestHandler = async (req, res) => {
                 if (tag) {
                   const href = tag.getAttribute('href') || '';
                   if (href.includes('omg10.com') || href.includes('monetag')) {
-                    return; // Whitelist
+                    tag.removeAttribute('target');
+                    return; // Whitelist, but force same frame
                   }
                   const target = tag.getAttribute('target') || '';
                   if (target === '_blank' || href.includes('ad') || href.includes('pop') || href.includes('click') || href.includes('syndication') || (!href.startsWith('/') && !href.includes(window.location.hostname))) {
