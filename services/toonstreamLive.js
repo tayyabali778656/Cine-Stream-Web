@@ -713,11 +713,62 @@ async function getLiveEpisodes(slug, targetSeason = 1, targetEpisode = 1) {
   if (DISABLE_SCRAPING) return [];
   const targetUrl = `/series/${slug}`;
   let { html, status } = await fetchPage(targetUrl);
-  
+  let resolvedSlug = slug; // track the real slug in case it has special chars (e.g. colon)
+
+  // If /series/{slug} fails or returns 500 (e.g., slug has colon stripped by slugify),
+  // find the real slug. Key insight: toon-stream.site slugs can contain colons (e.g., "jaadugar:-a-witch-in-mongolia")
+  // but our slugify() strips them, so we need to discover the real slug.
+  if (status !== 200) {
+    // Strategy: Try the episode page by inserting a colon after a word boundary.
+    // Toon-stream.site URLs use literal colons: /episode/jaadugar:-a-witch-in-mongolia-1x1/
+    // We try inserting ":" before the first "-a-", "-the-", "-an-", "-in-", "-of-" to guess where title ends.
+    const colonVariants = [];
+
+    // Try inserting colon after each word (greedy - try all positions)
+    const parts = slug.split('-');
+    for (let i = 1; i < parts.length; i++) {
+      const candidate = parts.slice(0, i).join('-') + ':-' + parts.slice(i).join('-');
+      colonVariants.push(`/episode/${candidate}-${targetSeason}x${targetEpisode}/`);
+    }
+    // Also try the slug as-is (no colon)
+    colonVariants.unshift(`/episode/${slug}-${targetSeason}x${targetEpisode}/`);
+
+    let epPageRes = null;
+    for (const epUrl of colonVariants) {
+      const res = await fetchPage(epUrl);
+      if (res.status === 200 && res.html && res.html.includes('entry-title')) {
+        epPageRes = res;
+        logger.info(`[SlugFix] Found working episode URL: ${epUrl}`);
+        break;
+      }
+    }
+
+    if (epPageRes) {
+      // Extract real series slug from the episode page's breadcrumb links
+      const seriesHrefMatch = epPageRes.html.match(/href="([^"]*\/series\/([^"/?#]+))[/"]/i);
+      if (seriesHrefMatch) {
+        resolvedSlug = decodeURIComponent(seriesHrefMatch[2]);
+        const realSeriesRes = await fetchPage(`/series/${resolvedSlug}`);
+        if (realSeriesRes.status === 200 && realSeriesRes.html && realSeriesRes.html.includes('entry-title')) {
+          html = realSeriesRes.html;
+          status = 200;
+          logger.info(`[SlugFix] Resolved via colon-variant: ${slug} -> ${resolvedSlug}`);
+        } else {
+          // Use episode page HTML which has episode sidebar
+          html = epPageRes.html;
+          status = 200;
+        }
+      } else {
+        html = epPageRes.html;
+        status = 200;
+      }
+    }
+  }
+
   // Fallback: Some animes on Toonstream do not have a /series/ page, only /episode/ pages.
   // Their episode pages still contain the full sidebar of all episodes.
   if (status !== 200 || !html) {
-    const fallbackUrl = `/episode/${slug}-1x1/`;
+    const fallbackUrl = `/episode/${resolvedSlug}-1x1/`;
     const fbRes = await fetchPage(fallbackUrl);
     if (fbRes.status === 200 && fbRes.html) {
       html = fbRes.html;
