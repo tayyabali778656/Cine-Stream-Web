@@ -2395,15 +2395,6 @@ const App = {
         movie = localMovie;
         this.populateModalUI(movie, type, isNetMirror, movieId);
 
-        // Hide loading screen instantly!
-        const loadingScreen = document.getElementById('modal-loading-screen');
-        const modalContent = this.modal.querySelector('.modal-content');
-        if (loadingScreen) {
-          loadingScreen.classList.remove('active');
-          if (modalContent) {
-            modalContent.style.overflowY = '';
-          }
-        }
       }
 
       // 2. Fetch full details from server
@@ -2492,7 +2483,23 @@ const App = {
                   }
                 }
               }
-            }).catch(err => console.warn("Background details fetch failed:", err));
+              // Hide loading screen after background fetch is done
+              const loadingScreen = document.getElementById('modal-loading-screen');
+              const modalContent = this.modal.querySelector('.modal-content');
+              if (loadingScreen) {
+                loadingScreen.classList.remove('active');
+                if (modalContent) modalContent.style.overflowY = '';
+              }
+            }).catch(err => {
+              console.warn("Background details fetch failed:", err);
+              // Hide loading screen on error
+              const loadingScreen = document.getElementById('modal-loading-screen');
+              const modalContent = this.modal.querySelector('.modal-content');
+              if (loadingScreen) {
+                loadingScreen.classList.remove('active');
+                if (modalContent) modalContent.style.overflowY = '';
+              }
+            });
           }
         } catch (err) {
           console.error("Failed loading movie details:", err);
@@ -2503,6 +2510,16 @@ const App = {
           this.closeModal(true);
           this.showToast("Failed to load movie details. Please try again later.");
           if (!localMovie) return;
+        }
+      } else {
+        // No fetch needed (full details are already cached locally)
+        const loadingScreen = document.getElementById('modal-loading-screen');
+        const modalContent = this.modal.querySelector('.modal-content');
+        if (loadingScreen) {
+          loadingScreen.classList.remove('active');
+          if (modalContent) {
+            modalContent.style.overflowY = '';
+          }
         }
       }
 
