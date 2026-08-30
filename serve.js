@@ -415,9 +415,9 @@ async function handleApiV1(req, res, pathname) {
             { slug: regex },
           ]
         })
-        .sort({ popularity: -1, updatedAt: -1 })
-        .limit(40)
-        .toArray();
+          .sort({ popularity: -1, updatedAt: -1 })
+          .limit(40)
+          .toArray();
       } catch (dbErr) {
         // DB not available
         logger.warn('search_db_error', { message: dbErr.message, q });
@@ -451,9 +451,9 @@ async function handleApiV1(req, res, pathname) {
                     }
                   },
                   { upsert: true }
-                ).catch(() => {});
+                ).catch(() => { });
               }
-            })).catch(() => {});
+            })).catch(() => { });
           }
         } catch (scrapeErr) {
           logger.warn('search_fallback_scrape_error', { message: scrapeErr.message, q });
@@ -636,7 +636,7 @@ async function handleApiV1(req, res, pathname) {
 
       if (details && details.type === 'movie') {
         let sources = details.movieSources || [];
-        
+
         // If movieSources are missing from DB, fetch them live!
         if (sources.length === 0) {
           try {
@@ -669,7 +669,7 @@ async function handleApiV1(req, res, pathname) {
 
       let episodes = [];
       const targetEp = dbEpisodes.find(ep => ep.season === season && ep.episode === episode);
-      
+
       // Expire cached stream links after 48 hours (2 days) to ensure third-party embeds stay fresh
       const isFresh = targetEp && targetEp.updatedAt && (Date.now() - new Date(targetEp.updatedAt).getTime() < 48 * 60 * 60 * 1000);
 
@@ -747,7 +747,7 @@ async function handleApiV1(req, res, pathname) {
           episodes = episodes.map(ep => {
             const dbEp = dbEpisodes.find(d => d.season === ep.season && d.episode === ep.episode);
             if (dbEp && dbEp.sources && dbEp.sources.length > 0 && (!ep.sources || ep.sources.length === 0)) {
-               ep.sources = dbEp.sources;
+              ep.sources = dbEp.sources;
             }
             return ep;
           });
@@ -861,7 +861,7 @@ async function handleApiV1(req, res, pathname) {
             animeCol.bulkWrite(bulkOps, { ordered: false })
               .catch(e => logger.warn('Failed to bulk save anime cards:', e.message));
           } catch (e) {
-             logger.warn('Error constructing bulkWrite for anime cards:', e.message);
+            logger.warn('Error constructing bulkWrite for anime cards:', e.message);
           }
         }
       }
@@ -927,7 +927,7 @@ async function handleApiV1(req, res, pathname) {
 
       // Delete existing episodes matching query
       await epCollection.deleteMany(query);
-      
+
       // Clear caches
       cache.deleteByPrefix('eps_');
       cache.deleteByPrefix('details_');
@@ -935,7 +935,7 @@ async function handleApiV1(req, res, pathname) {
       // Trigger rescrape by fetching them live again
       // We need original slug. Usually animeId is "toon_slug".
       const slug = animeId.replace('toon_', '');
-      
+
       if (season && episode) {
         await liveSvc.getLiveEpisodes(slug, Number(season), Number(episode));
       } else {
@@ -958,11 +958,11 @@ async function handleApiV1(req, res, pathname) {
       await getCollection('hindi_dubbed').deleteMany({});
       await getCollection('missing_catalog').deleteMany({});
       await getCollection('hidden_items').deleteMany({});
-      
+
       cache.deleteByPrefix('db_');
       cache.deleteByPrefix('eps_');
       cache.deleteByPrefix('details_');
-      
+
       sendJson(res, 200, { success: true });
     } catch (err) {
       sendJson(res, 500, { error: err.message });
@@ -1254,11 +1254,11 @@ const requestHandler = async (req, res) => {
 
   // Only await database initialization for routes that require the database/catalog
   const needsDb = pathname.startsWith('/api/') ||
-                  pathname.startsWith('/proxy') ||
-                  pathname.startsWith('/iframe-proxy') ||
-                  pathname === '/health' ||
-                  pathname.endsWith('.xml') ||
-                  pathname.match(/^\/watch\/tv\/(toon_[^/?]+)/);
+    pathname.startsWith('/proxy') ||
+    pathname.startsWith('/iframe-proxy') ||
+    pathname === '/health' ||
+    pathname.endsWith('.xml') ||
+    pathname.match(/^\/watch\/tv\/(toon_[^/?]+)/);
 
   if (needsDb) {
     await ensureInit();
@@ -1874,7 +1874,7 @@ const requestHandler = async (req, res) => {
         let html = await response.text();
         const originUrl = new URL(targetUrl);
         const originBase = originUrl.origin;
-        
+
         const isWhitelistedAd = targetUrl.includes('omg10.com') || targetUrl.includes('monetag');
 
         if (!isWhitelistedAd) {
@@ -2044,7 +2044,7 @@ const requestHandler = async (req, res) => {
       try {
         const htmlRaw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
         const animeCol = getCollection('anime');
-        
+
         // Fetch up to 40 items in this genre
         const genreItems = await animeCol.find({
           genres: { $regex: new RegExp(`^${genreName}$`, 'i') }
@@ -2175,14 +2175,14 @@ const requestHandler = async (req, res) => {
           details = await animeCollection.findOne({
             $or: [{ id: toonId }, { id: `toon_${slug}` }, { slug }]
           });
-        } catch (_) {}
+        } catch (_) { }
 
         // 2. Fallback to live scraping if not in DB
         if (!details || !details.title) {
           try {
             const liveSvcLocal = require('./services/toonstreamLive');
             details = await liveSvcLocal.getLiveAnimeDetails(toonId, slug);
-          } catch (_) {}
+          } catch (_) { }
         }
 
         if (details && details.title) {
@@ -2565,7 +2565,7 @@ const requestHandler = async (req, res) => {
           const fallbackInjected = htmlRaw
             .replace(new RegExp('<link id="seo-canonical"[^>]*>'), `<link id="seo-canonical" rel="canonical" href="${canonical}">`)
             .replace(new RegExp('<meta id="og-url"[^>]*>'), `<meta id="og-url" property="og:url" content="${canonical}">`);
-          
+
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(Buffer.from(fallbackInjected, 'utf8'));
           return;

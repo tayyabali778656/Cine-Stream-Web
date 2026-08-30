@@ -163,11 +163,11 @@ const App = {
         const isCurrent = String(opt.value) === currentValue;
         item.dataset.value = String(opt.value);
         item.style.cssText = [
-          'display:flex','align-items:center','padding:12px 18px',
-          'font-family:Outfit,sans-serif','font-size:0.9rem','font-weight:' + (isCurrent ? '700' : '500'),
+          'display:flex', 'align-items:center', 'padding:12px 18px',
+          'font-family:Outfit,sans-serif', 'font-size:0.9rem', 'font-weight:' + (isCurrent ? '700' : '500'),
           'color:' + (isCurrent ? '#e50914' : 'rgba(255,255,255,0.85)'),
           'background:' + (isCurrent ? 'rgba(229,9,20,0.2)' : 'transparent'),
-          'cursor:pointer','white-space:nowrap','min-height:46px','gap:10px',
+          'cursor:pointer', 'white-space:nowrap', 'min-height:46px', 'gap:10px',
           'border-top:1px solid rgba(255,255,255,0.05)',
           '-webkit-tap-highlight-color:transparent',
         ].join(';');
