@@ -79,13 +79,33 @@ async function scrapeEpisodePlayer(epUrl, _depth = 0) {
     while ((liMatch = liRegex.exec(html)) !== null) {
       const liHtml = liMatch[1];
       const hrefMatch = liHtml.match(/href="#(options-\d+)"/);
-      const nameMatch = liHtml.match(/<span[^>]*>([\s\S]*?)<\/span>/);
-      const numMatch = liHtml.match(/<\/span>\s*-\s*<span[^>]*>\s*(\d+)\s*<\/span>|<span>\s*(\d+)\s*<\/span>/);
-      if (hrefMatch && nameMatch) {
+      
+      const spans = [...liHtml.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)].map(m => m[1].trim());
+      let serverName = 'Server';
+      let serverNumMatch = null;
+      
+      if (spans.length >= 2) {
+        serverNumMatch = spans[0];
+        serverName = spans[1];
+      } else if (spans.length === 1) {
+        if (!isNaN(parseInt(spans[0]))) {
+          serverNumMatch = spans[0];
+        } else {
+          serverName = spans[0];
+        }
+      }
+      
+      const classMatch = liHtml.match(/<span[^>]*class=["']server["'][^>]*>([\s\S]*?)<\/span>/i);
+      if (classMatch) {
+        serverName = classMatch[1].trim();
+      }
+
+      if (hrefMatch) {
         const optionId = hrefMatch[1];
-        const serverName = nameMatch[1].trim();
-        const serverNumMatch = numMatch ? (numMatch[1] || numMatch[2]) : null;
-        const serverNum = serverNumMatch ? parseInt(serverNumMatch.trim(), 10) : Object.keys(serverMap).length + 1;
+        if (!isNaN(serverName) || serverName === '') {
+          serverName = 'Server';
+        }
+        const serverNum = serverNumMatch ? parseInt(serverNumMatch, 10) : Object.keys(serverMap).length + 1;
         serverMap[optionId] = { name: serverName, num: serverNum };
       }
     }
