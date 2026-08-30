@@ -543,6 +543,10 @@ const App = {
           suggestionsBox.style.display = 'none';
           suggestionsBox.innerHTML = '';
         }
+        if (this.searchQuery !== '') {
+          this.searchQuery = '';
+          this.resetAndFetch();
+        }
       }
 
       clearTimeout(debounceTimer);
@@ -573,12 +577,12 @@ const App = {
         this.searchBar.value = '';
         clearBtn.style.display = 'none';
         this.searchQuery = '';
-        this.handleSearch();
         const suggestionsBox = document.getElementById('search-suggestions');
         if (suggestionsBox) {
           suggestionsBox.style.display = 'none';
           suggestionsBox.innerHTML = '';
         }
+        this.resetAndFetch();
       });
     }
 
@@ -1757,9 +1761,7 @@ const App = {
     const paginationContainer = document.getElementById('pagination-container');
 
     if (!this.searchQuery) {
-      if (resultsSection) resultsSection.style.display = 'none';
-      if (mainFeedSection) mainFeedSection.style.display = 'block';
-      this.updatePaginationAndLoadMore();
+      this.resetAndFetch();
       return;
     }
 
