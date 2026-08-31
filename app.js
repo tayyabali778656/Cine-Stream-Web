@@ -2402,7 +2402,34 @@ const App = {
       // 2. Fetch full details from server
       if (!localMovie || (!localMovie.description && !localMovie.overview) || !this.animeDetailsCache[movieId]) {
         try {
-          const fetchPromise = fetch(`/api/v1/anime/details?id=${encodeURIComponent(movieId)}`).then(r => r.json());
+          // Robust fetch with retry — handles transient 403/429/5xx (e.g. Cloudflare bot check)
+          // without requiring the user to manually reload.
+          const fetchWithRetry = async (url, maxRetries = 3) => {
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+              try {
+                const res = await fetch(url, { credentials: 'include' });
+                // If response is not ok (403, 429, 5xx), retry with backoff
+                if (!res.ok) {
+                  if (attempt < maxRetries && (res.status === 403 || res.status === 429 || res.status >= 500)) {
+                    await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt)));
+                    continue;
+                  }
+                  // Final attempt or non-retryable status — return empty to avoid JSON crash
+                  return null;
+                }
+                const data = await res.json();
+                return data;
+              } catch (fetchErr) {
+                if (attempt < maxRetries) {
+                  await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt)));
+                  continue;
+                }
+                return null;
+              }
+            }
+            return null;
+          };
+          const fetchPromise = fetchWithRetry(`/api/v1/anime/details?id=${encodeURIComponent(movieId)}`);
 
           if (!localMovie) {
             // Blocking fetch if we have absolutely no local data

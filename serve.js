@@ -479,7 +479,11 @@ async function handleApiV1(req, res, pathname) {
     const id = url.searchParams.get('id') || '';
     const slug = url.searchParams.get('slug') || '';
     let cleanSlug = slug || (id ? id.replace('toon_', '') : '');
-    cleanSlug = decodeURIComponent(cleanSlug).replace(/:/g, '').replace(/%3A/gi, '');
+    cleanSlug = decodeURIComponent(cleanSlug)
+      .replace(/:/g, '').replace(/%3A/gi, '') // remove all colons
+      .replace(/-?\d+$/, '')                   // strip trailing episode/season numbers like -1, 1
+      .replace(/--+/g, '-')                    // collapse double-dashes
+      .replace(/-$/, '');                       // trim trailing dash
 
     const SLUG_ALIASES = {
       'reborn-to-master-the-blade-from-hero-king-to-extraordinary-squire': 'reborn-to-master-the-blade',

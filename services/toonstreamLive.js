@@ -618,14 +618,21 @@ async function getLiveAnimeList(filter, page = 1, type = '', genre = '', query =
 async function getLiveAnimeDetails(id, slug, hintType = '') {
   if (DISABLE_SCRAPING) return null;
   const cleanSlug = slug || id.replace('toon_', '');
+  const ultraCleanSlug = cleanSlug.replace(/[^a-zA-Z0-9-:]/g, '').replace(/--+/g, '-');
 
   const pathsToTry = [];
-  if (hintType === 'movie') {
-    pathsToTry.push({ path: `/movies/${cleanSlug}`, type: 'movie' });
-    pathsToTry.push({ path: `/series/${cleanSlug}`, type: 'tv' });
-  } else {
-    pathsToTry.push({ path: `/series/${cleanSlug}`, type: 'tv' });
-    pathsToTry.push({ path: `/movies/${cleanSlug}`, type: 'movie' });
+  const addPaths = (s) => {
+    if (hintType === 'movie') {
+      pathsToTry.push({ path: `/movies/${s}`, type: 'movie' });
+      pathsToTry.push({ path: `/series/${s}`, type: 'tv' });
+    } else {
+      pathsToTry.push({ path: `/series/${s}`, type: 'tv' });
+      pathsToTry.push({ path: `/movies/${s}`, type: 'movie' });
+    }
+  };
+  addPaths(cleanSlug);
+  if (ultraCleanSlug !== cleanSlug) {
+    addPaths(ultraCleanSlug);
   }
 
   let html = '';
@@ -711,9 +718,21 @@ async function getLiveAnimeDetails(id, slug, hintType = '') {
 // Fetch episodes and player sources live
 async function getLiveEpisodes(slug, targetSeason = 1, targetEpisode = 1) {
   if (DISABLE_SCRAPING) return [];
-  const targetUrl = `/series/${slug}`;
+  let targetUrl = `/series/${slug}`;
   let { html, status } = await fetchPage(targetUrl);
   let resolvedSlug = slug; // track the real slug in case it has special chars (e.g. colon)
+
+  const ultraCleanSlug = slug.replace(/[^a-zA-Z0-9-:]/g, '').replace(/--+/g, '-');
+  if (status !== 200 && ultraCleanSlug !== slug) {
+    targetUrl = `/series/${ultraCleanSlug}`;
+    const res2 = await fetchPage(targetUrl);
+    if (res2.status === 200 && res2.html && res2.html.includes('class="entry-title"')) {
+      html = res2.html;
+      status = res2.status;
+      resolvedSlug = ultraCleanSlug;
+      logger.info(`[SlugFix] Resolved via ultraCleanSlug: ${slug} -> ${ultraCleanSlug}`);
+    }
+  }
 
   // If /series/{slug} fails or returns 500 (e.g., slug has colon stripped by slugify),
   // find the real slug. Key insight: toon-stream.site slugs can contain colons (e.g., "jaadugar:-a-witch-in-mongolia")
