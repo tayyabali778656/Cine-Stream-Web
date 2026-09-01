@@ -1109,12 +1109,16 @@ const App = {
       const targetSize = 20;
 
 
+      const isFirstLoad = this.grid.querySelectorAll('.movie-card:not(.skeleton)').length === 0;
+
       const skeletons = [];
-      for (let i = 0; i < 12; i++) {
-        const card = document.createElement('div');
-        card.className = 'movie-card skeleton';
-        this.grid.appendChild(card);
-        skeletons.push(card);
+      if (!isFirstLoad) {
+        for (let i = 0; i < 12; i++) {
+          const card = document.createElement('div');
+          card.className = 'movie-card skeleton';
+          this.grid.appendChild(card);
+          skeletons.push(card);
+        }
       }
 
       try {
@@ -1129,7 +1133,7 @@ const App = {
                         : type === 'cartoon-movies' ? this.cartoonMoviesPool
                           : this.animePool;
 
-        const isFirstLoad = this.grid.querySelectorAll('.movie-card:not(.skeleton)').length === 0;
+        // isFirstLoad already calculated above
 
         let pagesToFetch = 1;
         let startPage = type === 'fresh-drop' ? this.freshDropPage
@@ -1327,7 +1331,7 @@ const App = {
           const typeVal = m.type || (m.title ? 'movie' : 'tv');
           const contentType = this.getContentType(m, typeVal);
 
-          const imgAttrs = `decoding="async" loading="eager"`;
+          const imgAttrs = idx < 10 ? `decoding="sync" loading="eager" fetchpriority="high"` : `decoding="async" loading="lazy"`;
 
           const badgeText = m.schedule_time
             ? (m.schedule_note ? `${m.schedule_time} • ${m.schedule_note}` : m.schedule_time)
@@ -1469,21 +1473,24 @@ const App = {
     }
 
     // 2. Homepage Feed Combined Mode (Netflix-style rows for each category)
-    this.grid.innerHTML = `
-      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2rem;">
-        ${Array(6).fill(`
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
-              <div class="skeleton" style="width: 150px; height: 1.5rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
-              <div class="skeleton" style="width: 80px; height: 1.5rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
+    const isFirstLoadCombined = this.grid.querySelectorAll('.movie-card:not(.skeleton)').length === 0;
+    if (!isFirstLoadCombined) {
+      this.grid.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2rem;">
+          ${Array(6).fill(`
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                <div class="skeleton" style="width: 150px; height: 1.5rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
+                <div class="skeleton" style="width: 80px; height: 1.5rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
+              </div>
+              <div style="display: flex; gap: 1rem; overflow: hidden; padding-bottom: 0.8rem;">
+                ${Array(8).fill('<div class="movie-card skeleton" style="flex: 0 0 150px; width: 150px; height: 225px;"></div>').join('')}
+              </div>
             </div>
-            <div style="display: flex; gap: 1rem; overflow: hidden; padding-bottom: 0.8rem;">
-              ${Array(8).fill('<div class="movie-card skeleton" style="flex: 0 0 150px; width: 150px; height: 225px;"></div>').join('')}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
+          `).join('')}
+        </div>
+      `;
+    }
 
     try {
       const categories = [
@@ -3297,7 +3304,7 @@ const App = {
         const altText = `${title} ${cardType === 'movie' ? 'Movie' : 'TV Series'} poster`;
         return `
           <div class="movie-card" role="listitem" style="aspect-ratio: 2/3; flex: 0 0 auto; width: 150px; scroll-snap-align: start;" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${cardType}')" tabindex="0" onkeydown="if(event.key==='Enter'){this.click();}" aria-label="Continue watching ${title}">
-             <img src="${poster}" srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w" sizes="(max-width: 480px) 150px, (max-width: 768px) 185px, 240px" alt="${altText}" loading="eager" fetchpriority="${idx < 6 ? 'high' : 'auto'}" decoding="sync" width="150" height="225" onload="this.parentElement.classList.add('loaded')" onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');">
+             <img src="${poster}" srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w" sizes="(max-width: 480px) 150px, (max-width: 768px) 185px, 240px" alt="${altText}" loading="${idx < 6 ? 'eager' : 'lazy'}" fetchpriority="${idx < 6 ? 'high' : 'auto'}" decoding="${idx < 6 ? 'sync' : 'async'}" width="150" height="225" onload="this.parentElement.classList.add('loaded')" onerror="this.src='https://placehold.co/500x750?text=No+Poster'; this.parentElement.classList.add('loaded');">
              <div class="movie-card-info" style="padding: 0.5rem;"><h4 class="movie-title" style="font-size: 0.8rem;">${title}</h4></div>
           </div>
         `;
