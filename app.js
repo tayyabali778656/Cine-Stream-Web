@@ -230,14 +230,12 @@ const App = {
 
     buildItems(options);
 
-    // Button click/touch handler (robust for mobile)
+    // Button click handler
     const toggleList = (e) => {
       e.stopPropagation();
-      if (e.type === 'touchstart') e.preventDefault(); // Prevent double-firing click
       if (isOpen) { closeList(); } else { openList(); }
     };
     btn.addEventListener('click', toggleList);
-    btn.addEventListener('touchstart', toggleList, { passive: false });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeList();
@@ -1502,43 +1500,7 @@ const App = {
         { id: 'cartoon-movies', label: 'Cartoon Movies', fallbackType: 'movie' }
       ];
 
-      const fetchResults = {};
-      const fetchPromises = categories.map(async (cat) => {
-        let pool = [];
-        let page = 1;
-        let attempts = 0;
-        // Fetch until we have 20 items or reach 3 attempts/pages
-        while (pool.length < 20 && attempts < 3) {
-          attempts++;
-          const data = await API.getMovies(cat.id, this.currentFilter, page, '', '');
-          if (data && data.results && data.results.length > 0) {
-            let results = this.filterHidden(data.results.filter(item => item.poster || item.poster_path));
-            // NOTE: Do NOT filter upcoming by release_date — upcoming items use schedule_day/schedule_time
-            const seen = new Set(pool.map(p => String(p.id)));
-            results.forEach(r => {
-              if (!seen.has(String(r.id))) {
-                pool.push(r);
-                seen.add(String(r.id));
-              }
-            });
-            page++;
-          } else {
-            break;
-          }
-        }
-        fetchResults[cat.id] = pool.slice(0, 20);
-      });
-
-      await Promise.all(fetchPromises);
-
-      // Race condition check: abort if mode/filter has changed during fetch
-      if (this.singleCategoryMode !== initialMode || this.currentFilter !== initialFilter) {
-        this._isLoadingFeed = false;
-        return;
-      }
-
-      const renderRow = (cat) => {
-        const items = fetchResults[cat.id] || [];
+      const renderRow = (cat, items) => {
         const headingHtml = `
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
             <h3 class="section-title" style="margin: 0; font-size: clamp(1rem, 2vw, 1.25rem); font-weight: 700;">
@@ -1565,8 +1527,13 @@ const App = {
           this.renderedIds.add(String(m.id));
           const title = m.title || m.name || 'Unknown';
           const safeTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          const year = (m.release_date || m.first_air_date || '????').split('-')[0];
-          const rating = (m.vote_average && m.vote_average > 0) ? m.vote_average.toFixed(1) : '7.5';
+          const year = m.release_year
+            ? String(m.release_year)
+            : (m.release_date || m.first_air_date || '????').split('-')[0];
+          const rawRating = m.rating || m.vote_average;
+          const rating = (rawRating && parseFloat(rawRating) > 0)
+            ? parseFloat(rawRating).toFixed(1)
+            : '7.5';
           const isManual = m.manual === true;
           const poster = m.poster
             ? m.poster
@@ -1626,20 +1593,58 @@ const App = {
         `;
       };
 
+      // Progressive rendering: insert placeholder rows first, then replace each as data arrives
       this.grid.innerHTML = '';
       this.renderedIds.clear();
 
       const mainContainer = document.createElement('div');
       mainContainer.style.cssText = 'grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2rem; width: 100%;';
-      mainContainer.innerHTML = categories.map(renderRow).join('');
       this.grid.appendChild(mainContainer);
 
-      // Auto-scan visible homepage items for 404 links in background
+      // Insert skeleton placeholder rows in order so layout is stable from the start
+      const rowElements = {};
       categories.forEach(cat => {
-        if (fetchResults[cat.id]) {
-          this.scanFeedForBrokenVideos(fetchResults[cat.id]);
+        const rowWrapper = document.createElement('div');
+        rowWrapper.id = `cat-row-${cat.id}`;
+        rowWrapper.innerHTML = `
+          <div style="display: flex; flex-direction: column; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+              <div class="skeleton" style="width: 130px; height: 1.4rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
+              <div class="skeleton" style="width: 65px; height: 1.4rem; border-radius: 4px; background: rgba(255,255,255,0.05);"></div>
+            </div>
+            <div style="display: flex; gap: 1rem; overflow: hidden; padding-bottom: 0.8rem;">
+              ${Array(8).fill('<div class="movie-card skeleton" style="flex: 0 0 150px; width: 150px; height: 225px;"></div>').join('')}
+            </div>
+          </div>
+        `;
+        rowElements[cat.id] = rowWrapper;
+        mainContainer.appendChild(rowWrapper);
+      });
+
+      // Fetch each category independently — replace its skeleton row as soon as page 1 data arrives
+      const fetchPromises = categories.map(async (cat) => {
+        try {
+          const data = await API.getMovies(cat.id, this.currentFilter, 1, '', '');
+          let pool = [];
+          if (data && data.results && data.results.length > 0) {
+            pool = this.filterHidden(data.results.filter(item => item.poster || item.poster_path)).slice(0, 20);
+          }
+
+          // Race condition check
+          if (this.singleCategoryMode !== initialMode || this.currentFilter !== initialFilter) return;
+
+          // Replace skeleton row with real content immediately
+          const rowEl = rowElements[cat.id];
+          if (rowEl) {
+            rowEl.innerHTML = renderRow(cat, pool);
+            this.scanFeedForBrokenVideos(pool);
+          }
+        } catch (err) {
+          console.warn(`[Feed] Failed to fetch ${cat.id}:`, err.message);
         }
       });
+
+      await Promise.all(fetchPromises);
 
       const loadMoreContainer = document.getElementById('load-more-container');
       if (loadMoreContainer) loadMoreContainer.style.display = 'none';
@@ -2729,6 +2734,11 @@ const App = {
                 this.activePlayer.currentSeason = s;
                 this.activePlayer.currentEpisode = e;
                 await this.activePlayer.updateSources(cachedSources);
+                
+                const dlC = document.getElementById('player-download-container');
+                if (dlC && typeof dlC._updateServerOptions === 'function') {
+                  dlC._updateServerOptions(this.activePlayer.sources);
+                }
               }
               return;
             }
@@ -3144,78 +3154,84 @@ const App = {
 
   closeModal(updHistory = true) {
     this.activeMovieId = null; // Cancel all pending async callbacks
-    const loadingScreen = document.getElementById('modal-loading-screen');
-    const modalContent = this.modal.querySelector('.modal-content');
-    if (loadingScreen) {
-      loadingScreen.classList.remove('active');
-      if (modalContent) {
-        modalContent.style.overflowY = '';
-      }
-    }
     if (this._watchBtnLoadTimeout) {
       clearTimeout(this._watchBtnLoadTimeout);
       this._watchBtnLoadTimeout = null;
     }
-    // Destroy active player
-    if (this.activePlayer) {
-      this.activePlayer.destroy();
-      this.activePlayer = null;
-    }
-    // Restore watch button if it was in loading state
-    const wb = document.getElementById('modal-watch-btn');
-    if (wb) { wb.disabled = false; wb.innerHTML = '<i class="fas fa-play"></i> Watch Now'; }
-    if (this.playerMessageHandler) {
-      window.removeEventListener('message', this.playerMessageHandler);
-      this.playerMessageHandler = null;
-    }
+
+    // 1. Instantly trigger visual close and restore body scroll
     if (this.modal) {
       this.modal.classList.remove('active');
       this.modal.classList.remove('watching');
     }
     document.body.style.overflow = 'auto';
-    const trailerContainer = document.getElementById('trailer-container');
-    const noTrailer = document.getElementById('no-trailer');
-    const backBtn = document.getElementById('back-to-details');
-    const heroOverlay = document.querySelector('.modal-hero-overlay');
-    // Reset ALL inline styles so CSS media queries take full control on next open
-    const heroEl = document.querySelector('.modal-hero');
-    const bodyEl = document.querySelector('.modal-body');
-    if (heroEl) { heroEl.style.display = ''; heroEl.style.height = ''; }
-    if (bodyEl) { bodyEl.style.display = ''; }
-
-    if (trailerContainer) trailerContainer.innerHTML = '';
-    if (noTrailer) this.hideNoTrailer(noTrailer);
-    if (backBtn) backBtn.style.display = 'none';
+    
     const controlBar = document.getElementById('player-control-bar');
     if (controlBar) controlBar.style.display = 'none';
-    if (heroOverlay) heroOverlay.style.display = 'block';
 
-    const playerAd = document.getElementById('player-ad-overlay');
-    if (playerAd) playerAd.style.display = 'none';
-
-    // Clear movie-specific SEO content from home page area
-    const seoArea = document.getElementById('seo-content-area');
-    if (seoArea) seoArea.innerHTML = '';
-
-    // Reset modal SEO/FAQ area so stale content is not shown on next open
-    const modalSeo = document.getElementById('modal-seo-content');
-    if (modalSeo) {
-      modalSeo.innerHTML = '';
-      modalSeo.style.display = 'none';
+    // Stop player audio/video instantly
+    if (this.activePlayer) {
+      this.activePlayer.destroy();
+      this.activePlayer = null;
     }
 
-    // Reset description toggle
-    const descEl = document.getElementById('modal-description');
-    const descToggle = document.getElementById('modal-desc-toggle');
-    if (descEl) { descEl.textContent = ''; descEl.classList.remove('expanded'); }
-    if (descToggle) { descToggle.style.display = 'none'; descToggle.textContent = 'View More'; }
-
-    if (updHistory) {
-      if (window.location.pathname !== '/') {
-        window.history.pushState({}, '', '/');
+    // 2. Defer heavy DOM cleanup so the close animation is butter smooth
+    setTimeout(() => {
+      const loadingScreen = document.getElementById('modal-loading-screen');
+      const modalContent = this.modal ? this.modal.querySelector('.modal-content') : null;
+      if (loadingScreen) {
+        loadingScreen.classList.remove('active');
+        if (modalContent) modalContent.style.overflowY = '';
       }
-    }
-    this.resetMetaTags();
+
+      const wb = document.getElementById('modal-watch-btn');
+      if (wb) { wb.disabled = false; wb.innerHTML = '<i class="fas fa-play"></i> Watch Now'; }
+      
+      if (this.playerMessageHandler) {
+        window.removeEventListener('message', this.playerMessageHandler);
+        this.playerMessageHandler = null;
+      }
+
+      const trailerContainer = document.getElementById('trailer-container');
+      const noTrailer = document.getElementById('no-trailer');
+      const backBtn = document.getElementById('back-to-details');
+      const heroOverlay = document.querySelector('.modal-hero-overlay');
+      
+      const heroEl = document.querySelector('.modal-hero');
+      const bodyEl = document.querySelector('.modal-body');
+      if (heroEl) { heroEl.style.display = ''; heroEl.style.height = ''; }
+      if (bodyEl) { bodyEl.style.display = ''; }
+
+      if (trailerContainer) trailerContainer.innerHTML = '';
+      if (noTrailer) this.hideNoTrailer(noTrailer);
+      if (backBtn) backBtn.style.display = 'none';
+      
+      if (heroOverlay) heroOverlay.style.display = 'block';
+
+      const playerAd = document.getElementById('player-ad-overlay');
+      if (playerAd) playerAd.style.display = 'none';
+
+      const seoArea = document.getElementById('seo-content-area');
+      if (seoArea) seoArea.innerHTML = '';
+
+      const modalSeo = document.getElementById('modal-seo-content');
+      if (modalSeo) {
+        modalSeo.innerHTML = '';
+        modalSeo.style.display = 'none';
+      }
+
+      const descEl = document.getElementById('modal-description');
+      const descToggle = document.getElementById('modal-desc-toggle');
+      if (descEl) { descEl.textContent = ''; descEl.classList.remove('expanded'); }
+      if (descToggle) { descToggle.style.display = 'none'; descToggle.textContent = 'View More'; }
+
+      if (updHistory) {
+        if (window.location.pathname !== '/') {
+          window.history.pushState({}, '', '/');
+        }
+      }
+      this.resetMetaTags();
+    }, 300); // 300ms matches typical CSS modal fade out duration
   },
 
   resetMetaTags() {
