@@ -3005,8 +3005,8 @@ const App = {
 
             // Download App button
             const dlBtn = document.createElement('a');
-            dlBtn.href = downloadUrl;
-            dlBtn.download = '';
+            dlBtn.href = '/app';
+            dlBtn.target = '_self';
             dlBtn.className = 'btn-primary';
             dlBtn.style.cssText = 'padding:6px 12px;font-size:0.85rem;border-radius:4px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600;box-shadow:0 4px 12px rgba(229,9,20,0.4);border:none;cursor:pointer;color:white;margin-right:12px;';
             dlBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Download App';
