@@ -868,7 +868,7 @@
 
   <!-- PWA Service Worker Registration: Single retry on fail -->
   <script>
-    (function () {
+    window.addEventListener('load', function () {
       if (!('serviceWorker' in navigator)) return;
       navigator.serviceWorker.register('/sw.js')
         .then(function (reg) {
@@ -887,7 +887,7 @@
             console.warn('[SW] Permanent failure, skipping reload.');
           }
         });
-    })();
+    });
   </script>
   <!-- ═══ Ads Integration (Popunder & Vignette Banner) ═══ -->
   <!--
