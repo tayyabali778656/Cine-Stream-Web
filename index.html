@@ -707,20 +707,7 @@
         </button>
       </div>
 
-      <!-- Rewarded Smartlink Ad Overlay (WebView) -->
-      <div id="player-ad-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:999999; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; opacity:0; transition:opacity 0.4s ease;">
-        <div id="ad-webview-container" style="position:relative; width:95%; max-width:1200px; height:90%; max-height:800px; background:#111; border-radius:12px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.8); transform:scale(0.95); transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-          <iframe id="ad-webview-iframe" src="" style="width:100%; height:100%; border:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation" allow="autoplay; notifications 'none'; push 'none'"></iframe>
-          
-          <!-- Close button overlay (Top Right) -->
-          <div id="ad-close-container" style="position:absolute; top:15px; right:15px; z-index:100000;">
-            <button id="ad-close-btn" disabled
-              style="background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.2); color:#ccc; font-size:13px; font-weight:600; padding:8px 16px; border-radius:20px; cursor:not-allowed; transition:all 0.3s; backdrop-filter:blur(4px);">
-              <span id="ad-close-label">Wait <span id="ad-countdown-text">5</span>s</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Rewarded Smartlink Ad Overlay (WebView) MOVED TO BODY END -->
 
       <!-- Ad Banner (between hero and content) -->
 
@@ -863,7 +850,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js" crossorigin="anonymous" defer></script>
   <!-- StreamPlayer: production streaming manager with failover -->
   <script src="/public/player/StreamPlayer.js?v=3.4.6" defer></script>
-  <script src="/app.js?v=3.5.12" defer></script>
+  <script src="/app.js?v=3.5.13" defer></script>
   <script src="/admin.js?v=3.4.0" defer></script>
 
   <!-- PWA Service Worker Registration: Single retry on fail -->
@@ -894,6 +881,21 @@
   <script>(function(s){s.dataset.zone='11462740',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
   <script>(function(s){s.dataset.zone='11462747',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
   -->
+  <!-- Rewarded Smartlink Ad Overlay (WebView) -->
+  <section id="player-ad-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:999999; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; opacity:0; transition:opacity 0.4s ease;">
+    <div id="ad-webview-container" style="position:relative; width:95%; max-width:1200px; height:90%; max-height:800px; background:#111; border-radius:12px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.8); transform:scale(0.95); transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+      <iframe id="ad-webview-iframe" src="" style="width:100%; height:100%; border:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation" allow="autoplay; notifications 'none'; push 'none'"></iframe>
+      
+      <!-- Close button overlay (Top Right) -->
+      <div id="ad-close-container" style="position:absolute; top:15px; right:15px; z-index:100000;">
+        <button id="ad-close-btn" disabled
+          style="background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.2); color:#ccc; font-size:13px; font-weight:600; padding:8px 16px; border-radius:20px; cursor:not-allowed; transition:all 0.3s; backdrop-filter:blur(4px);">
+          <span id="ad-close-label">Wait <span id="ad-countdown-text">5</span>s</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
   <nav class="mobile-bottom-nav">
     <a href="#" class="nav-item active" onclick="App.switchToCategory('combined'); updateMobileNav(this); return false;">
       <i class="fa-solid fa-house"></i>

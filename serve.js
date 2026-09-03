@@ -500,10 +500,12 @@ async function handleApiV1(req, res, pathname) {
 
     try {
       let anime = null;
+      const exactId = id ? decodeURIComponent(id) : null;
       try {
         const animeCollection = getCollection('anime');
         anime = await animeCollection.findOne({
           $or: [
+            ...(exactId ? [{ id: exactId }] : []),
             { id: cleanId },
             { id: `toon_${cleanSlug}` },
             { slug: cleanSlug }

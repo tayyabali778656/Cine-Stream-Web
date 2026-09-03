@@ -517,6 +517,21 @@ const App = {
 
     this.renderRecentlyViewed();
     this.setupNavScroll();
+
+    // Setup persistent 8-minute ad timer (survives page reloads)
+    if (!localStorage.getItem('lastSmartlinkAdTime')) {
+      localStorage.setItem('lastSmartlinkAdTime', Date.now().toString());
+    }
+
+    setInterval(() => {
+      const now = Date.now();
+      const lastAdTime = parseInt(localStorage.getItem('lastSmartlinkAdTime') || '0', 10);
+      
+      if (now - lastAdTime >= 8 * 60 * 1000) { // 8 minutes
+        localStorage.setItem('lastSmartlinkAdTime', now.toString());
+        this.showSmartlinkWebViewAd('timer');
+      }
+    }, 5000); // Check every 5 seconds to ensure accuracy across tabs/reloads
   },
 
   /**
