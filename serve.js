@@ -76,16 +76,16 @@ const COMPRESSIBLE = new Set([
 // Cache-Control values per file type
 const CACHE_CONTROL = {
   '.html': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-  '.css': 'public, max-age=31536000, immutable',
-  '.js': 'public, max-age=31536000, immutable',
+  '.css': 'public, max-age=31536000, s-maxage=31536000, immutable',
+  '.js': 'public, max-age=31536000, s-maxage=31536000, immutable',
   '.json': 'no-store', // catalog JSONs should NOT be cached by browser
-  '.png': 'public, max-age=604800',
-  '.jpg': 'public, max-age=604800',
-  '.webp': 'public, max-age=604800',
-  '.ico': 'public, max-age=604800',
-  '.svg': 'public, max-age=86400',
-  '.woff2': 'public, max-age=31536000, immutable',
-  '.woff': 'public, max-age=31536000, immutable',
+  '.png': 'public, max-age=604800, s-maxage=604800',
+  '.jpg': 'public, max-age=604800, s-maxage=604800',
+  '.webp': 'public, max-age=604800, s-maxage=604800',
+  '.ico': 'public, max-age=604800, s-maxage=604800',
+  '.svg': 'public, max-age=86400, s-maxage=86400',
+  '.woff2': 'public, max-age=31536000, s-maxage=31536000, immutable',
+  '.woff': 'public, max-age=31536000, s-maxage=31536000, immutable',
 };
 
 // ETag cache: path → { etag, mtime }

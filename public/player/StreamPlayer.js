@@ -394,7 +394,7 @@ class StreamPlayer {
         <p style="font-size:1.05rem;font-weight:500;max-width:420px;line-height:1.5;color:#ccc;margin:0 0 10px 0;">
           If you want to watch this anime, download the CineStream app now.
         </p>
-        <a href="https://github.com/tayyabali778656/Cine-Stream-Web/releases/download/v1.0/CineStream.apk" download
+        <a href="/app"
            style="display:inline-flex;align-items:center;gap:10px;padding:12px 28px;
                   background:#3DDC84;border:none;border-radius:30px;color:#000;
                   text-decoration:none;font-weight:700;font-size:1rem;
