@@ -518,20 +518,33 @@ const App = {
     this.renderRecentlyViewed();
     this.setupNavScroll();
 
-    // Setup persistent 8-minute ad timer (survives page reloads)
-    if (!localStorage.getItem('lastSmartlinkAdTime')) {
-      localStorage.setItem('lastSmartlinkAdTime', Date.now().toString());
+    // Setup persistent 8-minute ad timer (survives page reloads, pauses on tab switch/close)
+    if (!localStorage.getItem('smartlinkAdAccumulated')) {
+      localStorage.setItem('smartlinkAdAccumulated', '0');
     }
 
+    let lastAdTick = Date.now();
     setInterval(() => {
       const now = Date.now();
-      const lastAdTime = parseInt(localStorage.getItem('lastSmartlinkAdTime') || '0', 10);
-      
-      if (now - lastAdTime >= 8 * 60 * 1000) { // 8 minutes
-        localStorage.setItem('lastSmartlinkAdTime', now.toString());
-        this.showSmartlinkWebViewAd('timer');
+      const delta = now - lastAdTick;
+      lastAdTick = now;
+
+      if (!document.hidden) {
+        let accumulated = parseInt(localStorage.getItem('smartlinkAdAccumulated') || '0', 10);
+        
+        // Cap delta to 10 seconds to handle sleep/wake gracefully
+        if (delta > 0 && delta <= 10000) {
+          accumulated += delta;
+        }
+
+        if (accumulated >= 8 * 60 * 1000) { // 8 minutes
+          localStorage.setItem('smartlinkAdAccumulated', '0');
+          this.showSmartlinkWebViewAd('timer');
+        } else {
+          localStorage.setItem('smartlinkAdAccumulated', accumulated.toString());
+        }
       }
-    }, 5000); // Check every 5 seconds to ensure accuracy across tabs/reloads
+    }, 5000); // Check every 5 seconds
   },
 
   /**
@@ -1344,7 +1357,8 @@ const App = {
           const typeVal = m.type || (m.title ? 'movie' : 'tv');
           const contentType = this.getContentType(m, typeVal);
 
-          const imgAttrs = idx < 10 ? `decoding="sync" loading="eager" fetchpriority="high"` : `decoding="async" loading="lazy"`;
+          // Removed loading="lazy" because it causes severe delays in horizontal scrolling carousels.
+          const imgAttrs = `decoding="async" fetchpriority="${idx < 10 ? 'high' : 'auto'}"`;
 
           const badgeText = m.schedule_time
             ? (m.schedule_note ? `${m.schedule_time} • ${m.schedule_note}` : m.schedule_time)
