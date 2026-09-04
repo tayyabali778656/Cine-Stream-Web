@@ -820,9 +820,29 @@ async function handleApiV1(req, res, pathname) {
     try {
       if (isConnected()) {
         dbCached = await getCollection('listings_cache').findOne({ id: cacheKey });
-        if (dbCached && dbCached.data && dbCached.data.results && dbCached.data.results.length > 0 && (Date.now() - dbCached.timestamp) < 60 * 60 * 1000) {
+        if (dbCached && dbCached.data && dbCached.data.results && dbCached.data.results.length > 0) {
           cache.set(cacheKey, dbCached.data, 60 * 60 * 1000);
           sendJson(res, 200, dbCached.data, 'public, max-age=120, s-maxage=3600, stale-while-revalidate=7200');
+
+          // Stale-while-revalidate: background scrape if older than 1 hour
+          if ((Date.now() - dbCached.timestamp) >= 60 * 60 * 1000) {
+            liveSvc.getLiveAnimeList(filter, page, type, genre).then(freshData => {
+              if (freshData && freshData.results && freshData.results.length > 0) {
+                cache.set(cacheKey, freshData, 60 * 60 * 1000);
+                getCollection('listings_cache').updateOne(
+                  { id: cacheKey },
+                  { $set: { id: cacheKey, data: freshData, timestamp: Date.now() } },
+                  { upsert: true }
+                ).catch(() => {});
+                
+                // Save individual anime cards to the database for fallback
+                const bulkOps = freshData.results.map(item => ({
+                  updateOne: { filter: { id: item.id }, update: { $set: { ...item, updatedAt: new Date() } }, upsert: true }
+                }));
+                getCollection('anime').bulkWrite(bulkOps, { ordered: false }).catch(() => {});
+              }
+            }).catch(e => logger.warn('Background scrape failed:', e.message));
+          }
           return;
         }
       }
@@ -1575,6 +1595,14 @@ const requestHandler = async (req, res) => {
         return;
       }
 
+      // Block proxying of raw video streams to prevent Vercel bandwidth abuse
+      if (/\.(m3u8|ts|mp4|mkv)(\?|$)/i.test(targetUrl)) {
+        logger.warn('proxy_blocked_media', { url: targetUrl });
+        sendJson(res, 403, { error: 'Proxying media streams is forbidden' });
+        logger.request(req, 403, Date.now() - startMs);
+        return;
+      }
+
       if (!isProxyAllowed(targetUrl)) {
         logger.warn('proxy_blocked', { url: targetUrl });
         sendJson(res, 403, { error: 'Target domain not in whitelist' });
@@ -1603,6 +1631,14 @@ const requestHandler = async (req, res) => {
       if (!targetUrl || !targetUrl.startsWith('http')) {
         res.writeHead(400, { 'Content-Type': 'text/plain' });
         res.end('Invalid url');
+        return;
+      }
+
+      // Block proxying of raw video streams to prevent Vercel bandwidth abuse
+      if (/\.(m3u8|ts|mp4|mkv)(\?|$)/i.test(targetUrl)) {
+        logger.warn('iframe_proxy_blocked_media', { url: targetUrl });
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('Proxying media streams is forbidden');
         return;
       }
 
