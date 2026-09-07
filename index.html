@@ -850,8 +850,8 @@
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js" crossorigin="anonymous" defer></script>
   <!-- StreamPlayer: production streaming manager with failover -->
   <script src="/public/player/StreamPlayer.js?v=3.4.8" defer></script>
-  <script src="/app.js?v=3.5.17" defer></script>
-  <script src="/admin.js?v=3.4.0" defer></script>
+  <script src="/app.js?v=3.5.18" defer></script>
+  <script src="/admin.js?v=3.4.1" defer></script>
 
   <!-- PWA Service Worker Registration: Single retry on fail -->
   <script>
@@ -877,10 +877,8 @@
     });
   </script>
   <!-- ═══ Ads Integration (Popunder & Vignette Banner) ═══ -->
-  <!--
-  <script>(function(s){s.dataset.zone='11462740',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  <script>(function(s){s.dataset.zone='11462747',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  -->
+  <!-- Popunder Ad Removed as requested -->
+  
   <!-- Rewarded Smartlink Ad Overlay (WebView) -->
   <section id="player-ad-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:999999; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; opacity:0; transition:opacity 0.4s ease;">
     <div id="ad-webview-container" style="position:relative; width:95%; max-width:1200px; height:90%; max-height:800px; background:#111; border-radius:12px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.8); transform:scale(0.95); transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">

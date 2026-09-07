@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * services/crawlerScheduler.js - Auto Crawler Scheduler
@@ -58,16 +58,27 @@ function runCrawler(reason) {
         // Save successful run timestamp
         try { fsModule.writeFileSync(LOCK_FILE, String(Date.now()), 'utf8'); } catch (_) {}
 
-        logger.info('crawler_scheduler_done', { trigger: reason, elapsed_s: elapsed });
+        logger.info('toonstream_crawler_done', { trigger: reason, elapsed_s: elapsed });
 
-        // Trigger sitemap rebuild after crawl finishes
-        try {
-          const sitemapSvc = require('./sitemapService');
-          sitemapSvc.triggerRegen('post_crawler_run');
-          logger.info('crawler_scheduler_sitemap_triggered');
-        } catch (e) {
-          logger.warn('crawler_scheduler_sitemap_trigger_failed', { error: e.message });
-        }
+        // Run AnimeKai Crawler Sequentially right after Toonstream
+        logger.info('starting_animekai_crawler_sequence');
+        const AK_SCRIPT = path.join(ROOT_DIR, 'scripts', 'animekaiCrawler.js');
+        execFile(process.execPath, [AK_SCRIPT], { cwd: ROOT_DIR, timeout: 30 * 60 * 1000 }, (akErr, akOut, akErrStr) => {
+           if (akErr) {
+               logger.error('animekai_crawler_scheduler_failed', { error: akErr.message });
+           } else {
+               logger.info('animekai_crawler_scheduler_done');
+           }
+           
+           // Trigger sitemap rebuild after both crawls finish
+           try {
+             const sitemapSvc = require('./sitemapService');
+             sitemapSvc.triggerRegen('post_crawler_run');
+             logger.info('crawler_scheduler_sitemap_triggered');
+           } catch (e) {
+             logger.warn('crawler_scheduler_sitemap_trigger_failed', { error: e.message });
+           }
+        });
 
         resolve(true);
       }

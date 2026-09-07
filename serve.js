@@ -24,6 +24,7 @@ const config = require('./config');
 const logger = require('./utils/logger');
 const { connectDB, getCollection, isConnected } = require('./db');
 const liveSvc = require('./services/toonstreamLive');
+const animekaiSvc = require('./services/animekaiLive');
 const auth = require('./services/auth');
 const cache = require('./services/cache');
 const catalogSvc = require('./services/catalogService');
@@ -32,6 +33,17 @@ const sitemapSvc = require('./services/sitemapService');
 const crawlerSvc = require('./services/crawlerScheduler');
 const { requireAuth } = require('./middleware/authMiddleware');
 const { applySecurityHeaders, applyCors, applyRateLimit } = require('./middleware/security');
+
+// ── Helper: check if request is from an authenticated admin (no 401 side-effect) ──
+function isAdminRequest(req) {
+  try {
+    const token = auth.extractTokenFromCookies(req.headers.cookie || '');
+    if (!token) return false;
+    const payload = auth.verifyToken(token);
+    return !!(payload && payload.role === 'admin');
+  } catch { return false; }
+}
+
 
 const PORT = config.port;
 const PUBLIC_DIR = __dirname;
@@ -75,7 +87,7 @@ const COMPRESSIBLE = new Set([
 
 // Cache-Control values per file type
 const CACHE_CONTROL = {
-  '.html': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  '.html': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300',
   '.css': 'public, max-age=31536000, s-maxage=31536000, immutable',
   '.js': 'public, max-age=31536000, s-maxage=31536000, immutable',
   '.json': 'no-store', // catalog JSONs should NOT be cached by browser
@@ -414,10 +426,23 @@ async function handleApiV1(req, res, pathname) {
             { original_title: regex },
             { slug: regex },
           ]
+        }, {
+          projection: { 
+            id: 1, title: 1, name: 1, poster: 1, poster_path: 1, type: 1, 
+            slug: 1, rating: 1, vote_average: 1, original_language: 1, 
+            genres: 1, language: 1, tags: 1 
+          }
         })
           .sort({ popularity: -1, updatedAt: -1 })
           .limit(40)
           .toArray();
+          
+        // Enforce original_language='ja' for scraped anime to pass frontend anime filter
+        results.forEach(r => {
+          if (!r.original_language && r.id && (r.id.startsWith('toon_') || r.id.startsWith('animekai_'))) {
+            r.original_language = 'ja';
+          }
+        });
       } catch (dbErr) {
         // DB not available
         logger.warn('search_db_error', { message: dbErr.message, q });
@@ -577,7 +602,19 @@ async function handleApiV1(req, res, pathname) {
     }
 
     try {
-      // Parallelize admin lookup + details + DB episodes lookup
+      // ── Server-side in-memory cache (2 min TTL) ─────────────────────────────
+      // Keyed by slug+season so distinct seasons are cached independently.
+      // Invalidated automatically when admin_store is modified (cache.deleteByPrefix('eps_')).
+      // BYPASS cache for admin requests so the admin panel always sees raw data.
+      const epsCacheKey = `eps_${slug}_s${season}`;
+      if (!isAdminRequest(req)) {
+        const cachedEps = cache.get(epsCacheKey);
+        if (cachedEps) {
+          sendJson(res, 200, cachedEps, 'public, max-age=120, stale-while-revalidate=300');
+          return;
+        }
+      }
+
       const [adminEntry, details, dbEpisodes] = await Promise.all([
         (async () => {
           try {
@@ -670,28 +707,38 @@ async function handleApiV1(req, res, pathname) {
           title: details.title,
           sources: sources
         }];
-        sendJson(res, 200, movieEpisodes, 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
+        sendJson(res, 200, movieEpisodes, 'no-cache, no-store, must-revalidate');
         return;
       }
 
       let episodes = [];
       const targetEp = dbEpisodes.find(ep => ep.season === season && ep.episode === episode);
 
-      // Expire cached stream links after 48 hours (2 days) to ensure third-party embeds stay fresh
-      const isFresh = targetEp && targetEp.updatedAt && (Date.now() - new Date(targetEp.updatedAt).getTime() < 48 * 60 * 60 * 1000);
+      // Expire cached stream links:
+      //  - Movies: 7 days (sources rarely change for movies)
+      //  - Series: 48 hours (episodes can get new servers, recently aired eps updated)
+      const isMovie = details && details.type === 'movie';
+      const FRESH_TTL_MS = isMovie ? 7 * 24 * 60 * 60 * 1000 : 48 * 60 * 60 * 1000;
+      const anyFreshEp = dbEpisodes.find(ep => ep.updatedAt && (Date.now() - new Date(ep.updatedAt).getTime() < FRESH_TTL_MS));
+      const isFresh = !!anyFreshEp;
 
       // Also re-scrape if stored sources have numeric-only labels (old format without real server names like Ruby, Moly, etc.)
       const targetEpHasNumericLabels = targetEp && targetEp.sources && targetEp.sources.length > 0 &&
         targetEp.sources.every(s => /^\d+$/.test((s.label || '').trim()));
 
-      // Serve from DB if sources exist and are fresh and have real server name labels
-      if (dbEpisodes.length > 0 && targetEp && targetEp.sources && targetEp.sources.length > 0 && isFresh && !targetEpHasNumericLabels) {
+      // Prevent serving corrupted cache (0 sources)
+      const targetEpMissingSources = targetEp && (!targetEp.sources || targetEp.sources.length === 0);
+
+      // Serve from DB if we have episodes, they are fresh, and target ep doesn't have bad old labels or missing sources
+      if (dbEpisodes.length > 0 && isFresh && !targetEpHasNumericLabels && !targetEpMissingSources) {
         // Serve from DB directly
         episodes = dbEpisodes.map(ep => ({ ...ep }));
       } else {
         // Scrape live
         try {
+          console.time('toonstream_scrape_' + slug);
           episodes = await liveSvc.getLiveEpisodes(slug, season, episode);
+          console.timeEnd('toonstream_scrape_' + slug);
         } catch (epErr) {
           logger.warn(`getLiveEpisodes failed for ${slug}:`, epErr.message);
         }
@@ -729,28 +776,28 @@ async function handleApiV1(req, res, pathname) {
           }
         }
 
-        // Save scraped episodes to MongoDB with timestamp
+        // Save scraped episodes to MongoDB in the background (fire-and-forget)
+        // This means the user gets their response immediately without waiting for DB write
         if (episodes.length > 0) {
-          try {
-            const episodesCol = getCollection('episodes');
-            const bulkOps = episodes.map(ep => {
-              const updateDoc = { ...ep, updatedAt: new Date() };
-              // Critical Fix: Do not overwrite existing DB sources with empty arrays for other episodes
-              if (!ep.sources || ep.sources.length === 0) {
-                delete updateDoc.sources;
+          const episodesCol = getCollection('episodes');
+          const bulkOps = episodes.map(ep => {
+            const updateDoc = { ...ep, updatedAt: new Date() };
+            // Critical Fix: Do not overwrite existing DB sources with empty arrays for other episodes
+            if (!ep.sources || ep.sources.length === 0) {
+              delete updateDoc.sources;
+            }
+            return {
+              updateOne: {
+                filter: { id: ep.id },
+                update: { $set: updateDoc },
+                upsert: true
               }
-              return {
-                updateOne: {
-                  filter: { id: ep.id },
-                  update: { $set: updateDoc },
-                  upsert: true
-                }
-              };
-            });
-            await episodesCol.bulkWrite(bulkOps);
-          } catch (dbErr) {
-            logger.warn('Failed to save episodes to MongoDB:', dbErr.message);
-          }
+            };
+          });
+          // Fire-and-forget: do not await so user gets response instantly
+          episodesCol.bulkWrite(bulkOps).catch(dbErr =>
+            logger.warn('Failed to save episodes to MongoDB:', dbErr.message)
+          );
         }
 
         // Critical Fix: Merge DB sources into the live scraped episodes so the frontend playlist has ALL previously saved links
@@ -764,6 +811,65 @@ async function handleApiV1(req, res, pathname) {
           });
         }
       }
+
+      // --- ANIMEKAI INTEGRATION ---
+      // Check if AnimeKai sources for the LATEST episode of this season are fresh (within 48h)
+      // If we only check targetEp (usually ep 1), we miss newly released episodes on AnimeKai!
+      const epsForSeason = episodes.filter(e => e.season === season).sort((a,b) => b.episode - a.episode);
+      const lastEpInSeason = epsForSeason.length > 0 ? epsForSeason[0] : targetEp;
+
+      const akUpdatedAt = lastEpInSeason && lastEpInSeason.akUpdatedAt ? new Date(lastEpInSeason.akUpdatedAt).getTime() : 0;
+      const isAkFresh = akUpdatedAt && (Date.now() - akUpdatedAt < 48 * 60 * 60 * 1000);
+      const hasAnimeKaiSources = lastEpInSeason && lastEpInSeason.sources && lastEpInSeason.sources.some(s => s.label && s.label.includes('AnimeKai'));
+      const needsAnimeKaiScrape = !hasAnimeKaiSources || !isAkFresh;
+
+      if (needsAnimeKaiScrape) {
+        // ── BACKGROUND AnimeKai refresh (stale-while-revalidate) ────────────────
+        // We serve the existing episodes immediately (no 5-second wait for the user).
+        // AnimeKai is fetched in the background; on next request the fresh data will
+        // already be in MongoDB (and the server cache will have been invalidated).
+        const akInFlightKey = `ak_inflight_${slug}_s${season}`;
+        if (!cache.get(akInFlightKey)) {
+          // Mark as in-flight for 30 seconds to prevent duplicate background fetches
+          // from parallel user requests hitting the same episode simultaneously.
+          cache.set(akInFlightKey, true, 30_000);
+          setImmediate(async () => {
+            try {
+              const akEpisodes = await animekaiSvc.getLiveEpisodes(slug, season, episode);
+              if (!akEpisodes || akEpisodes.length === 0) return;
+
+              const episodesCol = getCollection('episodes');
+              if (!episodesCol) return;
+
+              // Save merged AnimeKai sources to MongoDB
+              const bulkOps = [];
+              for (const akEp of akEpisodes) {
+                const epId = `ep_${slug}_${akEp.season}x${akEp.episode}`;
+                bulkOps.push({
+                  updateOne: {
+                    filter: { id: epId },
+                    update: { $set: { ...akEp, id: epId, animeId: animeId || `toon_${slug}`, animeSlug: slug, akUpdatedAt: new Date() } },
+                    upsert: true
+                  }
+                });
+              }
+              if (bulkOps.length > 0) {
+                await episodesCol.bulkWrite(bulkOps);
+              }
+
+              // Invalidate server cache so next user request gets fresh merged data
+              cache.deleteByPrefix(`eps_${slug}`);
+              logger.info('animekai_background_refresh_done', { slug, season, count: akEpisodes.length });
+            } catch (akErr) {
+              logger.warn(`AnimeKai background refresh failed for ${slug}:`, akErr.message);
+            } finally {
+              cache.delete(akInFlightKey);
+            }
+          });
+        }
+      }
+      // --- END ANIMEKAI INTEGRATION ---
+
 
       // Merge custom episode links from admin store
       if (adminEntry && adminEntry.customLinks) {
@@ -792,7 +898,44 @@ async function handleApiV1(req, res, pathname) {
         episodes.sort((a, b) => a.season !== b.season ? a.season - b.season : a.episode - b.episode);
       }
 
-      sendJson(res, 200, episodes, 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
+      // ── Filter out admin-disabled servers per episode ────────────────────────
+      // Skip filter entirely if caller is the authenticated admin (admin panel needs raw data)
+      if (!isAdminRequest(req)) {
+        try {
+          const adminStoreCol = getCollection('admin_store');
+          const globalSettings = adminStoreCol ? await adminStoreCol.findOne({ id: 'global_settings' }) : null;
+          const disabledServers = (globalSettings && globalSettings.disabled_episode_servers) ? globalSettings.disabled_episode_servers : {};
+
+          if (Object.keys(disabledServers).length > 0) {
+            episodes = episodes.map(ep => {
+              if (!ep.sources || ep.sources.length === 0) return ep;
+              const epKey = `${ep.animeId || `toon_${slug}`}_${ep.season}x${ep.episode}`;
+              const animeKey = `${ep.animeId || `toon_${slug}`}_all`;
+              const disabled = new Set([
+                ...(disabledServers[epKey] || []),
+                ...(disabledServers[animeKey] || []),
+                ...(disabledServers['_global'] || [])
+              ]);
+              if (disabled.size === 0) return ep;
+              return {
+                ...ep,
+                sources: ep.sources.filter(src => !disabled.has(src.label))
+              };
+            });
+          }
+        } catch (filterErr) {
+          logger.warn('Failed to apply disabled server filters:', filterErr.message);
+        }
+      }
+
+      // Save final response to server cache (skip for admin requests — they need raw data)
+      if (!isAdminRequest(req) && episodes.length > 0) {
+        cache.set(epsCacheKey, episodes, 2 * 60 * 1000); // 2-minute TTL
+      }
+
+      sendJson(res, 200, episodes, isAdminRequest(req)
+        ? 'no-cache, no-store, must-revalidate'
+        : 'public, max-age=120, stale-while-revalidate=300');
     } catch (err) {
       sendJson(res, 500, { error: err.message });
     }

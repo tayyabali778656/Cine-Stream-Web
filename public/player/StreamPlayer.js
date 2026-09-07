@@ -73,7 +73,7 @@ class StreamPlayer {
     const source = this.sources[index];
     this.tryCount++;
 
-    this._showLoading(source.label || `Source ${index + 1}`);
+    // this._showLoading(source.label || `Source ${index + 1}`); // User requested removal of loading screen
     this._log('stream_try', { index, label: source.label, url: source.url });
 
     // Perform automatic health check
@@ -124,12 +124,12 @@ class StreamPlayer {
     iframe.src = playUrl;
 
     // Enable ads (popups) only for specific servers that strictly require them
-    const adServers = ['short', 'watch/dl', 'cloudy', 'ads'];
+    const adServers = ['short', 'watch/dl', 'cloudy', 'ads', 'cinestream', 'cine'];
     const labelLower = (source.label || '').toLowerCase();
     let allowAds = adServers.some(lbl => labelLower.includes(lbl));
 
     // Force strict sandbox for specific servers to permanently block their popunders
-    if (labelLower.includes('ruby') || labelLower.includes('moly') || labelLower.includes('play') || labelLower.includes('turbo')) {
+    if (labelLower.includes('ruby') || labelLower.includes('moly') || labelLower.includes('play') || labelLower.includes('turbo') || labelLower.includes('animekai')) {
       allowAds = false;
     }
 
@@ -311,19 +311,19 @@ class StreamPlayer {
       catch (e) { return []; }
     })();
 
-    // Deduplicate incoming sources by URL and formatted label to avoid duplicate servers
-    const seenUrls = new Set();
-    const seenLabels = new Set();
+    // Deduplicate incoming sources by URL + Label to avoid identical duplicates, but allow same URL with different labels
+    const seenKeys = new Set();
     const uniqueSources = [];
 
     for (const source of newSources) {
-      if (!source.url || seenUrls.has(source.url)) continue;
+      if (!source.url) continue;
 
       let formattedLabel = source.label;
-      if (seenLabels.has(formattedLabel)) continue;
+      const key = source.url + '|' + formattedLabel;
 
-      seenUrls.add(source.url);
-      seenLabels.add(formattedLabel);
+      if (seenKeys.has(key)) continue;
+
+      seenKeys.add(key);
 
       uniqueSources.push({
         ...source,

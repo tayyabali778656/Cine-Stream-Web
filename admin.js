@@ -96,12 +96,40 @@ const Admin = {
     * Initialize Admin UI
     */
    /**
-    * Load global configuration settings (like requires_ads_servers) from MongoDB
+    * Load global configuration settings (like requires_ads_servers) from MongoDB.
+    * Reuses data already fetched by syncDatabaseCache() to avoid a duplicate network call.
+    * Falls back to a fresh fetch only if the app cache is not yet populated.
     */
    async loadGlobalSettings() {
       try {
-         const res = await fetch('/api/v1/admin-store').then(r => r.json());
-         const settings = Array.isArray(res) ? res.find(item => item.id === 'global_settings') : null;
+         // Try to reuse data from the app's in-memory adminCache (populated by syncDatabaseCache)
+         const appCache = window.App?.adminCache;
+         let settings = null;
+
+         if (appCache && typeof appCache === 'object' && Object.keys(appCache).length > 0) {
+            // App cache already has data — find global_settings without a network call
+            settings = Object.values(appCache).find(item => item && item.id === 'global_settings')
+              || null;
+            // Also check the raw localStorage cache key that syncDatabaseCache uses
+            if (!settings) {
+               try {
+                  const rawCache = localStorage.getItem('db_cache__api_v1_admin-store');
+                  if (rawCache) {
+                     const { data, timestamp } = JSON.parse(rawCache);
+                     if (Date.now() - timestamp < 60_000 && Array.isArray(data)) {
+                        settings = data.find(item => item.id === 'global_settings') || null;
+                     }
+                  }
+               } catch (_) {}
+            }
+         }
+
+         // Fallback: fresh fetch if no cached data available yet
+         if (!settings) {
+            const res = await fetch('/api/v1/admin-store').then(r => r.json());
+            settings = Array.isArray(res) ? res.find(item => item.id === 'global_settings') : null;
+         }
+
          if (settings) {
             if (settings.requires_ads_servers) {
                const checkboxes = document.querySelectorAll('#admin-server-ads-checkboxes input[type="checkbox"]');
@@ -121,6 +149,7 @@ const Admin = {
          console.warn('[Admin] Failed to load global settings:', err);
       }
    },
+
 
    /**
     * Initialize Admin UI

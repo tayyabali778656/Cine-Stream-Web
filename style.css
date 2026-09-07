@@ -689,6 +689,33 @@ nav.scrolled {
   z-index: 2;
 }
 
+.lang-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hindi-badge {
+  background: rgba(244, 67, 54, 0.85); /* Red for Hindi */
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.english-badge {
+  background: rgba(25, 118, 210, 0.85); /* Blue for English */
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
 .type-badge {
   position: absolute;
   top: 10px;

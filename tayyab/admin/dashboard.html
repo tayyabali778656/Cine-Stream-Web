@@ -614,7 +614,7 @@
       <span class="badge-count" id="remove-badge" style="display: none;">0</span>
     </button>
     <button class="tab-btn" onclick="switchTab('tab-ads', this)">
-      <i class="fas fa-ad"></i> Server Ads
+      <i class="fas fa-server"></i> Server Control
     </button>
   </div>
 
@@ -705,90 +705,98 @@
     <!-- ============================== TAB: SERVER ADS ============================== -->
     <div class="tab-panel" id="tab-ads">
       <div class="section-heading">
-        <i class="fas fa-ad"></i>
-        <h1>Server Ads & Player Settings</h1>
+        <i class="fas fa-server"></i>
+        <h1>Episode Server Control</h1>
       </div>
-      <p class="subtitle">Configure ad constraints and select the default playback server for all players.</p>
+      <p class="subtitle">Search any anime, then enable or disable specific servers for any episode.</p>
 
-      <div class="card-grid">
-        <!-- Server Ads Card -->
-        <div class="card span-2" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 20px;">
-          <div class="card-title" style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 15px;"><i class="fas fa-server"></i> Configure Active Servers (Ads)</div>
-          <p style="font-size:0.82rem; color: var(--text-muted); margin-bottom:14px;">These are all possible servers. Check the servers that show ads so they can be deprioritized or labelled.</p>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;" id="dashboard-server-ads-checkboxes">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Ruby"> Ruby</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="cloudy"> cloudy</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Moly"> Moly</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Short"> Short</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="MultiQ"> MultiQ</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Play"> Play</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Turbo"> Turbo</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="SD"> SD</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="HD"> HD</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="FHD"> FHD</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="Watch/DL"> Watch/DL</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.9rem;"><input type="checkbox" data-server="short"> short</label>
-            
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 1"> Server 1</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 2"> Server 2</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 3"> Server 3</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 4"> Server 4</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 5"> Server 5</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 6"> Server 6</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 7"> Server 7</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 8"> Server 8</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 9"> Server 9</label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #777; font-size: 0.9rem;"><input type="checkbox" data-server="Server 10"> Server 10</label>
+      <!-- Search Card -->
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title"><i class="fas fa-search"></i> Search Anime</div>
+        <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+          <input type="text" id="server-ctrl-search-input" placeholder="Type anime title (e.g. One Piece)…"
+            style="flex: 1; min-width: 220px; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff; font-family: inherit; font-size: 0.95rem; outline: none;"
+            onkeydown="if(event.key==='Enter') searchAnimeForServerCtrl()">
+          <button onclick="searchAnimeForServerCtrl()" class="btn-save" style="padding: 12px 28px; font-size: 0.95rem; border-radius: 8px; white-space: nowrap;">
+            <i class="fas fa-search"></i> Search
+          </button>
+        </div>
+        <!-- Search Results -->
+        <div id="server-ctrl-search-results" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 16px;"></div>
+      </div>
+
+      <!-- Episode Server Panel (shown after anime selected) -->
+      <div id="server-ctrl-panel" style="display: none;">
+        <div class="card">
+          <div class="card-title" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <span><i class="fas fa-play-circle"></i> <span id="server-ctrl-anime-name">Anime Name</span></span>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <label style="color: var(--text-muted); font-size: 0.85rem; font-weight: 400;">Season:</label>
+              <select id="server-ctrl-season-select" onchange="loadEpisodesForServerCtrl()"
+                style="padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #fff; border-radius: 8px; font-family: inherit; font-size: 0.85rem; cursor: pointer;">
+              </select>
+              <button onclick="closeServerCtrlPanel()" style="background: none; border: 1px solid var(--glass-border); color: var(--text-muted); padding: 6px 12px; border-radius: 8px; font-family: inherit; font-size: 0.82rem; cursor: pointer;">
+                <i class="fas fa-times"></i> Close
+              </button>
+            </div>
           </div>
-          <button onclick="saveDashboardServerAds()" class="btn-primary" style="padding: 10px 20px; border-radius: 8px; cursor: pointer;"><i class="fas fa-save"></i> Save Server Ads Settings</button>
-        </div>
 
-        <!-- Default Server Card -->
-        <div class="card span-2" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 20px;">
-          <div class="card-title" style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 15px;"><i class="fas fa-play-circle"></i> Default Play Server</div>
-          <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; color: #fff;">Select Default Server:</label>
-            <select id="dashboard-default-server-select" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px;">
-              <option value="">None (Default Order)</option>
-              <optgroup label="Real Server Names" style="color: #fff; background: #1a1a1a;">
-                <option value="Ruby">Ruby</option>
-                <option value="cloudy">cloudy</option>
-                <option value="Moly">Moly</option>
-                <option value="Short">Short</option>
-                <option value="MultiQ">MultiQ</option>
-                <option value="Play">Play</option>
-                <option value="Turbo">Turbo</option>
-                <option value="SD">SD</option>
-                <option value="HD">HD</option>
-                <option value="FHD">FHD</option>
-                <option value="Watch/DL">Watch/DL</option>
-                <option value="short">short</option>
-              </optgroup>
-              <optgroup label="Fallback Server Labels" style="color: #777; background: #1a1a1a;">
-                <option value="Server 1">Server 1</option>
-                <option value="Server 2">Server 2</option>
-                <option value="Server 3">Server 3</option>
-                <option value="Server 4">Server 4</option>
-                <option value="Server 5">Server 5</option>
-                <option value="Server 6">Server 6</option>
-                <option value="Server 7">Server 7</option>
-                <option value="Server 8">Server 8</option>
-                <option value="Server 9">Server 9</option>
-                <option value="Server 10">Server 10</option>
-              </optgroup>
-            </select>
+          <!-- Episode List with Server Toggles -->
+          <div id="server-ctrl-loading" style="display: none; text-align: center; padding: 30px; color: var(--text-muted);">
+            <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 8px; display: block;"></i>
+            Loading episodes…
           </div>
-          <button onclick="saveDashboardDefaultServer()" class="btn-primary" style="padding: 10px 20px; border-radius: 8px; cursor: pointer;"><i class="fas fa-save"></i> Save Default Server</button>
+          <div id="server-ctrl-episodes" style="margin-top: 14px;"></div>
         </div>
+      </div>
 
-        <!-- Reset Website Data Card -->
-        <div class="card span-4" style="background: rgba(229, 9, 20, 0.03); border: 1px solid rgba(229, 9, 20, 0.2); border-radius: 8px; padding: 20px; margin-top: 20px;">
-          <div class="card-title" style="font-size: 1.1rem; font-weight: 600; color: #ff6b6b; margin-bottom: 15px;"><i class="fas fa-trash-alt"></i> Reset Admin Panel Data</div>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Warning: This will permanently delete all manual library entries, custom episode links, broken video reports, Hindi dubbed links, and hidden items. This action cannot be undone.</p>
-          <button onclick="resetAdminPanelData()" class="btn-delete" style="padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;"><i class="fas fa-exclamation-triangle"></i> Reset All Data</button>
+      <!-- Default Server Card (kept) -->
+      <div class="card span-2" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 20px; margin-top: 8px;">
+        <div class="card-title" style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 15px;"><i class="fas fa-play-circle"></i> Default Play Server</div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; color: #fff;">Select Default Server:</label>
+          <select id="dashboard-default-server-select" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px;">
+            <option value="">None (Default Order)</option>
+            <optgroup label="Real Server Names" style="color: #fff; background: #1a1a1a;">
+              <option value="Ruby">Ruby</option>
+              <option value="cloudy">cloudy</option>
+              <option value="Moly">Moly</option>
+              <option value="Short">Short</option>
+              <option value="MultiQ">MultiQ</option>
+              <option value="Play">Play</option>
+              <option value="Turbo">Turbo</option>
+              <option value="SD">SD</option>
+              <option value="HD">HD</option>
+              <option value="FHD">FHD</option>
+              <option value="Watch/DL">Watch/DL</option>
+              <option value="short">short</option>
+            </optgroup>
+            <optgroup label="Fallback Server Labels" style="color: #777; background: #1a1a1a;">
+              <option value="Server 1">Server 1</option>
+              <option value="Server 2">Server 2</option>
+              <option value="Server 3">Server 3</option>
+              <option value="Server 4">Server 4</option>
+              <option value="Server 5">Server 5</option>
+              <option value="Server 6">Server 6</option>
+              <option value="Server 7">Server 7</option>
+              <option value="Server 8">Server 8</option>
+              <option value="Server 9">Server 9</option>
+              <option value="Server 10">Server 10</option>
+            </optgroup>
+          </select>
         </div>
+        <button onclick="saveDashboardDefaultServer()" class="btn-save" style="padding: 10px 20px; border-radius: 8px; cursor: pointer;"><i class="fas fa-save"></i> Save Default Server</button>
+      </div>
+
+      <!-- Reset Website Data Card -->
+      <div class="card span-4" style="background: rgba(229, 9, 20, 0.03); border: 1px solid rgba(229, 9, 20, 0.2); border-radius: 8px; padding: 20px; margin-top: 20px;">
+        <div class="card-title" style="font-size: 1.1rem; font-weight: 600; color: #ff6b6b; margin-bottom: 15px;"><i class="fas fa-trash-alt"></i> Reset Admin Panel Data</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Warning: This will permanently delete all manual library entries, custom episode links, broken video reports, Hindi dubbed links, and hidden items. This action cannot be undone.</p>
+        <button onclick="resetAdminPanelData()" class="btn-delete" style="padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;"><i class="fas fa-exclamation-triangle"></i> Reset All Data</button>
       </div>
     </div>
+
+
 
   </main>
 
@@ -1776,47 +1784,17 @@
     window.renderHiddenList = renderHiddenList;
 
     function loadDashboardServerAds() {
+      // Load default play server setting
       const settings = DbState.adminStore['global_settings'];
-      if (settings) {
-        if (settings.requires_ads_servers) {
-          const checkboxes = document.querySelectorAll('#dashboard-server-ads-checkboxes input[type="checkbox"]');
-          checkboxes.forEach(cb => {
-            const serverName = cb.getAttribute('data-server');
-            cb.checked = settings.requires_ads_servers.includes(serverName);
-          });
-        }
-        if (settings.default_play_server) {
-          const select = document.getElementById('dashboard-default-server-select');
-          if (select) {
-            select.value = settings.default_play_server;
-          }
-        }
+      if (settings && settings.default_play_server) {
+        const select = document.getElementById('dashboard-default-server-select');
+        if (select) select.value = settings.default_play_server;
       }
     }
 
+    // Kept for backward compat (no checkboxes anymore)
     async function saveDashboardServerAds() {
-      const checkboxes = document.querySelectorAll('#dashboard-server-ads-checkboxes input[type="checkbox"]');
-      const requires_ads_servers = [];
-      checkboxes.forEach(cb => {
-        if (cb.checked) {
-          requires_ads_servers.push(cb.getAttribute('data-server'));
-        }
-      });
-
-      const currentSettings = DbState.adminStore['global_settings'] || {};
-      const payload = {
-        ...currentSettings,
-        id: 'global_settings',
-        requires_ads_servers
-      };
-
-      try {
-        await DbState.saveItem('admin-store', payload);
-        DbState.adminStore['global_settings'] = payload;
-        showToast('✅ Server ads settings saved!');
-      } catch (err) {
-        showToast('❌ Failed to save settings: ' + err.message, '#e74c3c');
-      }
+      // No-op: server ads checkboxes removed in favour of Episode Server Control
     }
 
     async function saveDashboardDefaultServer() {
@@ -1963,6 +1941,315 @@
     window.importToonstreamItem = importToonstreamItem;
     window.clearAllBroken = clearAllBroken;
 
+    // ══════════════════════════════════════════════════════════════════════════
+    //  EPISODE SERVER CONTROL
+    // ══════════════════════════════════════════════════════════════════════════
+    let _scAnime = null;       // currently selected anime { id, slug, title }
+    let _scAllEpisodes = [];   // episodes for selected season (filtered)
+    let _scAllEps_cache = [];  // ALL episodes fetched (all seasons), for season switching
+    let _scDisabledServers = {}; // local copy of disabled_episode_servers
+
+
+    // Load disabled server settings from MongoDB
+    async function loadDisabledServersFromDb() {
+      const settings = DbState.adminStore['global_settings'];
+      _scDisabledServers = (settings && settings.disabled_episode_servers) ? JSON.parse(JSON.stringify(settings.disabled_episode_servers)) : {};
+    }
+
+    // Save disabled server settings to MongoDB
+    async function saveDisabledServers() {
+      const currentSettings = DbState.adminStore['global_settings'] || {};
+      const payload = {
+        ...currentSettings,
+        id: 'global_settings',
+        disabled_episode_servers: _scDisabledServers
+      };
+      await DbState.saveItem('admin-store', payload);
+      DbState.adminStore['global_settings'] = payload;
+    }
+
+    // Search anime for server control
+    async function searchAnimeForServerCtrl() {
+      const q = document.getElementById('server-ctrl-search-input').value.trim();
+      const resultsDiv = document.getElementById('server-ctrl-search-results');
+      if (!q) { showToast('Please type an anime title.', 'var(--warning)'); return; }
+      resultsDiv.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching…</div>';
+
+      try {
+        const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}`);
+        const results = await res.json();
+        if (!results || results.length === 0) {
+          resultsDiv.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:20px;">No results found.</div>';
+          return;
+        }
+
+        // Only show anime/tv type
+        const animeResults = results.filter(r => r.type !== 'movie').slice(0, 16);
+        if (animeResults.length === 0) {
+          resultsDiv.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:20px;">No anime found with this title.</div>';
+          return;
+        }
+
+        let html = '';
+        animeResults.forEach(item => {
+          const id = item.id || `toon_${item.slug}`;
+          const slug = item.slug || (item.id ? item.id.replace('toon_', '') : '');
+          const title = item.title || item.name || 'Unknown';
+          const poster = item.poster || item.poster_path || '';
+          html += `
+            <div onclick="selectAnimeForServerCtrl('${escHtmlJs(id)}','${escHtmlJs(slug)}','${escHtmlJs(title)}')"
+              style="cursor:pointer;border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);transition:transform 0.15s,border-color 0.15s;"
+              onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='var(--primary)'"
+              onmouseout="this.style.transform='';this.style.borderColor='var(--glass-border)'">
+              <img src="${poster}" style="width:100%;aspect-ratio:2/3;object-fit:cover;display:block;" onerror="this.src='https://via.placeholder.com/120x180?text=No+Image'">
+              <div style="padding:8px;font-size:0.75rem;color:#ddd;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;" title="${escHtmlJs(title)}">${escHtmlJs(title)}</div>
+            </div>`;
+        });
+        resultsDiv.innerHTML = html;
+      } catch (err) {
+        resultsDiv.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--warning);padding:20px;">Error searching.</div>';
+      }
+    }
+
+    function escHtmlJs(str) {
+      if (typeof str !== 'string') return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    async function selectAnimeForServerCtrl(id, slug, title) {
+      _scAnime = { id, slug, title };
+      document.getElementById('server-ctrl-anime-name').textContent = title;
+      document.getElementById('server-ctrl-panel').style.display = 'block';
+      document.getElementById('server-ctrl-episodes').innerHTML = '';
+      await loadDisabledServersFromDb();
+
+      // Fetch all episodes first to discover actual seasons in the data
+      const seasonSelect = document.getElementById('server-ctrl-season-select');
+      const loading = document.getElementById('server-ctrl-loading');
+      seasonSelect.innerHTML = '<option value="1">Season 1</option>';
+      loading.style.display = 'block';
+
+      try {
+        // Fetch from season 1 first — the API returns ALL episodes across all seasons
+        const res = await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(id)}&animeSlug=${encodeURIComponent(slug)}&season=1&episode=1`, { credentials: 'include' });
+        const allEps = await res.json();
+
+        if (Array.isArray(allEps) && allEps.length > 0) {
+          // Discover all unique seasons from the episode list
+          const uniqueSeasons = [...new Set(allEps.map(ep => ep.season))].filter(Boolean).sort((a, b) => a - b);
+          seasonSelect.innerHTML = '';
+          uniqueSeasons.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = `Season ${s}`;
+            seasonSelect.appendChild(opt);
+          });
+
+          // Store all episodes and filter by first season for display
+          const firstSeason = uniqueSeasons[0] || 1;
+          _scAllEpisodes = allEps.filter(ep => ep.season === firstSeason);
+          _scAllEps_cache = allEps; // cache all episodes for season switching
+        } else {
+          _scAllEpisodes = [];
+          _scAllEps_cache = [];
+        }
+
+        renderEpisodeServerToggles();
+      } catch (e) {
+        seasonSelect.innerHTML = '<option value="1">Season 1</option>';
+        document.getElementById('server-ctrl-episodes').innerHTML = '<p style="color:var(--warning);padding:14px;">Failed to load episodes. Make sure the anime has been played at least once.</p>';
+      } finally {
+        loading.style.display = 'none';
+      }
+
+      document.getElementById('server-ctrl-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function loadEpisodesForServerCtrl() {
+      if (!_scAnime) return;
+      const season = parseInt(document.getElementById('server-ctrl-season-select').value, 10);
+      const loading = document.getElementById('server-ctrl-loading');
+      const epDiv = document.getElementById('server-ctrl-episodes');
+
+      // If we have cached episodes, just filter by season
+      if (_scAllEps_cache && _scAllEps_cache.length > 0) {
+        _scAllEpisodes = _scAllEps_cache.filter(ep => ep.season === season);
+        renderEpisodeServerToggles();
+        return;
+      }
+
+      // Otherwise fetch fresh
+      loading.style.display = 'block';
+      epDiv.innerHTML = '';
+
+      try {
+        const res = await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(_scAnime.id)}&animeSlug=${encodeURIComponent(_scAnime.slug)}&season=${season}&episode=1`, { credentials: 'include' });
+        const episodes = await res.json();
+        if (Array.isArray(episodes)) {
+          _scAllEps_cache = episodes;
+          _scAllEpisodes = episodes.filter(ep => ep.season === season);
+        } else {
+          _scAllEpisodes = [];
+        }
+        renderEpisodeServerToggles();
+      } catch (err) {
+        epDiv.innerHTML = '<p style="color:var(--warning);padding:14px;">Failed to load episodes: ' + err.message + '</p>';
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    function renderEpisodeServerToggles() {
+      const epDiv = document.getElementById('server-ctrl-episodes');
+      if (!_scAllEpisodes || _scAllEpisodes.length === 0) {
+        epDiv.innerHTML = '<p style="color:var(--text-muted);padding:14px;text-align:center;">No episodes found for this season.</p>';
+        return;
+      }
+
+      // Collect all unique server labels across all episodes
+      const allServerLabels = new Set();
+      _scAllEpisodes.forEach(ep => {
+        (ep.sources || []).forEach(src => { if (src.label) allServerLabels.add(src.label); });
+      });
+
+      if (allServerLabels.size === 0) {
+        const epCount = _scAllEpisodes.length;
+        epDiv.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);">
+          <i class="fas fa-info-circle" style="font-size:1.8rem;margin-bottom:10px;display:block;opacity:0.5;"></i>
+          <p style="font-size:0.9rem;margin-bottom:6px;">${epCount} episode(s) found but no server data loaded yet.</p>
+          <p style="font-size:0.82rem;opacity:0.7;">Go to the website, open this anime and play any episode. Then come back here and click the anime again — servers will appear automatically.</p>
+        </div>`;
+
+        return;
+      }
+
+      const animeKey = `${_scAnime.id}_all`;
+
+      let html = `
+        <style>
+          .srv-toggle-switch { position:relative;display:inline-block;width:42px;height:22px;flex-shrink:0; }
+          .srv-toggle-switch input { opacity:0;width:0;height:0; }
+          .srv-toggle-slider { position:absolute;cursor:pointer;inset:0;background:#333;border-radius:22px;transition:background 0.25s; }
+          .srv-toggle-slider:before { content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform 0.25s; }
+          .srv-toggle-switch input:checked + .srv-toggle-slider { background:var(--success,#2ecc71); }
+          .srv-toggle-switch input:checked + .srv-toggle-slider:before { transform:translateX(20px); }
+          .ep-server-row { display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;transition:background 0.15s; }
+          .ep-server-row:hover { background:rgba(255,255,255,0.04); }
+          .ep-card { background:rgba(255,255,255,0.025);border:1px solid var(--glass-border);border-radius:10px;margin-bottom:12px;overflow:hidden; }
+          .ep-card-header { display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--glass-border); }
+          .ep-card-body { padding:8px 0;display:none; }
+          .ep-card-body.open { display:block; }
+        </style>`;
+
+      // --- Per-Anime Global Toggle Row ---
+      html += `
+        <div style="background:rgba(229,9,20,0.06);border:1px solid rgba(229,9,20,0.2);border-radius:10px;padding:14px 16px;margin-bottom:18px;">
+          <div style="font-weight:700;font-size:0.92rem;color:#ff6b6b;margin-bottom:12px;"><i class="fas fa-globe"></i> Disable Servers for ALL Episodes of "${escHtmlJs(_scAnime.title)}"</div>`;
+      allServerLabels.forEach(label => {
+        const key = animeKey;
+        const isDisabled = _scDisabledServers[key] && _scDisabledServers[key].includes(label);
+        const isOn = !isDisabled;
+        html += `
+          <div class="ep-server-row">
+            <span style="font-size:0.88rem;color:#ddd;">${escHtmlJs(label)}</span>
+            <label class="srv-toggle-switch" title="${isOn ? 'ON – click to disable' : 'OFF – click to enable'}">
+              <input type="checkbox" ${isOn ? 'checked' : ''} onchange="toggleServerForAnime('${escHtmlJs(label)}','${escHtmlJs(animeKey)}',this.checked)" data-label="${escHtmlJs(label)}" data-key="${escHtmlJs(animeKey)}">
+              <span class="srv-toggle-slider"></span>
+            </label>
+          </div>`;
+      });
+      html += `</div>`;
+
+      // --- Per-Episode Toggle Rows (collapsible) ---
+      html += `<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;padding:0 4px;"><i class="fas fa-info-circle"></i> Click on an episode to expand its individual server controls.</div>`;
+
+      _scAllEpisodes.forEach(ep => {
+        const epKey = `${ep.animeId || _scAnime.id}_${ep.season}x${ep.episode}`;
+        const epServers = (ep.sources || []).map(s => s.label).filter(Boolean);
+        if (epServers.length === 0) return;
+
+        const allEnabled = !epServers.some(label => _scDisabledServers[epKey] && _scDisabledServers[epKey].includes(label));
+        html += `
+          <div class="ep-card">
+            <div class="ep-card-header" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.ep-chevron').style.transform=this.nextElementSibling.classList.contains('open')?'rotate(180deg)':''">
+              <span style="font-size:0.9rem;font-weight:600;">Ep ${ep.episode} – ${escHtmlJs(ep.title || `Episode ${ep.episode}`)}</span>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:0.75rem;color:${allEnabled ? 'var(--success)':'var(--warning)'};">${allEnabled ? '✅ All On' : '⚠️ Some Off'}</span>
+                <i class="fas fa-chevron-down ep-chevron" style="color:var(--text-muted);font-size:0.75rem;transition:transform 0.2s;"></i>
+              </div>
+            </div>
+            <div class="ep-card-body">`;
+
+        epServers.forEach(label => {
+          const isDisabled = _scDisabledServers[epKey] && _scDisabledServers[epKey].includes(label);
+          const isOn = !isDisabled;
+          html += `
+              <div class="ep-server-row">
+                <span style="font-size:0.87rem;color:#ddd;">${escHtmlJs(label)}</span>
+                <label class="srv-toggle-switch" title="${isOn ? 'ON' : 'OFF'}">
+                  <input type="checkbox" ${isOn ? 'checked' : ''} onchange="toggleServerForEpisode('${escHtmlJs(label)}','${escHtmlJs(epKey)}',this.checked)">
+                  <span class="srv-toggle-slider"></span>
+                </label>
+              </div>`;
+        });
+        html += `    </div></div>`;
+      });
+
+      epDiv.innerHTML = html;
+    }
+
+    async function toggleServerForAnime(label, key, isEnabled) {
+      if (!_scDisabledServers[key]) _scDisabledServers[key] = [];
+      if (!isEnabled) {
+        // disable: add to list
+        if (!_scDisabledServers[key].includes(label)) _scDisabledServers[key].push(label);
+      } else {
+        // enable: remove from list
+        _scDisabledServers[key] = _scDisabledServers[key].filter(s => s !== label);
+        if (_scDisabledServers[key].length === 0) delete _scDisabledServers[key];
+      }
+      try {
+        await saveDisabledServers();
+        showToast(`✅ "${label}" ${isEnabled ? 'enabled' : 'disabled'} for all episodes!`);
+        // Re-render to update per-episode status indicators
+        renderEpisodeServerToggles();
+      } catch (err) {
+        showToast('❌ Failed to save: ' + err.message, '#ff6b6b');
+      }
+    }
+
+    async function toggleServerForEpisode(label, key, isEnabled) {
+      if (!_scDisabledServers[key]) _scDisabledServers[key] = [];
+      if (!isEnabled) {
+        if (!_scDisabledServers[key].includes(label)) _scDisabledServers[key].push(label);
+      } else {
+        _scDisabledServers[key] = _scDisabledServers[key].filter(s => s !== label);
+        if (_scDisabledServers[key].length === 0) delete _scDisabledServers[key];
+      }
+      try {
+        await saveDisabledServers();
+        showToast(`✅ "${label}" ${isEnabled ? 'enabled' : 'disabled'} for Ep ${key.split('x').pop()}!`);
+        renderEpisodeServerToggles();
+      } catch (err) {
+        showToast('❌ Failed to save: ' + err.message, '#ff6b6b');
+      }
+    }
+
+    function closeServerCtrlPanel() {
+      document.getElementById('server-ctrl-panel').style.display = 'none';
+      _scAnime = null;
+      _scAllEpisodes = [];
+      _scAllEps_cache = [];
+    }
+
+
+    window.searchAnimeForServerCtrl = searchAnimeForServerCtrl;
+    window.selectAnimeForServerCtrl = selectAnimeForServerCtrl;
+    window.loadEpisodesForServerCtrl = loadEpisodesForServerCtrl;
+    window.toggleServerForAnime = toggleServerForAnime;
+    window.toggleServerForEpisode = toggleServerForEpisode;
+    window.closeServerCtrlPanel = closeServerCtrlPanel;
+
     // ── Init ──
     DbState.init().then(() => {
       // Restore active tab
@@ -1984,6 +2271,7 @@
         else if (activeTab.getAttribute('onclick').includes('tab-ads')) loadDashboardServerAds();
       }
     });
+
   </script>
 </body>
 

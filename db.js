@@ -19,8 +19,8 @@ try {
 }
 
 const client = new MongoClient(config.mongoUri, {
-  serverSelectionTimeoutMS: 10_000,
-  connectTimeoutMS: 15_000,
+  serverSelectionTimeoutMS: 15_000,  // Atlas SRV + TLS can take ~13s on slow networks
+  connectTimeoutMS: 20_000,
   family: 4,              // Force IPv4 — resolves DNS-related SSL issues on Node 24
   tls: true,
 });
@@ -67,7 +67,11 @@ async function connectDB() {
   if (db) return db;
   const start = Date.now();
   try {
-    await client.connect();
+    // Race against a 20s hard timeout — Atlas SRV+TLS takes ~13s on slow networks
+    await Promise.race([
+      client.connect(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB_CONNECT_TIMEOUT')), 20_000))
+    ]);
     db = client.db('moviebox');
     const durationMs = Date.now() - start;
     logger.info('db_connected', { duration_ms: durationMs, uri: config.mongoUri.split('@')[1] || 'local' });

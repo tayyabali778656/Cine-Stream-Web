@@ -40,7 +40,9 @@ function fetchPage(url, retries = 2) {
           return;
         }
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          return resolve(fetchPage(res.headers.location));
+          let redirectUrl = res.headers.location;
+          if (redirectUrl.startsWith('http://')) redirectUrl = redirectUrl.replace('http://', 'https://');
+          return resolve(fetchPage(redirectUrl));
         }
         let body = '';
         res.on('data', c => body += c);
@@ -164,9 +166,37 @@ async function scrapeEpisodePlayer(epUrl, _depth = 0) {
     }));
 
     servers = resolvedServers.filter(Boolean);
+
+    // --- ToonStream One Piece Wano Arc Missing Servers Fix ---
+    // e.g. /episode/one-piece-21x892/ has 2 servers, but /episode/one-piece-wano-arc-21x892/ has 7 servers.
+    if (_depth === 0 && epUrl.includes('one-piece')) {
+      const origNumMatch = epUrl.match(/-(\d+)x(\d+)\//);
+      if (origNumMatch) {
+        const s = parseInt(origNumMatch[1], 10);
+        const e = parseInt(origNumMatch[2], 10);
+        if (s >= 21) {
+          const wanoUrl = `${BASE_URL}/episode/one-piece-wano-arc-${s}x${e}/`;
+          if (epUrl !== wanoUrl) {
+            try {
+              const wanoServers = await scrapeEpisodePlayer(wanoUrl, 1);
+              if (wanoServers && wanoServers.length > 0) {
+                for (const ws of wanoServers) {
+                  if (!servers.find(s => s.url === ws.url)) {
+                    servers.push(ws);
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn(`Failed to merge Wano Arc servers for ${s}x${e}`);
+            }
+          }
+        }
+      }
+    }
+
     // Fix labels if fallback was used
     servers.forEach((s, idx) => {
-      if (s.label === 'Server') s.label = `Server ${idx + 1}`;
+      if (s.label === 'Server' || s.label.startsWith('Server ')) s.label = `Server ${idx + 1}`;
     });
 
     // ── Cross-series redirect fix ────────────────────────────────────────────────
@@ -814,22 +844,23 @@ async function getLiveEpisodes(slug, targetSeason = 1, targetEpisode = 1) {
       const titleMatch = epHtml.match(/<h2 class="entry-title">([\s\S]*?)<\/h2>/i);
       const imgMatch = epHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
 
-      // Extract season & episode numbers from URL (e.g. /episode/avatar-1x1/)
-      const numMatch = epUrl.match(/(\d+)x(\d+)/);
-      if (numMatch) {
-        const s = parseInt(numMatch[1], 10);
-        const e = parseInt(numMatch[2], 10);
-        list.push({
-          id: `ep_${slug}_${s}x${e}`,
-          animeId: `toon_${slug}`,
-          animeSlug: slug,
-          season: s,
-          episode: e,
-          title: titleMatch ? decodeHtmlEntities(titleMatch[1].replace(/<[^>]*>/g, '').trim()) : `S${s}E${e}`,
-          url: epUrl,
-          thumbnail: imgMatch ? imgMatch[1] : ''
-        });
-      }
+        // Extract season & episode numbers from URL (e.g. /episode/avatar-1x1/)
+        const numMatch = epUrl.match(/(\d+)x(\d+)/);
+        if (numMatch) {
+          const s = parseInt(numMatch[1], 10);
+          const e = parseInt(numMatch[2], 10);
+
+          list.push({
+            id: `ep_${slug}_${s}x${e}`,
+            animeId: `toon_${slug}`,
+            animeSlug: slug,
+            season: s,
+            episode: e,
+            title: titleMatch ? decodeHtmlEntities(titleMatch[1].replace(/<[^>]*>/g, '').trim()) : `S${s}E${e}`,
+            url: epUrl,
+            thumbnail: imgMatch ? imgMatch[1] : ''
+          });
+        }
     }
     return list;
   };
@@ -1033,5 +1064,6 @@ module.exports = {
   getLiveAnimeList,
   getLiveAnimeDetails,
   getLiveEpisodes,
-  getPlayServerFromFallback
+  getPlayServerFromFallback,
+  scrapeEpisodePlayer
 };

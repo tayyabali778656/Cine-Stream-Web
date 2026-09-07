@@ -19,6 +19,10 @@ const App = {
   episodeSourcesCache: {},
   animeDetailsCache: {},
   suggestionCache: {},
+  // Shared episodes API cache — prevents duplicate /api/v1/episodes calls between
+  // the episode selector and playWithFailover within the same session.
+  // Key: `${animeId}_s${season}`, TTL: 2 minutes
+  _episodesApiCache: {},
 
   animePool: [],
   animePage: 1,
@@ -1378,9 +1382,20 @@ const App = {
             ? `<span class="day-badge" aria-hidden="true">${m.schedule_day.substring(0, 3)}</span>`
             : '';
 
+          let langBadge = '';
+          const safeId = String(m.id || '');
+          if (contentType === 'Anime' && type !== 'upcoming') {
+            if (safeId.startsWith('toon_')) {
+              langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
+            } else if (safeId.startsWith('animekai_') && m.dub > 0) {
+              langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+            }
+          }
+
           return `
             <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${typeVal}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle} (${year}) - ${contentType}">
               <span class="type-badge" aria-hidden="true">${contentType}</span>
+              ${langBadge}
               ${dayBadge}
               ${scheduleBadge}
               <img
@@ -1584,9 +1599,20 @@ const App = {
             ? `<span class="day-badge" aria-hidden="true">${m.schedule_day.substring(0, 3)}</span>`
             : '';
 
+          let langBadge = '';
+          const safeId = String(m.id || '');
+          if (contentType === 'Anime' && cat.id !== 'upcoming') {
+            if (safeId.startsWith('toon_')) {
+              langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
+            } else if (safeId.startsWith('animekai_') && m.dub > 0) {
+              langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+            }
+          }
+
           return `
             <div class="movie-card fade-in" style="flex: 0 0 150px; width: 150px; scroll-snap-align: start;" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${type}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle}">
               <span class="type-badge" aria-hidden="true">${contentType}</span>
+              ${langBadge}
               ${dayBadge}
               ${scheduleBadge}
               <img
@@ -1892,9 +1918,20 @@ const App = {
 
         const contentType = this.getContentType(m, m.type);
 
+        let langBadge = '';
+        const safeId = String(m.id || '');
+        if (contentType === 'Anime') {
+          if (safeId.startsWith('toon_')) {
+            langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
+          } else if (safeId.startsWith('animekai_') && m.dub > 0) {
+            langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+          }
+        }
+
         return `
           <div class="movie-card fade-in" tabindex="0" onclick="App.openModal('${String(m.id).replace(/'/g, "\\'")}', '${m.type}', true, false, ${m.netmirror ? 'true' : 'false'})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="${safeTitle}">
             <span class="type-badge" aria-hidden="true">${contentType}</span>
+            ${langBadge}
             <img
               src="${poster}"
               srcset="${posterSm} 185w, ${posterMd} 342w, ${poster} 500w"
@@ -2030,9 +2067,20 @@ const App = {
           : 'https://placehold.co/92x138?text=No+Poster');
 
       const typeVal = m.type || (m.title ? 'movie' : 'tv');
+      const contentType = this.getContentType(m, typeVal);
+
+      let langBadge = '';
+      const safeId = String(m.id || '');
+      if (contentType === 'Anime') {
+        if (safeId.startsWith('toon_')) {
+          langBadge = `<span class="lang-badge hindi-badge" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; padding: 2px 5px;" aria-hidden="true">HINDI</span>`;
+        } else if (safeId.startsWith('animekai_') && m.dub > 0) {
+          langBadge = `<span class="lang-badge english-badge" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; padding: 2px 5px;" aria-hidden="true">ENG DUB</span>`;
+        }
+      }
 
       return `
-        <div class="search-suggestion-item" tabindex="0" onclick="App.openSuggestion('${String(m.id).replace(/'/g, "\\'")}', '${typeVal}', '${safeTitle.replace(/'/g, "\\'")}')">
+        <div class="search-suggestion-item" tabindex="0" style="position: relative;" onclick="App.openSuggestion('${String(m.id).replace(/'/g, "\\'")}', '${typeVal}', '${safeTitle.replace(/'/g, "\\'")}')">
           <img src="${poster}" alt="${safeTitle} poster" width="32" height="48" loading="lazy">
           <div class="search-suggestion-info">
             <span class="search-suggestion-title">${safeTitle}</span>
@@ -2040,6 +2088,7 @@ const App = {
               <i class="fas fa-star rating-star" style="color:#ffaa00;margin-right:3px;"></i>${ratingStr} • ${year}
             </span>
           </div>
+          ${langBadge}
         </div>
       `;
     }).join('');
@@ -2256,97 +2305,51 @@ const App = {
     }
   },
 
+
   /**
-   * Modal Logic
+   * Returns the next ad link in sequence (cycles through the smartlinks array).
+   * Shared by showSmartlinkWebViewAd and the background-tab episode-change ad.
    */
-  showSmartlinkWebViewAd(triggerType = 'any') {
-    const playerAd = document.getElementById('player-ad-overlay');
-    const iframe = document.getElementById('ad-webview-iframe');
-    const closeBtn = document.getElementById('ad-close-btn');
-    const countdownText = document.getElementById('ad-countdown-text');
-    const closeLabel = document.getElementById('ad-close-label');
-
-    if (!playerAd || !iframe) return;
-
-    // Smartlinks array
+  _getNextAdLink() {
     const links = [
       'https://omg10.com/4/11503004',
       'https://omg10.com/4/11503020',
       'https://omg10.com/4/11503019'
     ];
-
-    // Initialize counter if not exists to cycle through links sequentially
-    if (typeof this.adLinkIndex === 'undefined') {
-      this.adLinkIndex = 0;
-    }
-
-    // Pick the next link in the array
+    if (typeof this.adLinkIndex === 'undefined') this.adLinkIndex = 0;
     const link = links[this.adLinkIndex];
-
-    // Increment and wrap around
     this.adLinkIndex = (this.adLinkIndex + 1) % links.length;
+    return link;
+  },
 
-    // Load link in iframe directly
-    iframe.src = link;
+  /**
+   * Modal Logic
+   */
+  showSmartlinkWebViewAd(triggerType = 'any') {
 
-    // Reset UI
-    if (closeBtn) {
-      closeBtn.disabled = true;
-      closeBtn.style.cursor = 'not-allowed';
-      closeBtn.style.background = 'rgba(0,0,0,0.7)';
-      closeBtn.style.color = '#ccc';
+    const timeSinceLastClick = Date.now() - (window._lastUserClickTime || 0);
+    if (timeSinceLastClick > 1000 && triggerType !== 'timer' && triggerType !== 'episodeChange') {
+      return;
     }
-    if (countdownText) countdownText.textContent = '2';
-    if (closeLabel) closeLabel.innerHTML = 'Wait <span id="ad-countdown-text">2</span>s';
 
-    // Apply display:flex then animate in
-    playerAd.style.display = 'flex';
-    // Small delay to allow display:flex to apply before CSS transition
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        playerAd.style.opacity = '1';
-        const container = document.getElementById('ad-webview-container');
-        if (container) container.style.transform = 'scale(1)';
-      });
-    });
+    const link = this._getNextAdLink();
 
-    let remaining = 2;
-    if (window._adCountdownTimer) clearInterval(window._adCountdownTimer);
-    window._adCountdownTimer = setInterval(() => {
-      remaining--;
-      const ct = document.getElementById('ad-countdown-text');
-      if (ct) ct.textContent = remaining;
-      if (remaining <= 0) {
-        clearInterval(window._adCountdownTimer);
-        const cb = document.getElementById('ad-close-btn');
-        const cl = document.getElementById('ad-close-label');
-        if (cb) {
-          cb.disabled = false;
-          cb.style.cursor = 'pointer';
-          cb.style.background = '#e50914'; // Red active color
-          cb.style.color = '#fff';
-        }
-        if (cl) cl.innerHTML = '✕ Close';
+    if (triggerType === 'timer') {
+       try { window.open(link, '_blank'); } catch(e) {}
+       return;
+    }
 
-        if (cb) {
-          cb.onclick = () => {
-            // Open the smartlink ad in a new tab, acting as the captcha click
-            window.open(link, '_blank');
+    if (triggerType === 'episodeChange') {
+      // Tab-swap: new tab gets current URL (already updated with new episode via replaceState).
+      // Defer the redirect so episode loading code fires first.
+      try { window.open(window.location.href, '_blank'); } catch(e) {}
+      setTimeout(() => { try { window.location.href = link; } catch(e) {} }, 0);
+      return;
+    }
 
-            // Animate out
-            playerAd.style.opacity = '0';
-            const container = document.getElementById('ad-webview-container');
-            if (container) container.style.transform = 'scale(0.95)';
-
-            // Wait for transition before hiding completely
-            setTimeout(() => {
-              playerAd.style.display = 'none';
-              iframe.src = ''; // clear iframe to stop media/requests
-            }, 400);
-          };
-        }
-      }
-    }, 1000);
+    // ═══ TRUE POPUNDER (TAB-SWAP TRICK) for cardClick / watchNow ═══
+    window.open(window.location.href, '_blank');
+    window.location.href = link;
   },
 
   async openModal(movieId, type, updateHistory = true, isWatching = false, isNetMirror = false) {
@@ -2361,17 +2364,19 @@ const App = {
     document.getElementById('modal-title').textContent = 'Loading...';
     this.modal.classList.add('active');
 
-    // Show ad after modal is active ONLY when actually watching (not on card click)
+    // Show ad after modal is active
     if (isWatching) {
       this.showSmartlinkWebViewAd('watchNow');
+    } else {
+      this.showSmartlinkWebViewAd('cardClick');
     }
 
     document.body.style.overflow = 'hidden';
 
-    // Show loading screen with scroll reset and CSS class trigger
+    // Show loading screen only in details view (not when directly watching)
     const loadingScreen = document.getElementById('modal-loading-screen');
     const modalContent = this.modal.querySelector('.modal-content');
-    if (loadingScreen) {
+    if (loadingScreen && !isWatching) {
       if (modalContent) {
         modalContent.scrollTop = 0;
         modalContent.style.overflowY = 'hidden';
@@ -2610,11 +2615,7 @@ const App = {
         if (backBtn) backBtn.style.display = 'flex';
         if (heroOverlay) heroOverlay.style.display = 'none';
 
-        // Show player ad overlay when starting to watch
-        const playerAd = document.getElementById('player-ad-overlay');
-        if (playerAd) {
-          playerAd.style.display = 'flex';
-        }
+
 
         if (movieId) {
           const { STREAM_PLAYER_URL } = window.API_CONFIG;
@@ -2728,16 +2729,18 @@ const App = {
 
 
           const playWithFailover = async (s = 1, e = 1, isInitialPlay = false) => {
-            // ── Rewarded Smartlink Ad Overlay (WebView) ──────────
-            if (!isInitialPlay) {
-              this.showSmartlinkWebViewAd('episodeChange');
-            }
 
+            // Update URL first — so the new tab (opened by tab-swap ad) loads the correct episode
             if (isWatching) {
               const url = new URL(window.location.href);
               url.searchParams.set('s', s);
               url.searchParams.set('e', e);
               window.history.replaceState(window.history.state, '', url.pathname + url.search);
+            }
+
+            // ── Rewarded Smartlink Ad (original tab-swap) ──────────
+            if (!isInitialPlay) {
+              this.showSmartlinkWebViewAd('episodeChange');
             }
 
             if (this.activePlayer) {
@@ -2784,8 +2787,17 @@ const App = {
             // 2. ToonStream Database Episode Sources — fetch specific episode (server caches per-episode)
             if (movie._isToonStream || movie.toonstreamId || (movie.id && String(movie.id).startsWith('toon_'))) {
               try {
-                // Always fetch with the exact season+episode so the server scrapes the right sources
-                const epsRes = await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(movieId)}&season=${s}&episode=${e}`).then(r => r.json());
+                // Use shared in-memory cache to avoid duplicate calls when episode selector
+                // already fetched this season's data (TTL: 2 minutes)
+                const epsCacheKey = `${movieId}_s${s}`;
+                const epsCacheEntry = this._episodesApiCache[epsCacheKey];
+                const epsCacheValid = epsCacheEntry && (Date.now() - epsCacheEntry.ts < 2 * 60 * 1000);
+                const epsRes = epsCacheValid
+                  ? epsCacheEntry.data
+                  : await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(movieId)}&season=${s}&episode=${e}`).then(r => r.json());
+                if (!epsCacheValid && Array.isArray(epsRes)) {
+                  this._episodesApiCache[epsCacheKey] = { data: epsRes, ts: Date.now() };
+                }
                 const allEps = Array.isArray(epsRes) ? epsRes : [];
                 const ep = allEps.find(ep => ep.season === s && ep.episode === e);
                 if (ep && ep.sources && ep.sources.length > 0) {
@@ -2806,15 +2818,16 @@ const App = {
                       : src.url;
 
                     let baseLabel = src.label || `Server ${activeIdx++}`;
+                    // Normalize Watch/DL label
+                    const lowerLabel = baseLabel.toLowerCase();
+                    if (isAdServer && (lowerLabel.includes('watch') || lowerLabel.includes('dl')) && !lowerLabel.includes('cloudy') && !lowerLabel.includes('short')) {
+                      baseLabel = 'Watch/DL';
+                    }
                     if (isAdServer) {
-                      const lowerLabel = baseLabel.toLowerCase();
-                      if ((lowerLabel.includes('watch') || lowerLabel.includes('dl')) && !lowerLabel.includes('cloudy') && !lowerLabel.includes('short')) {
-                        baseLabel = 'Watch/DL';
-                      }
                       adsSources.push({
                         url: finalUrl,
                         type: src.type || 'iframe',
-                        label: `${baseLabel} (Ads)`,
+                        label: baseLabel,
                         allowAds: true,
                         hasAds: true
                       });
@@ -2822,7 +2835,7 @@ const App = {
                       noAdsSources.push({
                         url: finalUrl,
                         type: src.type || 'iframe',
-                        label: `${baseLabel} (No Ads)`,
+                        label: baseLabel,
                         allowAds: false,
                         hasAds: false
                       });
@@ -2850,8 +2863,55 @@ const App = {
                     });
                   }
 
-                  sources.push(...noAdsSources);
-                  sources.push(...adsSources);
+                  // ── Custom server order + dedup + whitelist ──────────────
+                  // Order: Play → Ruby → Turbo → Moly → cloudy → Watch/DL
+                  // Cine (Sub/Dub) only shown when no clean servers available
+                  const SERVER_ORDER = [
+                    { key: 'play',     matchFn: l => l === 'play' || l.startsWith('play ') },
+                    { key: 'ruby',     matchFn: l => l.includes('ruby') && !l.includes('short') },
+                    { key: 'turbo',    matchFn: l => l.includes('turbo') },
+                    { key: 'moly',     matchFn: l => l.includes('moly') },
+                    { key: 'short',    matchFn: l => l.includes('short') },
+                    { key: 'cloudy',   matchFn: l => l.includes('cloudy') },
+                    { key: 'watch/dl', matchFn: l => l.includes('watch') || (l.includes('dl') && !l.includes('cloudy')) },
+                  ];
+
+                  const allRaw = [...noAdsSources, ...adsSources];
+                  const usedUrls = new Set();
+
+                  // 1. Add servers in priority order, deduplicating by URL
+                  for (const { matchFn } of SERVER_ORDER) {
+                    for (const s of allRaw) {
+                      const l = s.label.toLowerCase();
+                      if (matchFn(l) && !l.includes('animekai') && !l.includes('cine') && !usedUrls.has(s.url)) {
+                        sources.push(s);
+                        usedUrls.add(s.url);
+                      }
+                    }
+                  }
+
+                  // 2. Add Cine (Sub/Dub) only when no clean No-Ads servers found
+                  const hasCleanServers = sources.some(s => !s.hasAds);
+                  if (!hasCleanServers) {
+                    let cineSubAdded = false, cineDubAdded = false;
+                    for (const s of allRaw) {
+                      const l = s.label.toLowerCase();
+                      if (l.includes('animekai') && !usedUrls.has(s.url)) {
+                        const isDub = l.includes('dub');
+                        if (isDub && !cineDubAdded) {
+                          s.label = 'Cine (Dub)';
+                          sources.push(s);
+                          usedUrls.add(s.url);
+                          cineDubAdded = true;
+                        } else if (!isDub && !cineSubAdded) {
+                          s.label = 'Cine (Sub)';
+                          sources.push(s);
+                          usedUrls.add(s.url);
+                          cineSubAdded = true;
+                        }
+                      }
+                    }
+                  }
                 }
               } catch (err) {
                 console.warn('Could not load ToonStream episode sources from DB:', err);
@@ -2937,8 +2997,16 @@ const App = {
               (async () => {
                 if (isStale()) return;
                 try {
-                  // Fetch the episode list for the selector (sources are fetched per-episode in playWithFailover)
-                  const epsRes = await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(movieId)}&season=1&episode=1`).then(r => r.json());
+                  // Use shared cache — if playWithFailover already fetched this, reuse it (TTL: 2 minutes)
+                  const epsCacheKey = `${movieId}_s1`;
+                  const epsCacheEntry = this._episodesApiCache[epsCacheKey];
+                  const epsCacheValid = epsCacheEntry && (Date.now() - epsCacheEntry.ts < 2 * 60 * 1000);
+                  const epsRes = epsCacheValid
+                    ? epsCacheEntry.data
+                    : await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(movieId)}&season=1&episode=1`).then(r => r.json());
+                  if (!epsCacheValid && Array.isArray(epsRes)) {
+                    this._episodesApiCache[epsCacheKey] = { data: epsRes, ts: Date.now() };
+                  }
                   const allEps = Array.isArray(epsRes) ? epsRes : [];
                   if (isStale()) return;
 
@@ -2965,7 +3033,16 @@ const App = {
                     const sNum = parseInt(val, 10);
                     if (!seasonMap[sNum] || seasonMap[sNum].length === 0) {
                       try {
-                        const freshRes = await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(movieId)}&season=${sNum}&episode=1`).then(r => r.json());
+                        // Check shared cache for this season too
+                        const sEpsCacheKey = `${movieId}_s${sNum}`;
+                        const sEpsCacheEntry = this._episodesApiCache[sEpsCacheKey];
+                        const sEpsCacheValid = sEpsCacheEntry && (Date.now() - sEpsCacheEntry.ts < 2 * 60 * 1000);
+                        const freshRes = sEpsCacheValid
+                          ? sEpsCacheEntry.data
+                          : await fetch(`/api/v1/episodes?animeId=${encodeURIComponent(movieId)}&season=${sNum}&episode=1`).then(r => r.json());
+                        if (!sEpsCacheValid && Array.isArray(freshRes)) {
+                          this._episodesApiCache[sEpsCacheKey] = { data: freshRes, ts: Date.now() };
+                        }
                         if (!isStale() && Array.isArray(freshRes)) {
                           freshRes.forEach(ep => {
                             const epS = ep.season || sNum;
@@ -3446,8 +3523,10 @@ const App = {
   isAnime(item) {
     if (!item) return false;
 
-    // 1. Support legacy TMDB/admin entries
+    // 1. Support legacy TMDB/admin entries & direct scraped ids
     if (item.original_language === 'ja') return true;
+    if (String(item.id || '').startsWith('animekai_')) return true;
+    if (String(item.id || '').startsWith('toon_')) return true;
 
     // 2. Check genres array
     const genres = Array.isArray(item.genres)
@@ -3674,3 +3753,6 @@ const App = {
 
 window.App = App;
 App.init();
+
+// Track user click times to differentiate real clicks from page loads
+document.addEventListener('click', () => { window._lastUserClickTime = Date.now(); }, true);
