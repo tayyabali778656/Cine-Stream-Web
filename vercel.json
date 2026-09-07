@@ -3,11 +3,18 @@
     "installCommand":  "npm install --omit=dev",
     "buildCommand":  "echo \"Sitemap already built locally\"",
     "framework":  null,
+    "crons": [
+        {
+            "path": "/api/cron/crawl",
+            "schedule": "0 3 * * *"
+        }
+    ],
     "builds":  [
                    {
                        "src":  "serve.js",
                        "use":  "@vercel/node",
                        "config":  {
+                                      "maxDuration": 300,
                                       "includeFiles":  [
                                                            "*.html",
                                                            "*.css",
@@ -58,6 +65,10 @@
                    {
                        "src":  "/xmlrpc(.*)",
                        "status":  404
+                   },
+                   {
+                       "src":  "/api/cron/crawl",
+                       "dest":  "serve.js"
                    },
                    {
                        "src":  "/api/(.*)",

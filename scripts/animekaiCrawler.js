@@ -372,10 +372,10 @@ async function run() {
     await scrapeAnimeKaiExclusive();
 
     logger.info('animekai_crawler_finished', { duration_ms: Date.now() - start, totalSaved });
-    process.exit(0);
+    // Note: process.exit removed so this can be called as a module from cron endpoints
   } catch (err) {
     logger.error('animekai_crawler_fatal', err);
-    process.exit(1);
+    throw err; // Let caller handle the error
   }
 }
 

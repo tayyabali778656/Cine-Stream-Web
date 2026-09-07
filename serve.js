@@ -824,50 +824,84 @@ async function handleApiV1(req, res, pathname) {
       const needsAnimeKaiScrape = !hasAnimeKaiSources || !isAkFresh;
 
       if (needsAnimeKaiScrape) {
-        // ── BACKGROUND AnimeKai refresh (stale-while-revalidate) ────────────────
-        // We serve the existing episodes immediately (no 5-second wait for the user).
-        // AnimeKai is fetched in the background; on next request the fresh data will
-        // already be in MongoDB (and the server cache will have been invalidated).
-        const akInFlightKey = `ak_inflight_${slug}_s${season}`;
-        if (!cache.get(akInFlightKey)) {
-          // Mark as in-flight for 30 seconds to prevent duplicate background fetches
-          // from parallel user requests hitting the same episode simultaneously.
-          cache.set(akInFlightKey, true, 30_000);
-          setImmediate(async () => {
-            try {
-              const akEpisodes = await animekaiSvc.getLiveEpisodes(slug, season, episode);
-              if (!akEpisodes || akEpisodes.length === 0) return;
+        if (process.env.VERCEL) {
+          // ── Vercel: use blocking Promise.race (5s timeout) ───────────────────
+          // On Vercel, background tasks (setImmediate) are killed the moment the
+          // response is sent. So we must await AnimeKai within the request lifecycle.
+          // 5-second timeout ensures we never hang the user longer than that.
+          try {
+            const akTimeoutPromise = new Promise(resolve => setTimeout(() => resolve([]), 5000));
+            const akEpisodes = await Promise.race([
+              animekaiSvc.getLiveEpisodes(slug, season, episode),
+              akTimeoutPromise
+            ]);
 
+            if (akEpisodes && akEpisodes.length > 0) {
               const episodesCol = getCollection('episodes');
-              if (!episodesCol) return;
-
-              // Save merged AnimeKai sources to MongoDB
-              const bulkOps = [];
-              for (const akEp of akEpisodes) {
-                const epId = `ep_${slug}_${akEp.season}x${akEp.episode}`;
-                bulkOps.push({
-                  updateOne: {
-                    filter: { id: epId },
-                    update: { $set: { ...akEp, id: epId, animeId: animeId || `toon_${slug}`, animeSlug: slug, akUpdatedAt: new Date() } },
-                    upsert: true
-                  }
+              if (episodesCol) {
+                const bulkOps = akEpisodes.map(akEp => {
+                  const epId = `ep_${slug}_${akEp.season}x${akEp.episode}`;
+                  return {
+                    updateOne: {
+                      filter: { id: epId },
+                      update: { $set: { ...akEp, id: epId, animeId: animeId || `toon_${slug}`, animeSlug: slug, akUpdatedAt: new Date() } },
+                      upsert: true
+                    }
+                  };
                 });
-              }
-              if (bulkOps.length > 0) {
-                await episodesCol.bulkWrite(bulkOps);
-              }
+                // Fire-and-forget DB save — don't await to keep response fast
+                episodesCol.bulkWrite(bulkOps).catch(e => logger.warn('AK bulkWrite failed:', e.message));
 
-              // Invalidate server cache so next user request gets fresh merged data
-              cache.deleteByPrefix(`eps_${slug}`);
-              logger.info('animekai_background_refresh_done', { slug, season, count: akEpisodes.length });
-            } catch (akErr) {
-              logger.warn(`AnimeKai background refresh failed for ${slug}:`, akErr.message);
-            } finally {
-              cache.delete(akInFlightKey);
+                // Merge AnimeKai sources into current episodes response
+                for (const akEp of akEpisodes) {
+                  let reqEp = episodes.find(e => e.season === akEp.season && e.episode === akEp.episode);
+                  if (reqEp && akEp.sources && akEp.sources.length > 0) {
+                    const existingKeys = new Set((reqEp.sources || []).map(s => s.url + s.label));
+                    for (const src of akEp.sources) {
+                      if (!existingKeys.has(src.url + src.label)) reqEp.sources.push(src);
+                    }
+                  } else if (!reqEp) {
+                    const epId = `ep_${slug}_${akEp.season}x${akEp.episode}`;
+                    akEp.id = epId; akEp.animeId = animeId || `toon_${slug}`; akEp.animeSlug = slug;
+                    episodes.push(akEp);
+                  }
+                }
+                episodes.sort((a, b) => a.season !== b.season ? a.season - b.season : a.episode - b.episode);
+              }
             }
-          });
+          } catch (akErr) {
+            logger.warn(`AnimeKai Vercel scrape failed for ${slug}:`, akErr.message);
+          }
+        } else {
+          // ── Non-Vercel (VPS): background refresh (stale-while-revalidate) ─────
+          // Serve existing episodes immediately — AnimeKai refreshes in background.
+          // Next user request gets fresh merged data from MongoDB.
+          const akInFlightKey = `ak_inflight_${slug}_s${season}`;
+          if (!cache.get(akInFlightKey)) {
+            cache.set(akInFlightKey, true, 30_000);
+            setImmediate(async () => {
+              try {
+                const akEpisodes = await animekaiSvc.getLiveEpisodes(slug, season, episode);
+                if (!akEpisodes || akEpisodes.length === 0) return;
+                const episodesCol = getCollection('episodes');
+                if (!episodesCol) return;
+                const bulkOps = akEpisodes.map(akEp => {
+                  const epId = `ep_${slug}_${akEp.season}x${akEp.episode}`;
+                  return { updateOne: { filter: { id: epId }, update: { $set: { ...akEp, id: epId, animeId: animeId || `toon_${slug}`, animeSlug: slug, akUpdatedAt: new Date() } }, upsert: true } };
+                });
+                if (bulkOps.length > 0) await episodesCol.bulkWrite(bulkOps);
+                cache.deleteByPrefix(`eps_${slug}`);
+                logger.info('animekai_background_refresh_done', { slug, season, count: akEpisodes.length });
+              } catch (akErr) {
+                logger.warn(`AnimeKai background refresh failed for ${slug}:`, akErr.message);
+              } finally {
+                cache.delete(akInFlightKey);
+              }
+            });
+          }
         }
       }
+
       // --- END ANIMEKAI INTEGRATION ---
 
 
@@ -1482,7 +1516,68 @@ const requestHandler = async (req, res) => {
   let statusCode = 200;
 
   try {
+    // ── Vercel Cron Job: /api/cron/crawl ────────────────────────────────────
+    // Triggered automatically by Vercel Cron (see vercel.json "crons" section).
+    // Also callable manually with the correct CRON_SECRET header.
+    // Runs ToonStream crawler → AnimeKai crawler → Sitemap rebuild sequentially.
+    if (pathname === '/api/cron/crawl') {
+      // Security: Vercel automatically sends Authorization: Bearer <CRON_SECRET>
+      const cronSecret = process.env.CRON_SECRET || '';
+      const authHeader = req.headers['authorization'] || '';
+      const providedSecret = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+
+      if (!cronSecret || providedSecret !== cronSecret) {
+        sendJson(res, 401, { error: 'Unauthorized. CRON_SECRET mismatch.' });
+        return;
+      }
+
+      if (req.method !== 'GET' && req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed.' });
+        return;
+      }
+
+      // Respond immediately with 202 so Vercel marks the cron as triggered
+      // The actual crawl runs asynchronously after this response
+      sendJson(res, 202, { message: 'Cron crawl triggered. Running in background...' });
+
+      // Run crawlers asynchronously (fire-and-forget after response sent)
+      setImmediate(async () => {
+        const cronStart = Date.now();
+        logger.info('vercel_cron_crawl_started');
+        try {
+          // Step 1: ToonStream catalog crawler
+          const toonstreamCrawler = require('./scripts/toonstreamCrawler');
+          await toonstreamCrawler.run();
+          logger.info('vercel_cron_toonstream_done', { elapsed_s: Math.round((Date.now() - cronStart) / 1000) });
+        } catch (tsErr) {
+          logger.error('vercel_cron_toonstream_failed', { error: tsErr.message });
+        }
+
+        try {
+          // Step 2: AnimeKai crawler (runs after ToonStream)
+          const animekaiCrawler = require('./scripts/animekaiCrawler');
+          await animekaiCrawler.run();
+          logger.info('vercel_cron_animekai_done', { elapsed_s: Math.round((Date.now() - cronStart) / 1000) });
+        } catch (akErr) {
+          logger.error('vercel_cron_animekai_failed', { error: akErr.message });
+        }
+
+        // Step 3: Rebuild sitemap
+        try {
+          const sitemapSvc = require('./services/sitemapService');
+          sitemapSvc.triggerRegen('vercel_cron');
+          logger.info('vercel_cron_sitemap_triggered');
+        } catch (smErr) {
+          logger.warn('vercel_cron_sitemap_failed', { error: smErr.message });
+        }
+
+        logger.info('vercel_cron_crawl_done', { total_elapsed_s: Math.round((Date.now() - cronStart) / 1000) });
+      });
+      return;
+    }
+
     // ── Health endpoint (protected — requires admin token or X-Health-Secret) ──
+
     if (pathname === '/health') {
       // Allow if: valid admin JWT cookie OR correct X-Health-Secret header
       const healthSecret = process.env.HEALTH_SECRET || '';

@@ -690,10 +690,10 @@ async function run() {
     await buildSearchIndex();
 
     logger.info('toonstream_crawler_finished', { duration_ms: Date.now() - start });
-    process.exit(0);
+    // Note: process.exit removed so this can be called as a module from cron endpoints
   } catch (err) {
     logger.error('toonstream_crawler_fatal', err);
-    process.exit(1);
+    throw err; // Let caller handle the error
   }
 }
 

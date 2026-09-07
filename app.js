@@ -1384,11 +1384,14 @@ const App = {
 
           let langBadge = '';
           const safeId = String(m.id || '');
-          if (contentType === 'Anime' && type !== 'upcoming') {
+          if (type !== 'upcoming') {
             if (safeId.startsWith('toon_')) {
+              // All ToonStream items (Anime, Movie, Cartoon) are in Hindi
               langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
-            } else if (safeId.startsWith('animekai_') && m.dub > 0) {
-              langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+            } else if (contentType === 'Anime') {
+              if (safeId.startsWith('animekai_') && m.dub > 0) {
+                langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+              }
             }
           }
 
@@ -1601,11 +1604,13 @@ const App = {
 
           let langBadge = '';
           const safeId = String(m.id || '');
-          if (contentType === 'Anime' && cat.id !== 'upcoming') {
+          if (cat.id !== 'upcoming') {
             if (safeId.startsWith('toon_')) {
               langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
-            } else if (safeId.startsWith('animekai_') && m.dub > 0) {
-              langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+            } else if (contentType === 'Anime') {
+              if (safeId.startsWith('animekai_') && m.dub > 0) {
+                langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+              }
             }
           }
 
@@ -1920,10 +1925,10 @@ const App = {
 
         let langBadge = '';
         const safeId = String(m.id || '');
-        if (contentType === 'Anime') {
-          if (safeId.startsWith('toon_')) {
-            langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
-          } else if (safeId.startsWith('animekai_') && m.dub > 0) {
+        if (safeId.startsWith('toon_')) {
+          langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
+        } else if (contentType === 'Anime') {
+          if (safeId.startsWith('animekai_') && m.dub > 0) {
             langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
           }
         }
@@ -2071,10 +2076,10 @@ const App = {
 
       let langBadge = '';
       const safeId = String(m.id || '');
-      if (contentType === 'Anime') {
-        if (safeId.startsWith('toon_')) {
-          langBadge = `<span class="lang-badge hindi-badge" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; padding: 2px 5px;" aria-hidden="true">HINDI</span>`;
-        } else if (safeId.startsWith('animekai_') && m.dub > 0) {
+      if (safeId.startsWith('toon_')) {
+        langBadge = `<span class="lang-badge hindi-badge" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; padding: 2px 5px;" aria-hidden="true">HINDI</span>`;
+      } else if (contentType === 'Anime') {
+        if (safeId.startsWith('animekai_') && m.dub > 0) {
           langBadge = `<span class="lang-badge english-badge" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; padding: 2px 5px;" aria-hidden="true">ENG DUB</span>`;
         }
       }
