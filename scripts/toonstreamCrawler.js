@@ -460,7 +460,12 @@ async function scrapeCategory(category, type) {
             const batch = episodes.slice(i, i + concurrency);
             await Promise.all(batch.map(async (ep) => {
               const playerSources = await scrapeEpisodePlayer(ep.url);
-              ep.sources = playerSources;
+              if (playerSources && playerSources.length > 0) {
+                 ep.sources = playerSources;
+              } else {
+                 const existingEp = await episodesCol.findOne({ id: ep.id });
+                 ep.sources = existingEp ? (existingEp.sources || []) : [];
+              }
               await episodesCol.updateOne({ id: ep.id }, { $set: ep }, { upsert: true });
             }));
           }
@@ -677,7 +682,12 @@ async function scrapeHomepageDetails() {
         const batch = episodes.slice(i, i + concurrency);
         await Promise.all(batch.map(async (ep) => {
           const playerSources = await scrapeEpisodePlayer(ep.url);
-          ep.sources = playerSources;
+          if (playerSources && playerSources.length > 0) {
+             ep.sources = playerSources;
+          } else {
+             const existingEp = await episodesCol.findOne({ id: ep.id });
+             ep.sources = existingEp ? (existingEp.sources || []) : [];
+          }
           await episodesCol.updateOne({ id: ep.id }, { $set: ep }, { upsert: true });
         }));
       }
