@@ -522,33 +522,7 @@ const App = {
     this.renderRecentlyViewed();
     this.setupNavScroll();
 
-    // Setup persistent 8-minute ad timer (survives page reloads, pauses on tab switch/close)
-    if (!localStorage.getItem('smartlinkAdAccumulated')) {
-      localStorage.setItem('smartlinkAdAccumulated', '0');
-    }
-
-    let lastAdTick = Date.now();
-    setInterval(() => {
-      const now = Date.now();
-      const delta = now - lastAdTick;
-      lastAdTick = now;
-
-      if (!document.hidden) {
-        let accumulated = parseInt(localStorage.getItem('smartlinkAdAccumulated') || '0', 10);
-        
-        // Cap delta to 10 seconds to handle sleep/wake gracefully
-        if (delta > 0 && delta <= 10000) {
-          accumulated += delta;
-        }
-
-        if (accumulated >= 8 * 60 * 1000) { // 8 minutes
-          localStorage.setItem('smartlinkAdAccumulated', '0');
-          this.showSmartlinkWebViewAd('timer');
-        } else {
-          localStorage.setItem('smartlinkAdAccumulated', accumulated.toString());
-        }
-      }
-    }, 5000); // Check every 5 seconds
+    // Smartlink timer ads removed
   },
 
   /**
@@ -2331,30 +2305,98 @@ const App = {
    * Modal Logic
    */
   showSmartlinkWebViewAd(triggerType = 'any') {
+    // Only episode change triggers the reward-style ad overlay
+    if (triggerType !== 'episodeChange') return;
 
-    const timeSinceLastClick = Date.now() - (window._lastUserClickTime || 0);
-    if (timeSinceLastClick > 1000 && triggerType !== 'timer' && triggerType !== 'episodeChange') {
-      return;
+    // Show reward-style overlay on current page with countdown
+    const overlay = document.getElementById('player-ad-overlay');
+    const iframe = document.getElementById('ad-webview-iframe');
+    const closeBtn = document.getElementById('ad-close-btn');
+    const closeLabel = document.getElementById('ad-close-label');
+    const adContainer = document.getElementById('ad-webview-container');
+
+    if (!overlay) return;
+
+    // Hide iframe, show overlay as a short blocker
+    if (iframe) iframe.style.display = 'none';
+
+    // Show overlay
+    overlay.style.display = 'flex';
+    setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+    if (adContainer) {
+      adContainer.style.background = 'rgba(15,15,25,0.98)';
+      adContainer.style.display = 'flex';
+      adContainer.style.flexDirection = 'column';
+      adContainer.style.justifyContent = 'center';
+      adContainer.style.alignItems = 'center';
+      setTimeout(() => { adContainer.style.transform = 'scale(1)'; }, 10);
+
+      // Show message inside container
+      let msgEl = document.getElementById('ad-reward-msg');
+      if (!msgEl) {
+        msgEl = document.createElement('div');
+        msgEl.id = 'ad-reward-msg';
+        msgEl.style.cssText = 'color:#fff;text-align:center;padding:20px;';
+        msgEl.innerHTML = `
+          <div style="font-size:48px;margin-bottom:16px;">🎬</div>
+          <div style="font-size:22px;font-weight:700;margin-bottom:8px;">Loading Next Episode...</div>
+          <div style="font-size:14px;color:#aaa;margin-bottom:20px;">Please wait a moment.</div>
+        `;
+        adContainer.appendChild(msgEl);
+      }
+      msgEl.style.display = 'block';
     }
 
-    const link = this._getNextAdLink();
+    // Reset + countdown on close button
+    if (closeBtn) {
+      closeBtn.disabled = true;
+      closeBtn.style.cursor = 'not-allowed';
+      closeBtn.style.color = '#ccc';
+      closeBtn.style.background = 'rgba(0,0,0,0.7)';
+      if (closeLabel) closeLabel.innerHTML = 'Wait <span id="ad-countdown-text">5</span>s';
 
-    if (triggerType === 'timer') {
-       try { window.open(link, '_blank'); } catch(e) {}
-       return;
+      let seconds = 1;
+      const tick = setInterval(() => {
+        seconds--;
+        const ct = document.getElementById('ad-countdown-text');
+        if (seconds <= 0) {
+          clearInterval(tick);
+          closeBtn.disabled = false;
+          closeBtn.style.cursor = 'pointer';
+          closeBtn.style.color = '#fff';
+          closeBtn.style.background = 'rgba(220,50,50,0.9)';
+          if (closeLabel) closeLabel.textContent = '✕ Close';
+        } else {
+          if (ct) ct.textContent = seconds;
+        }
+      }, 1000);
+
+      closeBtn.onclick = () => {
+        if (closeBtn.disabled) return;
+        clearInterval(tick);
+        overlay.style.opacity = '0';
+        if (adContainer) adContainer.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          if (iframe) { iframe.src = ''; iframe.style.display = ''; }
+          if (adContainer) {
+            adContainer.style.background = '#111';
+            adContainer.style.display = '';
+            adContainer.style.flexDirection = '';
+            adContainer.style.justifyContent = '';
+            adContainer.style.alignItems = '';
+            adContainer.style.transform = 'scale(0.95)';
+          }
+          const msgEl = document.getElementById('ad-reward-msg');
+          if (msgEl) msgEl.style.display = 'none';
+          closeBtn.disabled = true;
+          closeBtn.style.cursor = 'not-allowed';
+          closeBtn.style.background = 'rgba(0,0,0,0.7)';
+          closeBtn.style.color = '#ccc';
+          if (closeLabel) closeLabel.innerHTML = 'Wait <span id="ad-countdown-text">5</span>s';
+        }, 400);
+      };
     }
-
-    if (triggerType === 'episodeChange') {
-      // Tab-swap: new tab gets current URL (already updated with new episode via replaceState).
-      // Defer the redirect so episode loading code fires first.
-      try { window.open(window.location.href, '_blank'); } catch(e) {}
-      setTimeout(() => { try { window.location.href = link; } catch(e) {} }, 0);
-      return;
-    }
-
-    // ═══ TRUE POPUNDER (TAB-SWAP TRICK) for cardClick / watchNow ═══
-    window.open(window.location.href, '_blank');
-    window.location.href = link;
   },
 
   async openModal(movieId, type, updateHistory = true, isWatching = false, isNetMirror = false) {
@@ -2369,12 +2411,7 @@ const App = {
     document.getElementById('modal-title').textContent = 'Loading...';
     this.modal.classList.add('active');
 
-    // Show ad after modal is active
-    if (isWatching) {
-      this.showSmartlinkWebViewAd('watchNow');
-    } else {
-      this.showSmartlinkWebViewAd('cardClick');
-    }
+    // Smartlink ads on card/watch click removed
 
     document.body.style.overflow = 'hidden';
 
@@ -2794,7 +2831,7 @@ const App = {
               try {
                 // Use shared in-memory cache to avoid duplicate calls when episode selector
                 // already fetched this season's data (TTL: 2 minutes)
-                const epsCacheKey = `${movieId}_s${s}`;
+                const epsCacheKey = `${movieId}_s${s}_e${e}`;
                 const epsCacheEntry = this._episodesApiCache[epsCacheKey];
                 const epsCacheValid = epsCacheEntry && (Date.now() - epsCacheEntry.ts < 2 * 60 * 1000);
                 const epsRes = epsCacheValid
@@ -3003,7 +3040,7 @@ const App = {
                 if (isStale()) return;
                 try {
                   // Use shared cache — if playWithFailover already fetched this, reuse it (TTL: 2 minutes)
-                  const epsCacheKey = `${movieId}_s1`;
+                  const epsCacheKey = `${movieId}_s1_e1`;
                   const epsCacheEntry = this._episodesApiCache[epsCacheKey];
                   const epsCacheValid = epsCacheEntry && (Date.now() - epsCacheEntry.ts < 2 * 60 * 1000);
                   const epsRes = epsCacheValid
@@ -3039,7 +3076,7 @@ const App = {
                     if (!seasonMap[sNum] || seasonMap[sNum].length === 0) {
                       try {
                         // Check shared cache for this season too
-                        const sEpsCacheKey = `${movieId}_s${sNum}`;
+                        const sEpsCacheKey = `${movieId}_s${sNum}_e1`;
                         const sEpsCacheEntry = this._episodesApiCache[sEpsCacheKey];
                         const sEpsCacheValid = sEpsCacheEntry && (Date.now() - sEpsCacheEntry.ts < 2 * 60 * 1000);
                         const freshRes = sEpsCacheValid

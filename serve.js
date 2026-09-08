@@ -606,7 +606,7 @@ async function handleApiV1(req, res, pathname) {
       // Keyed by slug+season so distinct seasons are cached independently.
       // Invalidated automatically when admin_store is modified (cache.deleteByPrefix('eps_')).
       // BYPASS cache for admin requests so the admin panel always sees raw data.
-      const epsCacheKey = `eps_${slug}_s${season}`;
+      const epsCacheKey = `eps_${slug}_s${season}_e${episode}`;
       if (!isAdminRequest(req)) {
         const cachedEps = cache.get(epsCacheKey);
         if (cachedEps) {
@@ -841,10 +841,16 @@ async function handleApiV1(req, res, pathname) {
               if (episodesCol) {
                 const bulkOps = akEpisodes.map(akEp => {
                   const epId = `ep_${slug}_${akEp.season}x${akEp.episode}`;
+                  const existing = dbEpisodes ? dbEpisodes.find(e => e.id === epId) : null;
+                  let mergedSources = [...(akEp.sources || [])];
+                  if (existing && existing.sources) {
+                    const tsSources = existing.sources.filter(s => !s.label.includes('AnimeKai'));
+                    mergedSources = [...tsSources, ...mergedSources];
+                  }
                   return {
                     updateOne: {
                       filter: { id: epId },
-                      update: { $set: { ...akEp, id: epId, animeId: animeId || `toon_${slug}`, animeSlug: slug, akUpdatedAt: new Date() } },
+                      update: { $set: { ...akEp, sources: mergedSources, id: epId, animeId: animeId || `toon_${slug}`, animeSlug: slug, akUpdatedAt: new Date() } },
                       upsert: true
                     }
                   };
@@ -887,7 +893,13 @@ async function handleApiV1(req, res, pathname) {
                 if (!episodesCol) return;
                 const bulkOps = akEpisodes.map(akEp => {
                   const epId = `ep_${slug}_${akEp.season}x${akEp.episode}`;
-                  return { updateOne: { filter: { id: epId }, update: { $set: { ...akEp, id: epId, animeId: animeId || `toon_${slug}`, animeSlug: slug, akUpdatedAt: new Date() } }, upsert: true } };
+                  const existing = dbEpisodes ? dbEpisodes.find(e => e.id === epId) : null;
+                  let mergedSources = [...(akEp.sources || [])];
+                  if (existing && existing.sources) {
+                    const tsSources = existing.sources.filter(s => !s.label.includes('AnimeKai'));
+                    mergedSources = [...tsSources, ...mergedSources];
+                  }
+                  return { updateOne: { filter: { id: epId }, update: { $set: { ...akEp, sources: mergedSources, id: epId, animeId: animeId || `toon_${slug}`, animeSlug: slug, akUpdatedAt: new Date() } }, upsert: true } };
                 });
                 if (bulkOps.length > 0) await episodesCol.bulkWrite(bulkOps);
                 cache.deleteByPrefix(`eps_${slug}`);

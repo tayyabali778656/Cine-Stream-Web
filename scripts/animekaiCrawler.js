@@ -129,18 +129,24 @@ function mapEpisodeToToonstream(akEp, tsEpisodes, slug) {
   };
 }
 
-async function scrapeAnimeKaiExclusive() {
-  logger.info('starting_animekai_exclusive_crawl');
+async function run() {
+  const start = Date.now();
   try {
+    await connectDB();
+    logger.info('animekai_crawler_started');
+
     const animeCol = getCollection('anime');
     const episodesCol = getCollection('episodes');
-    let addedCount = 0;
-    let page = 1;
+
+    let totalSaved = 0;
     
-    while (true) {
+    // Scan only the first 5 pages of AnimeKai latest updates
+    const maxPages = 5;
+    
+    for (let page = 1; page <= maxPages; page++) {
         const { results } = await animekaiSvc.searchAnime('', page);
         if (!results || results.length === 0) {
-            logger.info(`animekai_exclusive_crawl_reached_end_at_page: ${page}`);
+            logger.info(`animekai_crawl_reached_end_at_page: ${page}`);
             break;
         }
         
@@ -158,6 +164,7 @@ async function scrapeAnimeKaiExclusive() {
            });
            
            if (!exists) {
+               // Anime does not exist in DB: Scrape completely (metadata + episodes)
                logger.info(`found_animekai_exclusive: ${akAnime.slug}`);
                const details = await animekaiSvc.getAnimeDetails(akAnime.slug);
                if (details) {
@@ -167,11 +174,11 @@ async function scrapeAnimeKaiExclusive() {
                        { $set: { ...details, createdAt: new Date(), updatedAt: new Date() } },
                        { upsert: true }
                    );
-                   addedCount++;
                    
-                   // 2. Scrape all episodes for this exclusive anime
+                   // 2. Scrape episodes
                    let targetUrl = `/watch/${akAnime.slug}`;
                    let { html, status } = await fetchPage(targetUrl);
+                   
                    const refreshMatch = html.match(/url='([^']+)'/i);
                    if (refreshMatch) {
                       let redirectUrl = refreshMatch[1].replace(/^https?:\/\/[^\/]+/, '');
@@ -218,164 +225,108 @@ async function scrapeAnimeKaiExclusive() {
                      }));
                    }
                    logger.info(`scraped_exclusive_anime_episodes: ${akAnime.slug} | total: ${updatedEps}`);
+                   totalSaved++;
                    await sleep(500); 
                }
+           } else {
+               // Anime exists in DB: Skip metadata. Update episodes only.
+               const slug = exists.slug || exists.id.replace(/^toon_/, '').replace(/^animekai_/, '');
+               if (!slug) continue;
+               
+               const cleanSlug = akAnime.slug; // use animekai's native slug for watch page
+               const tsEpisodes = await episodesCol.find({ animeSlug: slug }).toArray();
+               
+               let targetUrl = `/watch/${cleanSlug}`;
+               let { html, status } = await fetchPage(targetUrl);
+               
+               const refreshMatch = html.match(/url='([^']+)'/i);
+               if (refreshMatch) {
+                  let redirectUrl = refreshMatch[1].replace(/^https?:\/\/[^\/]+/, '');
+                  const nextResp = await fetchPage(redirectUrl);
+                  html = nextResp.html;
+               }
+
+               const epLinkRegex = new RegExp(`href="[^"]*\\/watch\\/${cleanSlug}\\/ep-(\\d+)"`, 'gi');
+               let epMatch;
+               const akEpisodeNumbers = new Set();
+               while ((epMatch = epLinkRegex.exec(html)) !== null) {
+                 akEpisodeNumbers.add(parseInt(epMatch[1], 10));
+               }
+
+               const epsToScrape = Array.from(akEpisodeNumbers).sort((a, b) => a - b);
+               if (epsToScrape.length === 0) epsToScrape.push(1); 
+
+               let updatedEps = 0;
+               const concurrency = 5;
+               for (let i = 0; i < epsToScrape.length; i += concurrency) {
+                 const batch = epsToScrape.slice(i, i + concurrency);
+                 await Promise.all(batch.map(async (epNum) => {
+                    const mapping = tsEpisodes.length > 0 ? mapEpisodeToToonstream({ episode: epNum }, tsEpisodes, slug) : null;
+                    
+                    let epId, season, episode, isExisting;
+                    if (mapping) {
+                        epId = mapping.id; season = mapping.season; episode = mapping.episode; isExisting = mapping.isExisting;
+                    } else {
+                        epId = `ep_${slug}_1x${epNum}`; season = 1; episode = epNum; isExisting = false;
+                    }
+
+                    const epUrl = `/watch/${cleanSlug}/ep-${epNum}`;
+                    const sources = await scrapeEpisodePlayer(epUrl);
+                    if (sources.length === 0) return;
+
+                    if (isExisting) {
+                       const tsEp = tsEpisodes.find(e => e.id === epId);
+                       const existingUrls = new Set((tsEp.sources || []).map(s => s.url));
+                       let added = false;
+                       for (const src of sources) {
+                           if (!existingUrls.has(src.url)) {
+                               if (!tsEp.sources) tsEp.sources = [];
+                               tsEp.sources.push(src);
+                               added = true;
+                           }
+                       }
+                       if (added) {
+                           await episodesCol.updateOne(
+                               { id: epId },
+                               { $set: { sources: tsEp.sources, akUpdatedAt: new Date() } }
+                           );
+                           updatedEps++;
+                       }
+                    } else {
+                       const newEp = {
+                           id: epId,
+                           animeId: exists.id,
+                           animeSlug: slug,
+                           season: season,
+                           episode: episode,
+                           title: `Episode ${episode}`,
+                           url: epUrl,
+                           thumbnail: '',
+                           sources: sources,
+                           isMissingAnimeKai: true,
+                           createdAt: new Date(),
+                           akUpdatedAt: new Date()
+                       };
+                       await episodesCol.updateOne({ id: epId }, { $set: newEp }, { upsert: true });
+                       updatedEps++;
+                    }
+                 }));
+               }
+               
+               if (updatedEps > 0) {
+                   logger.info(`merged_animekai_servers_for: ${slug} | episodes_updated: ${updatedEps}`);
+                   totalSaved++;
+               }
+               await sleep(500);
            }
         }
-        page++;
         await sleep(1000); 
     }
-    
-    logger.info('animekai_exclusive_crawl_finished', { exclusive_added: addedCount });
-  } catch(err) {
-    logger.error('animekai_exclusive_crawl_error', err);
-  }
-}
-
-async function run() {
-  const start = Date.now();
-  try {
-    await connectDB();
-    logger.info('animekai_crawler_started');
-
-    const animeCol = getCollection('anime');
-    const episodesCol = getCollection('episodes');
-
-    // Get all ToonStream and previously saved AnimeKai animes
-    const allAnimes = await animeCol.find({ id: { $regex: /^(toon|animekai)_/ } }).toArray();
-    logger.info(`found_${allAnimes.length}_toonstream_animes_for_animekai_merge`);
-
-    let totalSaved = 0;
-    const forceCrawl = process.argv.includes('--force');
-
-    let processed = 0;
-    for (const anime of allAnimes) {
-      processed++;
-      if (processed % 10 === 0) {
-          logger.info(`processing_progress: ${processed} / ${allAnimes.length}`);
-      }
-      try {
-        const slug = anime.slug || anime.id.replace(/^toon_/, '');
-        if (!slug) continue;
-        const cleanSlug = slug.replace(/-dub-sub$/i, '').replace(/-dub$/i, '').replace(/-sub$/i, '');
-        
-        // Log individual processing attempt for debugging if needed
-        // logger.info(`checking_animekai_for: ${cleanSlug}`);
-
-        const akDetails = await animekaiSvc.getAnimeDetails(cleanSlug);
-        if (!akDetails) {
-            // Couldn't find by exact slug, maybe try search in the future.
-            continue;
-        }
-
-        // We got details, meaning the anime exists on AnimeKai.
-        // Fetch all episodes from ToonStream DB for this anime
-        const tsEpisodes = await episodesCol.find({ animeSlug: slug }).toArray();
-        if (tsEpisodes.length === 0) continue;
-
-        // Call the watch page to extract all episode links
-        let targetUrl = `/watch/${cleanSlug}`;
-        let { html, status } = await fetchPage(targetUrl);
-        
-        // Follow redirect if any
-        const refreshMatch = html.match(/url='([^']+)'/i);
-        if (refreshMatch) {
-           let redirectUrl = refreshMatch[1].replace(/^https?:\/\/[^\/]+/, '');
-           const nextResp = await fetchPage(redirectUrl);
-           html = nextResp.html;
-        }
-
-        const epLinkRegex = new RegExp(`href="[^"]*\\/watch\\/${cleanSlug}\\/ep-(\\d+)"`, 'gi');
-        let epMatch;
-        const akEpisodeNumbers = new Set();
-        
-        while ((epMatch = epLinkRegex.exec(html)) !== null) {
-          akEpisodeNumbers.add(parseInt(epMatch[1], 10));
-        }
-
-        const epsToScrape = Array.from(akEpisodeNumbers).sort((a, b) => a - b);
-        if (epsToScrape.length === 0) {
-            // Could be a movie
-            epsToScrape.push(1); 
-        }
-
-        let updatedEps = 0;
-        
-        // Scrape in batches
-        const concurrency = 5;
-        for (let i = 0; i < epsToScrape.length; i += concurrency) {
-          const batch = epsToScrape.slice(i, i + concurrency);
-          await Promise.all(batch.map(async (epNum) => {
-             const mapping = mapEpisodeToToonstream({ episode: epNum }, tsEpisodes, slug);
-             if (!mapping) return;
-
-             const epUrl = `/watch/${cleanSlug}/ep-${epNum}`;
-             const sources = await scrapeEpisodePlayer(epUrl);
-             if (sources.length === 0) return;
-
-             if (mapping.isExisting) {
-                // Merge sources into existing ToonStream episode
-                const tsEp = tsEpisodes.find(e => e.id === mapping.id);
-                const existingUrls = new Set((tsEp.sources || []).map(s => s.url));
-                let added = false;
-                for (const src of sources) {
-                    if (!existingUrls.has(src.url)) {
-                        if (!tsEp.sources) tsEp.sources = [];
-                        tsEp.sources.push(src);
-                        added = true;
-                    }
-                }
-                if (added) {
-                    await episodesCol.updateOne(
-                        { id: mapping.id },
-                        { $set: { sources: tsEp.sources, akUpdatedAt: new Date() } }
-                    );
-                    updatedEps++;
-                }
-             } else {
-                // Insert completely missing episode
-                const newEp = {
-                    id: mapping.id,
-                    animeId: anime.id,
-                    animeSlug: slug,
-                    season: mapping.season,
-                    episode: mapping.episode,
-                    title: `Episode ${mapping.episode}`,
-                    url: epUrl,
-                    thumbnail: '',
-                    sources: sources,
-                    isMissingAnimeKai: true, // flag to indicate it came solely from AK
-                    createdAt: new Date(),
-                    akUpdatedAt: new Date()
-                };
-                await episodesCol.updateOne(
-                    { id: mapping.id },
-                    { $set: newEp },
-                    { upsert: true }
-                );
-                updatedEps++;
-             }
-          }));
-        }
-
-        if (updatedEps > 0) {
-            totalSaved++;
-            logger.info(`merged_animekai_servers_for: ${slug} | episodes_updated: ${updatedEps}`);
-        }
-        await sleep(500); // polite delay
-      } catch (err) {
-        logger.error(`animekai_crawl_failed_for_anime`, err);
-      }
-    }
-
-    // Optional: Scrape exclusive animes not on ToonStream
-    await scrapeAnimeKaiExclusive();
 
     logger.info('animekai_crawler_finished', { duration_ms: Date.now() - start, totalSaved });
-    // Note: process.exit removed so this can be called as a module from cron endpoints
   } catch (err) {
     logger.error('animekai_crawler_fatal', err);
-    throw err; // Let caller handle the error
+    throw err;
   }
 }
 

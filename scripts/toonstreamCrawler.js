@@ -428,9 +428,30 @@ async function scrapeCategory(category, type) {
           }
 
           const result = await scrapeDetailPage(detailUrl, type);
-          if (!result) continue;
-
-          await animeCol.updateOne({ id: result.anime.id }, { $set: result.anime }, { upsert: true });
+          const setFields = {
+            seasonCount: result.anime.seasonCount,
+            episodeCount: result.anime.episodeCount,
+            status: result.anime.status,
+            updatedAt: result.anime.updatedAt,
+            watch_page_url: result.anime.watch_page_url
+          };
+          const setOnInsertFields = {
+            id: result.anime.id,
+            title: result.anime.title,
+            alternative_title: result.anime.alternative_title,
+            poster: result.anime.poster,
+            banner: result.anime.banner,
+            description: result.anime.description,
+            genres: result.anime.genres,
+            type: result.anime.type,
+            release_year: result.anime.release_year,
+            rating: result.anime.rating,
+            duration: result.anime.duration,
+            language: result.anime.language,
+            tags: result.anime.tags,
+            slug: result.anime.slug
+          };
+          await animeCol.updateOne({ id: result.anime.id }, { $set: setFields, $setOnInsert: setOnInsertFields }, { upsert: true });
 
           // Save episodes + scrape player sources in parallel batches to speed up crawl
           const episodes = result.episodes;
@@ -624,7 +645,30 @@ async function scrapeHomepageDetails() {
       const result = await scrapeDetailPage(detailUrl, 'series');
       if (!result) continue;
 
-      await animeCol.updateOne({ id: result.anime.id }, { $set: result.anime }, { upsert: true });
+      const setFields = {
+        seasonCount: result.anime.seasonCount,
+        episodeCount: result.anime.episodeCount,
+        status: result.anime.status,
+        updatedAt: result.anime.updatedAt,
+        watch_page_url: result.anime.watch_page_url
+      };
+      const setOnInsertFields = {
+        id: result.anime.id,
+        title: result.anime.title,
+        alternative_title: result.anime.alternative_title,
+        poster: result.anime.poster,
+        banner: result.anime.banner,
+        description: result.anime.description,
+        genres: result.anime.genres,
+        type: result.anime.type,
+        release_year: result.anime.release_year,
+        rating: result.anime.rating,
+        duration: result.anime.duration,
+        language: result.anime.language,
+        tags: result.anime.tags,
+        slug: result.anime.slug
+      };
+      await animeCol.updateOne({ id: result.anime.id }, { $set: setFields, $setOnInsert: setOnInsertFields }, { upsert: true });
 
       // Save episodes + scrape player sources in parallel batches to speed up crawl
       const episodes = result.episodes;
