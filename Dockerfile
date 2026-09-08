@@ -7,10 +7,23 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install production deps only (no devDependencies in final image)
+# Also set environment variable to skip Puppeteer chromium download during npm install
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN npm ci --omit=dev --ignore-scripts
 
 # ── Stage 2: Production image ─────────────────────────────────────────────────
 FROM node:20-alpine AS production
+
+# Install Chromium for Puppeteer
+RUN apk add --no-cache \
+      chromium \
+      nss \
+      freetype \
+      harfbuzz \
+      ca-certificates \
+      ttf-freefont \
+      nodejs \
+      yarn
 
 # Security: Create a non-root user to run the app
 RUN addgroup -g 1001 -S nodejs && \
@@ -30,6 +43,8 @@ USER cinestream
 EXPOSE 3000
 
 ENV NODE_ENV=production
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Health check — verify server is responding
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \

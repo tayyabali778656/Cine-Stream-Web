@@ -7,44 +7,63 @@ const logger = require('../utils/logger');
 const config = require('../config');
 const BASE_URL = config.toonstreamBaseUrl || 'https://toon-stream.site';
 
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
+
+let globalBrowser = null;
+
 // ── HTTP Helper ────────────────────────────────────────────────────────────────
-function fetchPage(url, retries = 3) {
+async function fetchPage(url, retries = 3) {
   const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
-  return new Promise((resolve, reject) => {
-    const attempt = (n) => {
-      https.get(fullUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Referer': BASE_URL,
-        },
-        timeout: 20000,
-      }, (res) => {
-        if (res.statusCode === 404) { resolve({ html: '', status: 404 }); return; }
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          return resolve(fetchPage(res.headers.location));
+  if (!globalBrowser) return { html: '', status: 500 };
+
+  return new Promise(async (resolve, reject) => {
+    let page;
+    const attempt = async (n) => {
+      try {
+        page = await globalBrowser.newPage();
+        
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+           const rt = req.resourceType();
+           if (['image', 'stylesheet', 'font', 'media'].includes(rt)) {
+              req.abort();
+           } else {
+              req.continue();
+           }
+        });
+
+        const response = await page.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        if (!response) {
+            await page.close();
+            if (n > 0) return setTimeout(() => attempt(n - 1), 2000);
+            return resolve({ html: '', status: 500 });
         }
-        let body = '';
-        res.on('data', c => body += c);
-        res.on('end', () => resolve({ html: body, status: res.statusCode }));
-        res.on('error', reject);
-      }).on('error', (err) => {
+        
+        const status = response.status();
+        if (status === 404) {
+            await page.close();
+            return resolve({ html: '', status: 404 });
+        }
+        
+        const title = await page.title();
+        if (title.includes('Just a moment') || title.includes('Cloudflare')) {
+            await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {});
+        }
+        
+        const html = await page.content();
+        await page.close();
+        resolve({ html, status });
+      } catch (err) {
+        if (page && !page.isClosed()) await page.close();
         if (n > 0) {
           logger.info(`retrying_fetch: ${fullUrl} (${n} left)`);
           setTimeout(() => attempt(n - 1), 2000);
         } else {
-          reject(err);
+          resolve({ html: '', status: 500 });
         }
-      }).on('timeout', function () {
-        this.destroy();
-        if (n > 0) {
-          logger.info(`timeout_retry: ${fullUrl}`);
-          setTimeout(() => attempt(n - 1), 3000);
-        } else {
-          reject(new Error(`Timeout: ${fullUrl}`));
-        }
-      });
+      }
     };
     attempt(retries);
   });
@@ -726,6 +745,12 @@ async function run() {
     await connectDB();
     logger.info('toonstream_crawler_started');
 
+    logger.info('launching_puppeteer_browser');
+    globalBrowser = await puppeteer.launch({
+      headless: "new",
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
     // Step 1: Scrape homepage lists for trending/popular sections
     await scrapeHomepage();
 
@@ -748,6 +773,11 @@ async function run() {
   } catch (err) {
     logger.error('toonstream_crawler_fatal', err);
     throw err; // Let caller handle the error
+  } finally {
+    if (globalBrowser) {
+      await globalBrowser.close();
+      globalBrowser = null;
+    }
   }
 }
 

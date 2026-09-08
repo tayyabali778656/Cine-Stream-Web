@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "mongodb": "^7.4.0"
+    "mongodb": "^7.4.0",
+    "puppeteer": "^25.10.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "devDependencies": {
     "jimp": "^1.6.1"
