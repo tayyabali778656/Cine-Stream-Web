@@ -2786,6 +2786,10 @@ const App = {
               url.searchParams.set('s', s);
               url.searchParams.set('e', e);
               window.history.replaceState(window.history.state, '', url.pathname + url.search);
+              
+              // Dynamically update canonical and open-graph URL for SEO/Sharing
+              this.setById('seo-canonical', 'href', url.href);
+              this.setById('og-url', 'content', url.href);
             }
 
             // ── Rewarded Smartlink Ad (original tab-swap) ──────────

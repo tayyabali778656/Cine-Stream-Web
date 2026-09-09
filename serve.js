@@ -48,6 +48,16 @@ function isAdminRequest(req) {
 const PORT = config.port;
 const PUBLIC_DIR = __dirname;
 
+// ── In-Memory Cache for index.html (Performance Fix) ──────────────────────────
+let cachedIndexHtml = null;
+function getIndexHtml() {
+  if (!cachedIndexHtml) {
+    cachedIndexHtml = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+  }
+  return cachedIndexHtml;
+}
+
+
 // ── In-memory cache for iframe-proxy HLS resolutions (10-min TTL) ────────────
 const iframeProxyCache = new Map(); // url → { result, expiry }
 const PROXY_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -2407,7 +2417,7 @@ const requestHandler = async (req, res) => {
       const rawGenre = genreMatch[1];
       const genreName = rawGenre.charAt(0).toUpperCase() + rawGenre.slice(1).toLowerCase();
       try {
-        const htmlRaw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+        const htmlRaw = getIndexHtml();
         const animeCol = getCollection('anime');
 
         // Fetch up to 40 items in this genre
@@ -2520,7 +2530,7 @@ const requestHandler = async (req, res) => {
       const episode = isWatch ? parseInt(urlObjForSeo.searchParams.get('e') || '1', 10) : null;
 
       try {
-        const htmlRaw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+        const htmlRaw = getIndexHtml();
         let animeTitle = slug
           .split('-')
           .map(w => w.charAt(0).toUpperCase() + w.slice(1))
@@ -2926,8 +2936,11 @@ const requestHandler = async (req, res) => {
         logger.warn('seo_inject_error', { message: seoErr.message });
         try {
           // Minimal dynamic canonical fallback injection so Google doesn't index it as duplicate homepage
-          const htmlRaw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+          const htmlRaw = getIndexHtml();
+          const fallbackTitle = `Watch ${toonId ? toonId.replace('toon_', '').replace(/-/g, ' ') : 'Anime'} Online`;
           const fallbackInjected = htmlRaw
+            .replace(new RegExp('<title id="seo-title">[^<]*</title>'), `<title id="seo-title">${fallbackTitle} | CineStream</title>`)
+            .replace(new RegExp('<meta id="seo-desc"[^>]*>'), `<meta id="seo-desc" name="description" content="Watch ${fallbackTitle} in Hindi Dubbed on CineStream.">`)
             .replace(new RegExp('<link id="seo-canonical"[^>]*>'), `<link id="seo-canonical" rel="canonical" href="${canonical}">`)
             .replace(new RegExp('<meta id="og-url"[^>]*>'), `<meta id="og-url" property="og:url" content="${canonical}">`);
 
@@ -2941,7 +2954,7 @@ const requestHandler = async (req, res) => {
     } else if (pathname === '/' && seoQ) {
       // ── SEO: Server-side search results page meta injection ──────────────────
       try {
-        const htmlRaw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+        const htmlRaw = getIndexHtml();
         const seoTitle = `${seoQ} Anime Search Results | CineStream`;
         const seoDesc = `Find ${seoQ} episodes, seasons, in Hindi Dubbed content, related anime and more on CineStream.`;
         const seoKeywords = `${seoQ}, search ${seoQ}, watch ${seoQ} hindi, ${seoQ} dubbed, CineStream`;
