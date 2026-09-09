@@ -145,7 +145,10 @@ class StreamPlayer {
     iframe.setAttribute('allow', "autoplay; encrypted-media; picture-in-picture; notifications 'none'; push 'none'");
     iframe.style.cssText = 'width:100%;height:100%;border:none;background:#000;';
     iframe.setAttribute('loading', 'eager');
-    iframe.setAttribute('referrerpolicy', 'no-referrer');
+    // Only apply no-referrer for 1anime.site (AnimeKai) as other servers might break without a referer
+    if (playUrl && playUrl.includes('1anime.site')) {
+      iframe.setAttribute('referrerpolicy', 'no-referrer');
+    }
 
     // Clear timeout once iframe fires load (doesn't guarantee stream plays)
     iframe.onload = () => {
