@@ -430,7 +430,7 @@ async function handleApiV1(req, res, pathname) {
           projection: { 
             id: 1, title: 1, name: 1, poster: 1, poster_path: 1, type: 1, 
             slug: 1, rating: 1, vote_average: 1, original_language: 1, 
-            genres: 1, language: 1, tags: 1 
+            genres: 1, language: 1, tags: 1, sub: 1, dub: 1
           }
         })
           .sort({ popularity: -1, updatedAt: -1 })
@@ -456,12 +456,19 @@ async function handleApiV1(req, res, pathname) {
           const data = await liveSvc.getLiveAnimeList('', page, '', '', q);
           results = data.results || [];
 
+          // ── Fallback to AnimeKai if ToonStream fails (e.g. login wall) ────
+          if (results.length === 0) {
+            logger.info(`ToonStream search empty for "${q}", falling back to AnimeKai`);
+            const akData = await animekaiSvc.searchAnime(q, page);
+            results = akData.results || [];
+          }
+
           // Save scraped results to MongoDB in the background for future instant searches
           if (results.length > 0 && isConnected()) {
             const animeCol = getCollection('anime');
             Promise.all(results.map(async (item) => {
               if (item.title && item.slug) {
-                const id = item.id || `toon_${item.slug}`;
+                const id = item.id || (item.url && item.url.includes('animekai') ? `animekai_${item.slug}` : `toon_${item.slug}`);
                 await animeCol.updateOne(
                   { id },
                   {
@@ -546,7 +553,20 @@ async function handleApiV1(req, res, pathname) {
         return;
       }
 
-      const freshAnime = await liveSvc.getLiveAnimeDetails(cleanId, cleanSlug);
+      let freshAnime = null;
+      
+      // If it's explicitly an AnimeKai ID, only scrape AnimeKai
+      if (cleanId.startsWith('animekai_') || cleanId.startsWith('animekai-')) {
+         freshAnime = await animekaiSvc.getAnimeDetails(cleanSlug);
+      } else {
+         // Try ToonStream first
+         freshAnime = await liveSvc.getLiveAnimeDetails(cleanId, cleanSlug);
+         // Fallback to AnimeKai if ToonStream fails
+         if (!freshAnime) {
+           freshAnime = await animekaiSvc.getAnimeDetails(cleanSlug);
+         }
+      }
+
       if (!freshAnime) {
         if (anime) {
           logger.info(`Live scrape empty for anime details ${cleanId}, falling back to basic anime from DB`);
@@ -726,7 +746,7 @@ async function handleApiV1(req, res, pathname) {
       const targetEpHasNumericLabels = targetEp && targetEp.sources && targetEp.sources.length > 0 &&
         targetEp.sources.every(s => /^\d+$/.test((s.label || '').trim()));
 
-      // Prevent serving corrupted cache (0 sources)
+      // Prevent serving corrupted cache (0 sources) — also catches empty array []
       const targetEpMissingSources = targetEp && (!targetEp.sources || targetEp.sources.length === 0);
 
       // Serve from DB if we have episodes, they are fresh, and target ep doesn't have bad old labels or missing sources
@@ -974,12 +994,15 @@ async function handleApiV1(req, res, pathname) {
         }
       }
 
-      // Save final response to server cache (skip for admin requests — they need raw data)
-      if (!isAdminRequest(req) && episodes.length > 0) {
+      // Save final response to server cache
+      // Only cache if target episode actually has sources — prevents caching empty sources
+      const targetEpInFinal = episodes.find(ep => ep.season === season && ep.episode === episode);
+      const targetHasSources = targetEpInFinal && targetEpInFinal.sources && targetEpInFinal.sources.length > 0;
+      if (!isAdminRequest(req) && episodes.length > 0 && targetHasSources) {
         cache.set(epsCacheKey, episodes, 2 * 60 * 1000); // 2-minute TTL
       }
 
-      sendJson(res, 200, episodes, isAdminRequest(req)
+      sendJson(res, 200, episodes, (isAdminRequest(req) || !targetHasSources)
         ? 'no-cache, no-store, must-revalidate'
         : 'public, max-age=120, stale-while-revalidate=300');
     } catch (err) {

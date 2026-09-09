@@ -522,7 +522,33 @@ const App = {
     this.renderRecentlyViewed();
     this.setupNavScroll();
 
-    // Smartlink timer ads removed
+    // Setup persistent 8-minute ad timer (survives page reloads, pauses on tab switch/close)
+    if (!localStorage.getItem('smartlinkAdAccumulated')) {
+      localStorage.setItem('smartlinkAdAccumulated', '0');
+    }
+
+    let lastAdTick = Date.now();
+    setInterval(() => {
+      const now = Date.now();
+      const delta = now - lastAdTick;
+      lastAdTick = now;
+
+      if (!document.hidden) {
+        let accumulated = parseInt(localStorage.getItem('smartlinkAdAccumulated') || '0', 10);
+
+        // Cap delta to 10 seconds to handle sleep/wake gracefully
+        if (delta > 0 && delta <= 10000) {
+          accumulated += delta;
+        }
+
+        if (accumulated >= 8 * 60 * 1000) { // 8 minutes
+          localStorage.setItem('smartlinkAdAccumulated', '0');
+          this.showSmartlinkWebViewAd('timer');
+        } else {
+          localStorage.setItem('smartlinkAdAccumulated', accumulated.toString());
+        }
+      }
+    }, 5000); // Check every 5 seconds
   },
 
   /**
@@ -1364,7 +1390,7 @@ const App = {
               langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
             } else if (contentType === 'Anime') {
               if (safeId.startsWith('animekai_') && m.dub > 0) {
-                langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+                langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG</span>`;
               }
             }
           }
@@ -1583,7 +1609,7 @@ const App = {
               langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
             } else if (contentType === 'Anime') {
               if (safeId.startsWith('animekai_') && m.dub > 0) {
-                langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+                langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG</span>`;
               }
             }
           }
@@ -1903,7 +1929,7 @@ const App = {
           langBadge = `<span class="lang-badge hindi-badge" aria-hidden="true">HINDI</span>`;
         } else if (contentType === 'Anime') {
           if (safeId.startsWith('animekai_') && m.dub > 0) {
-            langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG DUB</span>`;
+            langBadge = `<span class="lang-badge english-badge" aria-hidden="true">ENG</span>`;
           }
         }
 
@@ -2054,7 +2080,7 @@ const App = {
         langBadge = `<span class="lang-badge hindi-badge" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; padding: 2px 5px;" aria-hidden="true">HINDI</span>`;
       } else if (contentType === 'Anime') {
         if (safeId.startsWith('animekai_') && m.dub > 0) {
-          langBadge = `<span class="lang-badge english-badge" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; padding: 2px 5px;" aria-hidden="true">ENG DUB</span>`;
+          langBadge = `<span class="lang-badge english-badge" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; padding: 2px 5px;" aria-hidden="true">ENG</span>`;
         }
       }
 
@@ -2305,98 +2331,77 @@ const App = {
    * Modal Logic
    */
   showSmartlinkWebViewAd(triggerType = 'any') {
-    // Only episode change triggers the reward-style ad overlay
-    if (triggerType !== 'episodeChange') return;
-
-    // Show reward-style overlay on current page with countdown
-    const overlay = document.getElementById('player-ad-overlay');
+    const playerAd = document.getElementById('player-ad-overlay');
     const iframe = document.getElementById('ad-webview-iframe');
     const closeBtn = document.getElementById('ad-close-btn');
+    const countdownText = document.getElementById('ad-countdown-text');
     const closeLabel = document.getElementById('ad-close-label');
-    const adContainer = document.getElementById('ad-webview-container');
 
-    if (!overlay) return;
+    if (!playerAd || !iframe) return;
 
-    // Hide iframe, show overlay as a short blocker
-    if (iframe) iframe.style.display = 'none';
+    // Pick the next link in the array
+    const link = this._getNextAdLink();
 
-    // Show overlay
-    overlay.style.display = 'flex';
-    setTimeout(() => { overlay.style.opacity = '1'; }, 10);
-    if (adContainer) {
-      adContainer.style.background = 'rgba(15,15,25,0.98)';
-      adContainer.style.display = 'flex';
-      adContainer.style.flexDirection = 'column';
-      adContainer.style.justifyContent = 'center';
-      adContainer.style.alignItems = 'center';
-      setTimeout(() => { adContainer.style.transform = 'scale(1)'; }, 10);
+    // Load link in iframe directly
+    iframe.src = link;
 
-      // Show message inside container
-      let msgEl = document.getElementById('ad-reward-msg');
-      if (!msgEl) {
-        msgEl = document.createElement('div');
-        msgEl.id = 'ad-reward-msg';
-        msgEl.style.cssText = 'color:#fff;text-align:center;padding:20px;';
-        msgEl.innerHTML = `
-          <div style="font-size:48px;margin-bottom:16px;">🎬</div>
-          <div style="font-size:22px;font-weight:700;margin-bottom:8px;">Loading Next Episode...</div>
-          <div style="font-size:14px;color:#aaa;margin-bottom:20px;">Please wait a moment.</div>
-        `;
-        adContainer.appendChild(msgEl);
-      }
-      msgEl.style.display = 'block';
-    }
-
-    // Reset + countdown on close button
+    // Reset UI
     if (closeBtn) {
       closeBtn.disabled = true;
       closeBtn.style.cursor = 'not-allowed';
-      closeBtn.style.color = '#ccc';
       closeBtn.style.background = 'rgba(0,0,0,0.7)';
-      if (closeLabel) closeLabel.innerHTML = 'Wait <span id="ad-countdown-text">5</span>s';
-
-      let seconds = 1;
-      const tick = setInterval(() => {
-        seconds--;
-        const ct = document.getElementById('ad-countdown-text');
-        if (seconds <= 0) {
-          clearInterval(tick);
-          closeBtn.disabled = false;
-          closeBtn.style.cursor = 'pointer';
-          closeBtn.style.color = '#fff';
-          closeBtn.style.background = 'rgba(220,50,50,0.9)';
-          if (closeLabel) closeLabel.textContent = '✕ Close';
-        } else {
-          if (ct) ct.textContent = seconds;
-        }
-      }, 1000);
-
-      closeBtn.onclick = () => {
-        if (closeBtn.disabled) return;
-        clearInterval(tick);
-        overlay.style.opacity = '0';
-        if (adContainer) adContainer.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-          overlay.style.display = 'none';
-          if (iframe) { iframe.src = ''; iframe.style.display = ''; }
-          if (adContainer) {
-            adContainer.style.background = '#111';
-            adContainer.style.display = '';
-            adContainer.style.flexDirection = '';
-            adContainer.style.justifyContent = '';
-            adContainer.style.alignItems = '';
-            adContainer.style.transform = 'scale(0.95)';
-          }
-          const msgEl = document.getElementById('ad-reward-msg');
-          if (msgEl) msgEl.style.display = 'none';
-          closeBtn.disabled = true;
-          closeBtn.style.cursor = 'not-allowed';
-          closeBtn.style.background = 'rgba(0,0,0,0.7)';
-          closeBtn.style.color = '#ccc';
-          if (closeLabel) closeLabel.innerHTML = 'Wait <span id="ad-countdown-text">5</span>s';
-        }, 400);
-      };
+      closeBtn.style.color = '#ccc';
     }
+    if (countdownText) countdownText.textContent = '2';
+    if (closeLabel) closeLabel.innerHTML = 'Wait <span id="ad-countdown-text">2</span>s';
+
+    // Apply display:flex then animate in
+    playerAd.style.display = 'flex';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        playerAd.style.opacity = '1';
+        const container = document.getElementById('ad-webview-container');
+        if (container) container.style.transform = 'scale(1)';
+      });
+    });
+
+    let remaining = 2;
+    if (window._adCountdownTimer) clearInterval(window._adCountdownTimer);
+    window._adCountdownTimer = setInterval(() => {
+      remaining--;
+      const ct = document.getElementById('ad-countdown-text');
+      if (ct) ct.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(window._adCountdownTimer);
+        const cb = document.getElementById('ad-close-btn');
+        const cl = document.getElementById('ad-close-label');
+        if (cb) {
+          cb.disabled = false;
+          cb.style.cursor = 'pointer';
+          cb.style.background = '#e50914';
+          cb.style.color = '#fff';
+        }
+        if (cl) cl.innerHTML = '✕ Close';
+
+        if (cb) {
+          cb.onclick = () => {
+            // Open the smartlink ad in a new tab, acting as the captcha click
+            window.open(link, '_blank');
+
+            // Animate out
+            playerAd.style.opacity = '0';
+            const container = document.getElementById('ad-webview-container');
+            if (container) container.style.transform = 'scale(0.95)';
+
+            // Wait for transition before hiding completely
+            setTimeout(() => {
+              playerAd.style.display = 'none';
+              iframe.src = ''; // clear iframe to stop media/requests
+            }, 400);
+          };
+        }
+      }
+    }, 1000);
   },
 
   async openModal(movieId, type, updateHistory = true, isWatching = false, isNetMirror = false) {
@@ -2411,7 +2416,10 @@ const App = {
     document.getElementById('modal-title').textContent = 'Loading...';
     this.modal.classList.add('active');
 
-    // Smartlink ads on card/watch click removed
+    // Show ad after modal is active ONLY when actually watching (not on card click)
+    if (isWatching) {
+      this.showSmartlinkWebViewAd('watchNow');
+    }
 
     document.body.style.overflow = 'hidden';
 

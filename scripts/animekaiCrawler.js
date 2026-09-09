@@ -168,10 +168,16 @@ async function run() {
                logger.info(`found_animekai_exclusive: ${akAnime.slug}`);
                const details = await animekaiSvc.getAnimeDetails(akAnime.slug);
                if (details) {
-                   // 1. Save Anime details
                    await animeCol.updateOne(
                        { id: details.id },
-                       { $set: { ...details, createdAt: new Date(), updatedAt: new Date() } },
+                       { $set: { 
+                           ...details, 
+                           sub: akAnime.sub || details.sub || 0,
+                           dub: akAnime.dub || details.dub || 0,
+                           language: (akAnime.dub > 0) ? 'English' : 'Japanese',
+                           createdAt: new Date(), 
+                           updatedAt: new Date() 
+                       } },
                        { upsert: true }
                    );
                    
