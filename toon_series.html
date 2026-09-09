@@ -3863,7 +3863,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   });
 
-  /* Restore selected season after refresh */
+    /* Restore selected season after refresh */
 
   const savedSeason = localStorage.getItem("selectedSeason");
   const savedIndex = localStorage.getItem("selectedSeasonIndex");
@@ -3884,8 +3884,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }, 100);
 
+    } else {
+      const firstBtn = document.querySelector(".season-btn");
+      if (firstBtn) {
+        loadSeason(firstBtn);
+      }
     }
 
+  } else {
+    const firstBtn = document.querySelector(".season-btn");
+    if (firstBtn) {
+      loadSeason(firstBtn);
+    }
   }
 
 });

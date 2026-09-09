@@ -900,8 +900,51 @@ async function handleApiV1(req, res, pathname) {
           }
         } else {
           // ── Non-Vercel (VPS): background refresh (stale-while-revalidate) ─────
-          // Serve existing episodes immediately — AnimeKai refreshes in background.
-          // Next user request gets fresh merged data from MongoDB.
+          // If the target episode currently has 0 sources from ToonStream, we MUST await AnimeKai synchronously
+          // so the frontend doesn't get an empty sources array and show the Download APK error.
+          const targetEpObj = episodes.find(e => e.season === season && e.episode === episode);
+          const hasZeroSources = !targetEpObj || !targetEpObj.sources || targetEpObj.sources.length === 0;
+
+          if (hasZeroSources) {
+            try {
+              const akEpisodes = await animekaiSvc.getLiveEpisodes(slug, season, episode);
+              if (akEpisodes && akEpisodes.length > 0) {
+                // Merge into current response
+                for (const akEp of akEpisodes) {
+                  let reqEp = episodes.find(e => e.season === akEp.season && e.episode === akEp.episode);
+                  if (reqEp) {
+                    reqEp.sources = [...(reqEp.sources || []), ...(akEp.sources || [])];
+                  } else {
+                    akEp.id = `ep_${slug}_${akEp.season}x${akEp.episode}`;
+                    episodes.push(akEp);
+                  }
+                }
+                
+                // Also trigger background DB save so it caches for next time
+                setImmediate(async () => {
+                  const episodesCol = getCollection('episodes');
+                  if (episodesCol) {
+                    const bulkOps = akEpisodes.map(akEp => {
+                      const epId = `ep_${slug}_${akEp.season}x${akEp.episode}`;
+                      const existing = dbEpisodes ? dbEpisodes.find(e => e.id === epId) : null;
+                      let mergedSources = [...(akEp.sources || [])];
+                      if (existing && existing.sources) {
+                        const tsSources = existing.sources.filter(s => !s.label.includes('AnimeKai'));
+                        mergedSources = [...tsSources, ...mergedSources];
+                      }
+                      return { updateOne: { filter: { id: epId }, update: { $set: { ...akEp, sources: mergedSources, id: epId, animeId: animeId || `toon_${slug}`, animeSlug: slug, akUpdatedAt: new Date() } }, upsert: true } };
+                    });
+                    if (bulkOps.length > 0) await episodesCol.bulkWrite(bulkOps);
+                    cache.deleteByPrefix(`eps_${slug}`);
+                  }
+                });
+              }
+            } catch (akErr) {
+              logger.warn(`AnimeKai sync scrape failed for ${slug}:`, akErr.message);
+            }
+          } else {
+            // Serve existing episodes immediately — AnimeKai refreshes in background.
+            // Next user request gets fresh merged data from MongoDB.
           const akInFlightKey = `ak_inflight_${slug}_s${season}`;
           if (!cache.get(akInFlightKey)) {
             cache.set(akInFlightKey, true, 30_000);
@@ -934,7 +977,7 @@ async function handleApiV1(req, res, pathname) {
         }
       }
 
-      // --- END ANIMEKAI INTEGRATION ---
+      } // --- END ANIMEKAI INTEGRATION ---
 
 
       // Merge custom episode links from admin store

@@ -2963,6 +2963,13 @@ const App = {
                     }
                   }
                 }
+                  // 3. Fallback: Add any remaining sources
+                  for (const s of allRaw) {
+                    if (!usedUrls.has(s.url)) {
+                      sources.push(s);
+                      usedUrls.add(s.url);
+                    }
+                  }
               } catch (err) {
                 console.warn('Could not load ToonStream episode sources from DB:', err);
               }
