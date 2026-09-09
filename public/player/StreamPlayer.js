@@ -145,6 +145,7 @@ class StreamPlayer {
     iframe.setAttribute('allow', "autoplay; encrypted-media; picture-in-picture; notifications 'none'; push 'none'");
     iframe.style.cssText = 'width:100%;height:100%;border:none;background:#000;';
     iframe.setAttribute('loading', 'eager');
+    iframe.setAttribute('referrerpolicy', 'no-referrer');
 
     // Clear timeout once iframe fires load (doesn't guarantee stream plays)
     iframe.onload = () => {
