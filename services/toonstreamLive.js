@@ -3,7 +3,7 @@
 const https = require('https');
 const logger = require('../utils/logger');
 
-const BASE_URL = 'https://toon-stream.site';
+const BASE_URL = 'https://toonstream.vip';
 const DISABLE_SCRAPING = process.env.DISABLE_TOONSTREAM === 'true';
 
 let upcomingCache = null;

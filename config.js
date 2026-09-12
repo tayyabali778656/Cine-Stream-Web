@@ -69,8 +69,8 @@ const config = {
   adminEmail: optional('ADMIN_EMAIL', 'tayyabdev@make.com'),
   adminPasswordHash: optional('ADMIN_PASSWORD_HASH', ''), // bcrypt hash
 
-  // ToonStream (scraper source)
-  toonstreamBaseUrl: 'https://toon-stream.site',
+  // ToonStream (scraper source) — using toonstream.vip (no Cloudflare block)
+  toonstreamBaseUrl: 'https://toonstream.vip',
 
   // Streaming
   streamPlayerUrl: optional('STREAM_PLAYER_URL', 'https://gemma416okl.com/play/'),
